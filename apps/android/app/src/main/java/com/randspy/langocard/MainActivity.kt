@@ -1,63 +1,215 @@
 package com.randspy.langocard
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.randspy.langocard.ui.theme.LangocardTheme
+import io.github.openspacedrepetition.Rating
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+    private lateinit var model: LearningModel
+    private lateinit var speech: FrenchSpeech
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
-            LangocardTheme {
-                WelcomeScreen()
+        model = ViewModelProvider(this)[LearningModel::class.java]
+        speech = FrenchSpeech(this)
+        setContent { LangocardTheme { PilotApp(model, speech) {
+            runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
+        } } }
+    }
+    override fun onStart() { super.onStart(); if (::model.isInitialized) model.resumeClock() }
+    override fun onStop() {
+        if (::model.isInitialized) { model.tick(); model.persist() }
+        if (::speech.isInitialized) speech.stop()
+        super.onStop()
+    }
+    override fun onDestroy() { if (::speech.isInitialized) speech.close(); super.onDestroy() }
+}
+
+@Composable
+private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -> Unit) {
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(model, lifecycle) {
+        lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            model.resumeClock()
+            while (true) { delay(1000); model.tick() }
+        }
+    }
+    val revision = model.revision
+    val scroll = rememberScrollState()
+    LaunchedEffect(model.screen, model.prompt?.key, model.sessionReviews) { scroll.scrollTo(0) }
+    BackHandler(model.screen != "home") { speech.stop(); if (model.screen == "review") model.finish() else model.home() }
+    val current = model.prompt
+    var revealed by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
+    var played by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
+    Scaffold(bottomBar = {
+        if (model.screen == "review" && current != null) {
+            ReviewControls(model, speech, revealed,
+                canReveal = current.skill != Skill.Listening || (played && !speech.speaking && speech.available),
+                reveal = { revealed = true })
+        }
+    }) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("PILOT · FR", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+            }
+            when (model.screen) {
+                "review" -> Review(model, speech, revealed, played) { played = speech.say(current!!.entry.example) || played }
+                "summary" -> {
+                    Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
+                    Text("${model.sessionReviews} assessments · ${model.sessionRecalled} recalled")
+                    Text("${model.sessionSeconds / 60}m ${model.sessionSeconds % 60}s of focused practice")
+                    Text("${model.dueCount(speech.available)} reviews remain due. Related skills wait until another day; progress is saved.")
+                    if (model.pausedCount > 0) Text("Repeatedly missed cards get a three-day pause. Review their examples in the library.")
+                    Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
+                }
+                else -> {
+                    Text("A little French.\nEvery day.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                    Text("Read, listen, and find the words to speak. Your daily target is 15 minutes.")
+                    ElevatedCard(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("TODAY", style = MaterialTheme.typography.labelLarge)
+                            Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
+                            LinearProgressIndicator(progress = { (model.spent / 900f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+                            Text("${model.dueCount(speech.available)} due · ${model.studied} / 200 meanings started")
+                            Button(onClick = { model.start(!model.placementDone, speech.available) },
+                                enabled = model.spent < 900 || !model.placementDone, modifier = Modifier.fillMaxWidth()) {
+                                Text(if (!model.placementDone) "Find my starting point" else "Start a session")
+                            }
+                        }
+                    }
+                    if (!model.placementDone) {
+                        Text("An optional B2 starting check: six entries across three skills. This is a sample, not a CEFR test.")
+                        TextButton(onClick = { model.skipPlacement() }) { Text("Skip placement and start fresh") }
+                    }
+                    Text("Your interests", style = MaterialTheme.typography.titleMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("daily" to "Daily life", "culture" to "Culture", "news" to "News").forEach { (id, label) ->
+                            FilterChip(selected = id in model.interests, onClick = { model.toggleInterest(id) }, label = { Text(label) })
+                        }
+                    }
+                    Text(speech.message, style = MaterialTheme.typography.bodySmall)
+                    if (!speech.available) {
+                        Text("Listening cards wait until an offline voice is available.")
+                        OutlinedButton(onClick = settings) { Text("Open speech settings") }
+                    }
+                    Text("200 original draft meanings and examples · France French · not independently language-reviewed or frequency-ranked yet.", style = MaterialTheme.typography.bodySmall)
+                    Text("FSRS · 90% target recall · up to 5 new meanings per day. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
+                    Library(model, speech)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun WelcomeScreen() {
-    Scaffold { contentPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.headlineLarge,
-            )
-            Text(
-                text = stringResource(R.string.welcome_message),
-                style = MaterialTheme.typography.bodyLarge,
-            )
+private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, play: () -> Unit) {
+    val p = model.prompt ?: return
+    DisposableEffect(p.key) { onDispose { speech.stop() } }
+    Text(if (model.isPlacement) "STARTING CHECK · ${model.placementProgress}" else "DAILY PRACTICE · ${model.spent / 60} / 15 min",
+        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+    Text(p.skill.label, style = MaterialTheme.typography.headlineLarge)
+    ElevatedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            when (p.skill) {
+                Skill.Reading -> {
+                    Text(p.entry.word, style = MaterialTheme.typography.headlineMedium)
+                    Text(p.entry.example)
+                    Text("Recall the meaning before revealing.", style = MaterialTheme.typography.bodySmall)
+                }
+                Skill.Production -> {
+                    Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
+                    Text(p.entry.cloze, style = MaterialTheme.typography.titleLarge)
+                    Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence.", style = MaterialTheme.typography.bodySmall)
+                }
+                Skill.Listening -> {
+                    Text("Listen, then recall the meaning.", style = MaterialTheme.typography.titleLarge)
+                    Button(onClick = play, enabled = speech.available) {
+                        Text(if (played) "Play again" else "Play French sentence")
+                    }
+                    if (!speech.available) {
+                        Text(speech.message)
+                        TextButton(onClick = model::deferAudio) { Text("Continue without listening") }
+                    }
+                }
+            }
+            if (revealed) {
+                HorizontalDivider()
+                Text(p.entry.word, style = MaterialTheme.typography.headlineMedium)
+                if (!p.entry.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.entry.answer}")
+                Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
+                Text(p.entry.definition)
+                Text(p.entry.example)
+                if (speech.available) OutlinedButton(onClick = { speech.say(p.entry.example) }) { Text("Hear example") }
+            }
+        }
+    }
+    TextButton(onClick = { speech.stop(); model.finish() }) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+}
+
+/** Kept outside the scrolling card so every rating remains reachable without scrolling. */
+@Composable
+private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed: Boolean,
+                           canReveal: Boolean, reveal: () -> Unit) {
+    val p = model.prompt ?: return
+    Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!revealed) {
+                Button(onClick = reveal, enabled = canReveal, modifier = Modifier.fillMaxWidth()) { Text("Reveal answer") }
+            } else {
+                Text("How well did you recall it?", style = MaterialTheme.typography.titleSmall)
+            }
+            listOf(listOf(Rating.AGAIN to "Again", Rating.HARD to "Hard"),
+                listOf(Rating.GOOD to "Good", Rating.EASY to "Easy")).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { (rating, label) ->
+                        val interval = if (revealed) remember(p.key, model.sessionReviews, rating) { model.interval(rating) } else ""
+                        OutlinedButton(onClick = { speech.stop(); model.rate(rating, speech.available) },
+                            enabled = revealed, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
+                            Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                                Text(label, fontWeight = FontWeight.Bold)
+                                if (revealed) Text("~$interval", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-private fun WelcomeScreenPreview() {
-    LangocardTheme {
-        WelcomeScreen()
+private fun Library(model: LearningModel, speech: FrenchSpeech) {
+    var expanded by remember { mutableStateOf(false) }
+    var search by remember { mutableStateOf("") }
+    TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Close pilot library" else "Browse pilot library") }
+    if (expanded) {
+        OutlinedTextField(value = search, onValueChange = { search = it }, label = { Text("French or English") }, modifier = Modifier.fillMaxWidth())
+        model.entries.filter { it.word.contains(search, true) || it.english.contains(search, true) }.forEach { entry ->
+            HorizontalDivider()
+            Text(entry.word, style = MaterialTheme.typography.titleMedium)
+            Text(entry.english)
+            Text(entry.definition)
+            Text(entry.example)
+            if (speech.available) TextButton(onClick = { speech.say(entry.example) }) { Text("Listen") }
+        }
     }
 }

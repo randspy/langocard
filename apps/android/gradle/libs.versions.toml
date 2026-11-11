@@ -1,4 +1,6 @@
 [versions]
+fsrs = "1.0.0"
+junit = "4.13.2"
 agp = "9.5.1"
 kotlin = "2.4.21"
 activityCompose = "1.13.0"
@@ -6,6 +8,9 @@ lifecycle = "2.11.0"
 composeBom = "2026.09.00"
 
 [libraries]
+fsrs = { module = "io.github.open-spaced-repetition:fsrs", version.ref = "fsrs" }
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime", version.ref = "lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }

@@ -12,7 +12,7 @@ apps/
 
 ## Android
 
-Application ID: `com.randspy.langocard`. Supports Android 16 (API 36) and newer, with compile/target SDK 37. The initial app contains a welcome screen, a system light/dark theme, and a Compose preview.
+Application ID: `com.randspy.langocard`. Supports Android 16 (API 36) and newer, with compile/target SDK 37. The app contains an offline 200-meaning French flashcard pilot with placement, reading/listening/production practice, FSRS scheduling, and saved progress. See the Android README for scope and content limitations.
 
 Open `apps/android` in Android Studio, or use the checked-in Gradle wrapper from a terminal. See [Android setup](apps/android/README.md) for prerequisites and emulator instructions.
 
