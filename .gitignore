@@ -1,0 +1,15 @@
+# Local configuration and secrets
+.DS_Store
+.idea/
+*.iml
+local.properties
+.env
+.env.*
+!.env.example
+
+# Android / Gradle output
+.gradle/
+.kotlin/
+**/build/
+*.jks
+*.keystore

@@ -1,0 +1,45 @@
+name: Android
+
+on:
+  push:
+    paths:
+      - "apps/android/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "apps/android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/android
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Build and lint
+        run: ./gradlew --no-daemon :app:assembleDebug :app:lintDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: langocard-debug
+          path: apps/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

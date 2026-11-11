@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Langocard</string>
+    <string name="welcome_message">Your language learning starts here.</string>
+</resources>
