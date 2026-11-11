@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- JDK 17 (select it as the Gradle JDK in Android Studio too).
+- Android Studio’s bundled JDK for IDE builds, or JDK 17 for command-line/CI builds. Java and Kotlin both target Java 17 bytecode; no separate Java 17 toolchain is required when using the bundled JDK.
 - Android SDK platform 37.0, build tools 36.0.0, and platform tools.
 - Android 16 or newer device/emulator for running the app.
 
@@ -18,7 +18,7 @@ Set `ANDROID_HOME` to your SDK directory, or create an untracked `local.properti
 sdk.dir=/absolute/path/to/Android/sdk
 ```
 
-On this Mac, the SDK is installed at `$HOME/Library/Android/sdk`. Homebrew JDK 17 can be selected for the current shell with:
+On this Mac, the SDK is installed at `$HOME/Library/Android/sdk`. For command-line builds, Homebrew JDK 17 can be selected for the current shell with:
 
 ```sh
 export JAVA_HOME="$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"
