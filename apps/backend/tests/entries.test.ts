@@ -1,0 +1,83 @@
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { api, internal } from "../convex/_generated/api";
+import { OWNER_GITHUB_ID, setup, shipped, signIn, type T } from "./helpers";
+
+const token = "test-token";
+beforeEach(() => { process.env.ALLOWED_GITHUB_ID = OWNER_GITHUB_ID; process.env.SYNC_TOKEN = token; });
+afterEach(() => { delete process.env.ALLOWED_GITHUB_ID; delete process.env.SYNC_TOKEN; });
+
+const content = (o: Record<string, unknown> = {}) => {
+  const { entryId: _, origin: __, ...rest } = shipped(o);
+  return rest;
+};
+async function owner(t: T) {
+  await t.mutation(internal.seed.apply, { entries: [shipped()] });
+  return signIn(t, OWNER_GITHUB_ID);
+}
+const pullEntries = async (t: T) =>
+  (await t.query(api.sync.pull, { token, table: "entries", since: 0, cursor: null })).page as Record<string, unknown>[];
+
+describe("entries", () => {
+  test("refuses anyone but the owner", async () => {
+    const t = setup();
+    const stranger = await signIn(t, "999");
+    await expect(stranger.mutation(api.entries.create, content())).rejects.toThrow(/isn't allowed/);
+    await expect(stranger.query(api.entries.get, { entryId: "frw-1" })).rejects.toThrow(/isn't allowed/);
+  });
+
+  test("creates personal entries that sync to devices", async () => {
+    const t = setup();
+    const me = await owner(t);
+    const entryId = await me.mutation(api.entries.create, content({ word: "une trouvaille", rank: null }));
+    expect(entryId).toMatch(/^personal-/);
+    expect(await me.query(api.entries.get, { entryId })).toMatchObject({ word: "une trouvaille", origin: "personal", edited: false });
+    expect((await pullEntries(t)).map((e) => e.entryId)).toContain(entryId);
+  });
+
+  test("rejects invalid content with the entry rule message", async () => {
+    const t = setup();
+    const me = await owner(t);
+    await expect(me.mutation(api.entries.create, content({ example: "no answer" }))).rejects.toThrow(/Mark exactly one answer/);
+    await expect(me.mutation(api.entries.update, { entryId: "frw-1", ...content({ topic: "sport" }) })).rejects.toThrow(/Unknown topic/);
+  });
+
+  test("edits a shipped entry and marks it edited", async () => {
+    const t = setup();
+    const me = await owner(t);
+    await me.mutation(api.entries.update, { entryId: "frw-1", ...content({ definition: "Ma définition." }) });
+    const entry = await me.query(api.entries.get, { entryId: "frw-1" });
+    expect(entry).toMatchObject({ definition: "Ma définition.", edited: true, shipped: { definition: "Posséder." } });
+    expect(entry!.editedAt).toBeGreaterThan(0);
+    // An older device copy can't overwrite the edit.
+    await t.mutation(api.sync.push, { token, cards: [], reviews: [], sources: [], buried: [], entries: [{ entryId: "frw-1", ...content(), editedAt: 1, deletedAt: null }] });
+    expect((await me.query(api.entries.get, { entryId: "frw-1" }))!.definition).toBe("Ma définition.");
+  });
+
+  test("an unchanged save writes nothing", async () => {
+    const t = setup();
+    const me = await owner(t);
+    await me.mutation(api.entries.update, { entryId: "frw-1", ...content() });
+    expect((await me.query(api.entries.get, { entryId: "frw-1" }))!.editedAt).toBeNull();
+  });
+
+  test("deletes and restores, keeping the content", async () => {
+    const t = setup();
+    const me = await owner(t);
+    await me.mutation(api.entries.remove, { entryId: "frw-1" });
+    expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ deleted: true });
+    await expect(me.mutation(api.entries.update, { entryId: "frw-1", ...content({ word: "x" }) })).rejects.toThrow(/Restore/);
+    await me.mutation(api.entries.restore, { entryId: "frw-1" });
+    expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ deleted: false, word: "avoir" });
+    expect((await pullEntries(t))[0]).toMatchObject({ entryId: "frw-1" });
+  });
+
+  test("editing back to the new shipped wording clears the upstream flag", async () => {
+    const t = setup();
+    const me = await owner(t);
+    await me.mutation(api.entries.update, { entryId: "frw-1", ...content({ definition: "Mine." }) });
+    await t.mutation(internal.seed.apply, { entries: [shipped({ definition: "Détenir." })] });
+    expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ upstreamChanged: true });
+    await me.mutation(api.entries.update, { entryId: "frw-1", ...content({ definition: "Détenir." }) });
+    expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ upstreamChanged: false, edited: false });
+  });
+});
