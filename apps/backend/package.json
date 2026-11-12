@@ -8,9 +8,13 @@
     "typecheck": "tsc --noEmit -p convex && tsc --noEmit -p tests",
     "test": "vitest run",
     "link-android": "node scripts/link-android.mjs",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "link-web": "node scripts/link-web.mjs",
+    "setup-web-auth": "node scripts/setup-web-auth.mjs"
   },
   "dependencies": {
+    "@auth/core": "^0.41.3",
+    "@convex-dev/auth": "^0.0.98",
     "convex": "^1.49.0"
   },
   "devDependencies": {
