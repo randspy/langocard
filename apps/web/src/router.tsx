@@ -6,6 +6,7 @@ import { validateSearch } from "@/lib/library";
 import { EntryPage } from "@/routes/EntryPage";
 import { LibraryPage } from "@/routes/LibraryPage";
 import { NewEntryPage } from "@/routes/NewEntryPage";
+import { UpstreamPage } from "@/routes/UpstreamPage";
 
 const rootRoute = createRootRoute({ component: Layout });
 
@@ -18,6 +19,7 @@ function Layout() {
           <Link to="/" className="font-serif text-xl">Langocard</Link>
           <Link to="/" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium" activeOptions={{ exact: true, includeSearch: false }}>Library</Link>
           <Link to="/entries/new" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">New entry</Link>
+          <Link to="/conflicts" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Upstream changes</Link>
           <div className="ml-auto"><Button variant="ghost" size="sm" onClick={() => void signOut()}>Sign out</Button></div>
         </nav>
       </header>
@@ -45,7 +47,13 @@ const entryRoute = createRoute({
   component: EntryPage,
 });
 
-const routeTree = rootRoute.addChildren([libraryRoute, newEntryRoute, entryRoute]);
+const upstreamRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/conflicts",
+  component: UpstreamPage,
+});
+
+const routeTree = rootRoute.addChildren([libraryRoute, newEntryRoute, entryRoute, upstreamRoute]);
 export const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

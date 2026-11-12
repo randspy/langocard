@@ -89,3 +89,34 @@ export const restore = mutation({
     await ctx.db.patch(entry._id, { editedAt: nextClock(entry), updatedAt: Date.now() });
   },
 });
+
+/** Edited entries whose shipped content changed since, with both versions to compare. */
+export const upstreamChanges = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireOwner(ctx);
+    const rows = await ctx.db.query("entries").withIndex("by_upstreamChanged", (q) => q.eq("upstreamChanged", true)).take(1000);
+    return rows
+      .filter((row) => row.shipped !== null && !isDeleted(row))
+      .map((row) => ({ entryId: row.entryId, origin: row.origin, mine: contentOf(row), theirs: row.shipped! }))
+      .sort((a, b) => a.mine.word.localeCompare(b.mine.word, "fr"));
+  },
+});
+
+/**
+ * Settles an upstream change. "keepMine" keeps the learner's wording; "takeTheirs" adopts
+ * the shipped content, after which the entry follows future content updates again.
+ */
+export const resolveUpstream = mutation({
+  args: { entryId: v.string(), choice: v.union(v.literal("keepMine"), v.literal("takeTheirs")) },
+  handler: async (ctx, { entryId, choice }) => {
+    await requireOwner(ctx);
+    const entry = await load(ctx, entryId);
+    if (!entry.upstreamChanged || !entry.shipped) return;
+    if (choice === "keepMine") {
+      await ctx.db.patch(entry._id, { upstreamChanged: false, updatedAt: Date.now() });
+    } else {
+      await ctx.db.patch(entry._id, { ...entry.shipped, editedAt: nextClock(entry), upstreamChanged: false, updatedAt: Date.now() });
+    }
+  },
+});
