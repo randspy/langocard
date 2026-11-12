@@ -71,6 +71,13 @@ fun PackCatalogue(model: LearningModel) {
     var message by remember { mutableStateOf("") }
     var activePack by remember { mutableStateOf<String?>(null) }
     Text("Dictionary definitions and examples, ordered by frequency. These packs haven’t had independent language review.", style = MaterialTheme.typography.bodyMedium)
+    Text("New dictionary entries", style = MaterialTheme.typography.titleSmall)
+    Text("Choose a frequency starting point. Existing reviews and starter cards continue.", style = MaterialTheme.typography.bodySmall)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(1 to "All ranks", 2501 to "2,501+", 7001 to "7,001+").forEach { (rank, label) ->
+            FilterChip(selected = model.minimumRank == rank, onClick = { model.setMinimumRank(rank) }, label = { Text(label) })
+        }
+    }
     OutlinedButton(enabled = !busy, onClick = { scope.launch {
         busy = true; activePack = null; message = ""
         try {

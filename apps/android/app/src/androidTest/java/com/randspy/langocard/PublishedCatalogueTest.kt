@@ -36,6 +36,18 @@ class PublishedCatalogueTest {
                     if (!model.installedPack(pack.id)) assertEquals(pack.meanings, model.importPack(downloaded[index]))
                 }
                 assertEquals(1316, model.entries.size)
+                model.skipPlacement()
+                model.start(false, false)
+                assertTrue(model.prompt!!.entry.rank in 2501..20000)
+                val assessed = model.prompt!!
+                model.rate(io.github.openspacedrepetition.Rating.GOOD, false)
+                val savedMemory = model.state(assessed)!!.toJson()
+                model.finish(); model.setMinimumRank(1); model.start(false, false)
+                assertTrue(model.prompt!!.entry.rank < 2501)
+                assertEquals(savedMemory, model.state(assessed)!!.toJson())
+                model.finish(); model.setMinimumRank(7001); model.start(false, false)
+                assertTrue(model.prompt!!.entry.rank in 7001..20000)
+                model.finish()
                 val backup = model.backup()
                 model.restore(backup)
                 assertTrue(packs.all { model.installedPack(it.id) })

@@ -47,6 +47,7 @@ object ContentFiles {
             require(card.difficulty == null || card.difficulty in 1.0..10.0) { "Invalid difficulty" }
         }
         require(data.optInt("seconds") >= 0 && data.optInt("introduced") >= 0 && data.optInt("placementIndex") in 0..18)
+        if (data.has("minimumRank")) require(data.getInt("minimumRank") in listOf(1, 2501, 7001))
         // Validate optional collections before any file is replaced.
         for (key in listOf("buried", "failures", "paused")) if (data.has(key)) data.getJSONObject(key)
         if (data.has("reviews")) data.getJSONArray("reviews")

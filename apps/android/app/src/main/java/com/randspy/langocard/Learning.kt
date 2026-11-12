@@ -78,6 +78,11 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         .map { word -> entries.first { it.word == word } }
     val placementDone get() = data.optBoolean("placementDone")
     val placementProgress get() = "$placementIndex / 18"
+    val minimumRank get() = data.optInt("minimumRank", 2501)
+    fun setMinimumRank(rank: Int) {
+        require(rank in listOf(1, 2501, 7001))
+        data.put("minimumRank", rank); save()
+    }
     val interests get() = data.optString("interests", "daily,culture,news").split(',').toSet()
     private fun today() = StudyPolicy.date(Instant.now())
     private fun rollover() {
@@ -216,7 +221,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val sibling = available.firstOrNull { p -> state(p) == null && Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }
         if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) { prompt = sibling; return }
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            prompt = available.filter { state(it) == null }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
+            prompt = available.filter { state(it) == null && it.entry.rank >= minimumRank }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
             if (prompt != null) return
         }
         finish()

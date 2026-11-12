@@ -73,6 +73,11 @@ The measured coverage and preparation pipeline are documented in
   The pinned MIT-licensed `io.github.open-spaced-repetition:fsrs:1.0.0`
   ([Java-FSRS](https://github.com/open-spaced-repetition/java-fsrs)) schedules at
   90% desired retention using default parameters. Model fitting is deferred.
+- The personal B2 default starts new ranked dictionary entries above rank 2,500.
+  The packs page can change this to all ranks or 7,001+. This is a frequency
+  preference, not a CEFR mapping or a claim that lower-ranked words are known.
+  Existing reviews, started senses, unranked starter cards and personal entries
+  are preserved.
 - Due reviews take priority. At most five new meanings are introduced daily;
   existing meanings gain additional skills on later days. Related skills are
   buried until the next local calendar day. Failed cards retain their FSRS due
