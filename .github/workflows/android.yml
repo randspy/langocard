@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - "apps/android/**"
+      - "content/*-fixtures.json"
       - ".github/workflows/android.yml"
   pull_request:
     paths:
       - "apps/android/**"
+      - "content/*-fixtures.json"
       - ".github/workflows/android.yml"
   workflow_dispatch:
 
