@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -36,7 +37,10 @@ class MainActivity : ComponentActivity() {
             runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
         } } }
     }
-    override fun onStart() { super.onStart(); if (::model.isInitialized) model.resumeClock() }
+    override fun onStart() {
+        super.onStart()
+        if (::model.isInitialized) { model.resumeClock(); model.sync() }
+    }
     override fun onStop() {
         if (::model.isInitialized) { model.tick(); model.persist() }
         if (::speech.isInitialized) speech.stop()
@@ -55,7 +59,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         }
     }
     var destination by rememberSaveable { mutableStateOf("study") }
-    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "export" to "Export to Anki", "sources" to "Content sources")
+    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "sync" to "Cloud sync", "export" to "Export to Anki", "sources" to "Content sources")
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val revision = model.revision
@@ -117,10 +121,10 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     }
                     Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
-                Text("OFFLINE · FR", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                SyncIndicator(model, onClick = if (model.screen == "home") ({ destination = "sync" }) else null)
             }
             when (if (model.screen == "home") destination else model.screen) {
-                "library", "add", "packs", "backup", "export", "sources" -> {
+                "library", "add", "packs", "backup", "sync", "export", "sources" -> {
                     Text(destinations.getValue(destination), style = MaterialTheme.typography.headlineMedium)
                     if (destination == "sources") ContentSources()
                     else if (destination == "library") Library(model, speech, alwaysOpen = true)
@@ -289,4 +293,17 @@ private fun ContentSources() {
     val notice = remember { context.assets.open("CONTENT-NOTICE.md").bufferedReader().use { it.readText() } }
     Text("Original starter material and source-aligned dictionary packs are kept separate from your learning history. Dictionary packs are structurally checked, not independently language-reviewed.")
     Text(notice, style = MaterialTheme.typography.bodyMedium)
+}
+
+/** Top-right status: local-only, syncing, synced, or the last sync failed (still works offline). */
+@Composable
+private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
+    val (label, color) = when {
+        !model.syncConfigured -> "OFFLINE" to MaterialTheme.colorScheme.primary
+        model.syncing -> "SYNCING…" to MaterialTheme.colorScheme.onSurfaceVariant
+        model.syncFailed -> "NOT SYNCED" to MaterialTheme.colorScheme.error
+        else -> "SYNCED" to MaterialTheme.colorScheme.primary
+    }
+    val modifier = if (onClick != null) Modifier.clickable(onClickLabel = "Open cloud sync", onClick = onClick) else Modifier
+    Text("$label · FR", modifier = modifier.padding(4.dp), color = color, style = MaterialTheme.typography.labelLarge)
 }

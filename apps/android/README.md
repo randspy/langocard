@@ -93,7 +93,7 @@ The measured coverage and preparation pipeline are documented in
   network; France voices are preferred. Synthetic audio is labeled. Missing or
   failed audio never counts as a successful assessment. Install voice data in
   Android speech settings and reopen the app; check actual output in airplane
-  mode on the target device. Studying works offline; networking is used only for explicitly requested pack downloads.
+  mode on the target device. Studying works offline; networking is used only for explicitly requested pack downloads and, once configured, cloud sync.
 - The library supports French/English search and replaying examples. Interest
   changes affect new-entry ordering, without changing learned card states.
 
@@ -101,7 +101,9 @@ Run `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`.
 The remaining editorial content work is expansion toward 20,000 usable study lemmas.
 A 20,000-lemma frequency reference and a hosted catalogue are now provided, but
 reference coverage is not counted as completed learning content.
-Sync, notifications, AI and automatic speech scoring remain deferred.
+Optional cloud sync (Menu → Cloud sync) merges progress between devices through
+your own Convex deployment; see `../backend/README.md`. Studying never waits for
+the network. Notifications, AI and automatic speech scoring remain deferred.
 Do not clear application data to update it; install newer APKs with `adb install -r`.
 
 ## Library tools
