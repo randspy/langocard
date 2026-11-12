@@ -1,3 +1,13 @@
+import java.util.Properties
+
+/** Optional sync settings from the untracked local.properties (see apps/backend/README.md). */
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+fun syncSetting(property: String, env: String): String =
+    (localProperties.getProperty(property) ?: System.getenv(env) ?: "").trim()
+        .replace("\\", "\\\\").replace("\"", "\\\"")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -14,10 +24,13 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("String", "SYNC_URL", "\"${syncSetting("langocard.syncUrl", "LANGOCARD_SYNC_URL")}\"")
+        buildConfigField("String", "SYNC_TOKEN", "\"${syncSetting("langocard.syncToken", "LANGOCARD_SYNC_TOKEN")}\"")
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {

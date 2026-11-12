@@ -3,9 +3,13 @@ package com.randspy.langocard
 import android.app.Application
 import android.util.AtomicFile
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import io.github.openspacedrepetition.Card as MemoryCard
 import io.github.openspacedrepetition.Rating
 import io.github.openspacedrepetition.Scheduler
@@ -81,7 +85,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     val minimumRank get() = data.optInt("minimumRank", 2501)
     fun setMinimumRank(rank: Int) {
         require(rank in listOf(1, 2501, 7001))
-        data.put("minimumRank", rank); save()
+        data.put("minimumRank", rank).put("preferencesChangedAt", System.currentTimeMillis()); save()
     }
     val interests get() = data.optString("interests", "daily,culture,news").split(',').toSet()
     private fun today() = StudyPolicy.date(Instant.now())
@@ -109,7 +113,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun backup(): String {
         persist()
         return JSONObject().put("format", "langocard-backup").put("version", 1)
-            .put("data", JSONObject(data.toString())).toString(2)
+            .put("data", JSONObject(data.toString()).apply { remove("sync") }).toString(2)
     }
     fun validateBackup(text: String) { ContentFiles.backupData(text, bundled.map { it.id }.toSet()) }
     fun restore(text: String) {
@@ -129,8 +133,11 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         replace(buried, restored.optJSONObject("buried") ?: JSONObject())
         replace(failures, restored.optJSONObject("failures") ?: JSONObject())
         replace(paused, restored.optJSONObject("paused") ?: JSONObject())
+        val sync = data.optJSONObject("sync")
         replace(data, restored)
         data.put("cards", cards).put("reviews", logs).put("buried", buried).put("failures", failures).put("paused", paused)
+        // The restored progress is pushed again on the next sync; newer cloud reviews still win.
+        data.put("sync", sync ?: JSONObject()); SyncData.reset(data)
         memory.clear(); cards.keys().forEach { memory[it] = MemoryCard.fromJson(cards.getString(it)) }
         nextCardId = maxOf(data.optInt("nextCardId"), (memory.values.maxOfOrNull { it.cardId } ?: -1) + 1)
         entries.clear(); entries.addAll(bundled)
@@ -177,7 +184,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     fun toggleInterest(topic: String) {
         val next = interests.toMutableSet().apply { if (!add(topic)) remove(topic) }
-        if (next.isNotEmpty()) { data.put("interests", next.joinToString(",")); save() }
+        if (next.isNotEmpty()) { data.put("interests", next.joinToString(",")).put("preferencesChangedAt", System.currentTimeMillis()); save() }
     }
     fun start(placement: Boolean, audio: Boolean) {
         rollover(); placing = placement; sessionReviews = 0; sessionRecalled = 0; sessionSeconds = 0
@@ -199,7 +206,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
     fun persist() { save() }
-    fun finish() { screen = "summary"; prompt = null; save() }
+    fun finish() { screen = "summary"; prompt = null; save(); sync() }
     fun home() { screen = "home"; prompt = null; save() }
     fun skipPlacement() { data.put("placementDone", true); placing = false; home() }
     val isPlacement get() = placing
@@ -233,6 +240,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         if (state(p) == null) { nextCardId++; data.put("nextCardId", nextCardId) }
         val result = scheduler.reviewCard(card, rating)
         cards.put(p.key, result.card().toJson())
+        SyncData.markCard(data, p.key, result.card().lastReview?.toEpochMilli() ?: 0L)
         memory[p.key] = result.card()
         logs.put(JSONObject().put("key", p.key).put("placement", placing).put("log", result.reviewLog().toJson()))
         val missed = if (rating == Rating.AGAIN) failures.optInt(p.key) + 1 else 0
@@ -255,5 +263,66 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val result = scheduler.reviewCard(card, rating)
         val minutes = ((java.time.Duration.between(Instant.now(), result.card().due).seconds + 59) / 60).coerceAtLeast(1)
         return if (minutes < 60) "${minutes}m" else if (minutes < 1440) "${minutes / 60}h" else "${minutes / 1440}d"
+    }
+
+    var syncStatus by androidx.compose.runtime.mutableStateOf(""); private set
+    var syncing by androidx.compose.runtime.mutableStateOf(false); private set
+    /** Whether a sync target is set; refresh with [refreshSyncConfig] after changing it. */
+    var syncConfigured by androidx.compose.runtime.mutableStateOf(SyncConfig.load(application) != null); private set
+    var syncFailed by androidx.compose.runtime.mutableStateOf(false); private set
+    fun refreshSyncConfig() { syncConfigured = SyncConfig.load(getApplication()) != null; if (!syncConfigured) syncFailed = false }
+
+    /** Pushes local changes and merges other devices' changes; a no-op until sync is set up. */
+    fun sync(manual: Boolean = false) {
+        refreshSyncConfig()
+        val config = SyncConfig.load(getApplication()) ?: run { if (manual) syncStatus = "Set up sync first"; return }
+        if (syncing || (screen == "review" && !manual)) return
+        syncing = true; syncStatus = "Syncing…"
+        viewModelScope.launch {
+            syncStatus = try {
+                runSync(ConvexHttp(config))
+                SyncConfig.markSynced(getApplication(), System.currentTimeMillis())
+                syncFailed = false
+                "Synced"
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { syncFailed = true; "Sync failed: ${e.message ?: e.javaClass.simpleName}" }
+            finally { syncing = false }
+        }
+    }
+
+    private suspend fun runSync(client: ConvexHttp) {
+        val generation = SyncData.state(data).getInt("generation")
+        fun current() = SyncData.state(data).getInt("generation") == generation
+        rollover()
+        val outbox = SyncData.outbox(data, today())
+        for (args in outbox.batches()) withContext(Dispatchers.IO) { client.mutation("sync:push", args) }
+        SyncData.markPushed(data, outbox); save()
+        for (table in SyncData.TABLES) {
+            val since = SyncData.cursor(data, table)
+            var cursor: String? = null
+            var serverTime: Long? = null
+            do {
+                val args = JSONObject().put("table", table).put("since", since).put("cursor", cursor ?: JSONObject.NULL)
+                val result = withContext(Dispatchers.IO) { client.query("sync:pull", args) }
+                if (!current()) return // a restore replaced the data mid-sync; the next sync starts over
+                if (serverTime == null) serverTime = result.getDouble("serverTime").toLong()
+                val page = result.getJSONArray("page")
+                applyRemote(table, (0 until page.length()).map(page::getJSONObject))
+                cursor = result.getString("continueCursor")
+            } while (!result.getBoolean("isDone"))
+            SyncData.setCursor(data, table, serverTime!!)
+            save()
+        }
+    }
+
+    private fun applyRemote(table: String, rows: List<JSONObject>) {
+        if (rows.isEmpty()) return
+        if (table == "settings") rollover()
+        val applied = SyncData.apply(data, table, rows, entries.map { it.id }.toSet())
+        entries.addAll(applied.entries)
+        memory.putAll(applied.cards)
+        nextCardId = maxOf(nextCardId, data.optInt("nextCardId"), (memory.values.maxOfOrNull { it.cardId } ?: -1) + 1)
+        data.put("nextCardId", nextCardId)
+        if (!placing) placementIndex = data.optInt("placementIndex")
     }
 }

@@ -93,6 +93,7 @@ fun LibraryTools(model: LearningModel, section: String) {
     OutlinedButton(onClick = { backup.launch("langocard-backup.json") }, enabled = !busy) { Text("Save backup") }
     OutlinedButton(onClick = { restore.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Restore backup") }
     }
+    if (section == "sync") CloudSyncSettings(model)
     if (section == "export") {
         Text("Export reading and production cards for Anki. Review schedules and synthetic audio stay in Langocard.")
     OutlinedButton(onClick = { export.launch("langocard-anki.tsv") }, enabled = !busy) { Text("Export cards to Anki") }
@@ -101,4 +102,41 @@ fun LibraryTools(model: LearningModel, section: String) {
         title = { Text("Replace current progress?") }, text = { Text("This restores the library and progress from the selected backup. Save a backup of your current progress first if you need it.") },
         confirmButton = { TextButton(onClick = { val text = pendingRestore!!; pendingRestore = null; task { model.restore(text); "Backup restored" } }) { Text("Restore") } },
         dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Cancel") } })
+}
+
+@Composable
+private fun CloudSyncSettings(model: LearningModel) {
+    val context = LocalContext.current
+    val configured = model.syncConfigured
+    var url by remember { mutableStateOf(SyncConfig.load(context)?.url ?: "") }
+    var token by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf("") }
+    Text("Keep your progress in your own Convex deployment and share it between devices. Studying always works offline; changes sync when the app opens and after each session.")
+    if (configured) {
+        Text("Connected to $url", style = MaterialTheme.typography.bodyMedium)
+        val last = SyncConfig.lastSynced(context)
+        val lastText = if (last == 0L) "Not synced yet" else "Last synced " + java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(last))
+        Text(lastText, style = MaterialTheme.typography.bodySmall)
+        if (model.syncStatus.isNotBlank()) Text(model.syncStatus)
+        if (model.syncing) LinearProgressIndicator(Modifier.fillMaxWidth())
+        Button(onClick = { model.sync(manual = true) }, enabled = !model.syncing) { Text("Sync now") }
+        OutlinedButton(onClick = { SyncConfig.clear(context); model.refreshSyncConfig(); token = "" }, enabled = !model.syncing) { Text("Disconnect this device") }
+        Text("Disconnecting keeps your local progress and the cloud copy.", style = MaterialTheme.typography.bodySmall)
+    } else {
+        if (SyncConfig.builtIn != null) {
+            Button(onClick = { SyncConfig.useBuiltIn(context); url = SyncConfig.builtIn.url; model.sync(manual = true) }) {
+                Text("Connect with this build's settings")
+            }
+            Text("Or enter another deployment:", style = MaterialTheme.typography.bodySmall)
+        }
+        OutlinedTextField(url, { url = it }, label = { Text("Deployment URL (https://….convex.cloud)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(token, { token = it }, label = { Text("Sync token") }, singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+        Text("Use the same value you set with: npx convex env set SYNC_TOKEN …", style = MaterialTheme.typography.bodySmall)
+        if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
+        Button(onClick = {
+            error = try { SyncConfig.save(context, url, token); url = SyncConfig.load(context)!!.url; model.sync(manual = true); "" }
+            catch (e: IllegalArgumentException) { e.message ?: "Invalid settings" }
+        }, enabled = url.isNotBlank() && token.isNotBlank()) { Text("Connect and sync") }
+    }
 }

@@ -1,0 +1,22 @@
+{
+  "name": "langocard-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "typecheck": "tsc --noEmit -p convex",
+    "test": "vitest run",
+    "link-android": "node scripts/link-android.mjs"
+  },
+  "dependencies": {
+    "convex": "^1.49.0"
+  },
+  "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "@types/node": "^26.6.6",
+    "convex-test": "^0.0.69",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

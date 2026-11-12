@@ -29,6 +29,15 @@ object ContentFiles {
         require(result.map { it.id }.distinct().size == result.size) { "Duplicate entry IDs" }
         return result
     }
+    /** Parses one stored FSRS card, rejecting unknown entries and out-of-range memory state. */
+    fun validateCard(key: String, json: String, entryIds: Set<String>): Card {
+        require(key.substringBefore(':') in entryIds && key.substringAfter(':') in Skill.entries.map { it.name }) { "Unknown card" }
+        val card = Card.fromJson(json)
+        require(card.due != null && card.state != null) { "Invalid card" }
+        require(card.stability == null || (card.stability.isFinite() && card.stability > 0)) { "Invalid stability" }
+        require(card.difficulty == null || card.difficulty in 1.0..10.0) { "Invalid difficulty" }
+        return card
+    }
     fun backupData(text: String, bundled: Set<String>): JSONObject {
         require(text.toByteArray().size <= MAX_BYTES) { "Backup is too large" }
         val envelope = JSONObject(text)
@@ -39,13 +48,7 @@ object ContentFiles {
         require(extra.none { it.id in bundled }) { "Entry collides with built-in library" }
         val ids = bundled + extra.map { it.id }
         val cards = data.getJSONObject("cards")
-        cards.keys().forEach { key ->
-            require(key.substringBefore(':') in ids && key.substringAfter(':') in Skill.entries.map { it.name }) { "Unknown card" }
-            val card = Card.fromJson(cards.getString(key))
-            require(card.due != null && card.state != null) { "Invalid card" }
-            require(card.stability == null || (card.stability.isFinite() && card.stability > 0)) { "Invalid stability" }
-            require(card.difficulty == null || card.difficulty in 1.0..10.0) { "Invalid difficulty" }
-        }
+        cards.keys().forEach { key -> validateCard(key, cards.getString(key), ids) }
         require(data.optInt("seconds") >= 0 && data.optInt("introduced") >= 0 && data.optInt("placementIndex") in 0..18)
         if (data.has("minimumRank")) require(data.getInt("minimumRank") in listOf(1, 2501, 7001))
         // Validate optional collections before any file is replaced.
