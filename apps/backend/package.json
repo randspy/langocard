@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "convex dev",
     "deploy": "convex deploy",
-    "typecheck": "tsc --noEmit -p convex",
+    "typecheck": "tsc --noEmit -p convex && tsc --noEmit -p tests",
     "test": "vitest run",
-    "link-android": "node scripts/link-android.mjs"
+    "link-android": "node scripts/link-android.mjs",
+    "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
     "convex": "^1.49.0"

@@ -1,0 +1,302 @@
+{
+  "description": "Merge cases shared by apps/backend/convex/merge.ts and Android Sync.kt. cards: mergeCard(stored, incoming) must equal expected (review fields follow lastReview, manual fields follow cardEditedAt; ties keep stored). entries: incomingWins is whether the incoming version replaces the stored one; deleted is whether the incoming version is a deletion.",
+  "suspendedIndefinitely": 253402300799999,
+  "cards": [
+    {
+      "name": "newer review wins",
+      "stored": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "incoming": {
+        "card": "{\"v\":2}",
+        "lastReview": 200,
+        "failures": 1,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "expected": {
+        "card": "{\"v\":2}",
+        "lastReview": 200,
+        "failures": 1,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      }
+    },
+    {
+      "name": "older review loses",
+      "stored": {
+        "card": "{\"v\":1}",
+        "lastReview": 200,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "incoming": {
+        "card": "{\"v\":0}",
+        "lastReview": 150,
+        "failures": 3,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "expected": {
+        "card": "{\"v\":1}",
+        "lastReview": 200,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      }
+    },
+    {
+      "name": "equal clocks keep stored",
+      "stored": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 1,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "incoming": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 2,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "expected": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 1,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      }
+    },
+    {
+      "name": "leech pause travels with its review",
+      "stored": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "incoming": {
+        "card": "{\"v\":1}",
+        "lastReview": 300,
+        "failures": 0,
+        "pausedUntil": 500,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "expected": {
+        "card": "{\"v\":1}",
+        "lastReview": 300,
+        "failures": 0,
+        "pausedUntil": 500,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      }
+    },
+    {
+      "name": "suspension survives a newer review from another device",
+      "stored": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 253402300799999,
+        "cardEditedAt": 250
+      },
+      "incoming": {
+        "card": "{\"v\":3}",
+        "lastReview": 300,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "expected": {
+        "card": "{\"v\":3}",
+        "lastReview": 300,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 253402300799999,
+        "cardEditedAt": 250
+      }
+    },
+    {
+      "name": "resume beats an older suspension",
+      "stored": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 253402300799999,
+        "cardEditedAt": 250
+      },
+      "incoming": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 260
+      },
+      "expected": {
+        "card": "{\"v\":1}",
+        "lastReview": 100,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 260
+      }
+    },
+    {
+      "name": "reset beats a review made before it",
+      "stored": {
+        "card": null,
+        "lastReview": 400,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 400
+      },
+      "incoming": {
+        "card": "{\"v\":4}",
+        "lastReview": 350,
+        "failures": 2,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 0
+      },
+      "expected": {
+        "card": null,
+        "lastReview": 400,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 400
+      }
+    },
+    {
+      "name": "review after a reset wins",
+      "stored": {
+        "card": null,
+        "lastReview": 400,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 400
+      },
+      "incoming": {
+        "card": "{\"v\":5}",
+        "lastReview": 450,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 400
+      },
+      "expected": {
+        "card": "{\"v\":5}",
+        "lastReview": 450,
+        "failures": 0,
+        "pausedUntil": 0,
+        "suspendedUntil": 0,
+        "cardEditedAt": 400
+      }
+    }
+  ],
+  "entries": [
+    {
+      "name": "edit beats unedited",
+      "stored": {
+        "editedAt": null,
+        "deletedAt": null
+      },
+      "incoming": {
+        "editedAt": 100,
+        "deletedAt": null
+      },
+      "incomingWins": true,
+      "deleted": false
+    },
+    {
+      "name": "older edit loses",
+      "stored": {
+        "editedAt": 200,
+        "deletedAt": null
+      },
+      "incoming": {
+        "editedAt": 100,
+        "deletedAt": null
+      },
+      "incomingWins": false,
+      "deleted": false
+    },
+    {
+      "name": "equal versions keep stored",
+      "stored": {
+        "editedAt": 100,
+        "deletedAt": null
+      },
+      "incoming": {
+        "editedAt": 100,
+        "deletedAt": null
+      },
+      "incomingWins": false,
+      "deleted": false
+    },
+    {
+      "name": "delete after edit wins and deletes",
+      "stored": {
+        "editedAt": 100,
+        "deletedAt": null
+      },
+      "incoming": {
+        "editedAt": 100,
+        "deletedAt": 150
+      },
+      "incomingWins": true,
+      "deleted": true
+    },
+    {
+      "name": "edit older than a delete loses",
+      "stored": {
+        "editedAt": 100,
+        "deletedAt": 150
+      },
+      "incoming": {
+        "editedAt": 120,
+        "deletedAt": null
+      },
+      "incomingWins": false,
+      "deleted": false
+    },
+    {
+      "name": "restore after delete wins and undeletes",
+      "stored": {
+        "editedAt": 100,
+        "deletedAt": 150
+      },
+      "incoming": {
+        "editedAt": 160,
+        "deletedAt": 150
+      },
+      "incomingWins": true,
+      "deleted": false
+    }
+  ]
+}

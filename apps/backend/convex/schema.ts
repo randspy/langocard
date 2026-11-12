@@ -1,20 +1,17 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
 
 /**
- * Cloud copy of one learner's study data. Each row carries `updatedAt` (server
- * time of the last write) so devices can pull only what changed since their
- * previous sync. Payloads the server doesn't need to inspect stay as JSON strings
- * in the Android app's own format.
+ * Cloud copy of one learner's study data (sync protocol v2). Each row carries
+ * `updatedAt` (server time of the last write) so devices can pull only what changed
+ * since their previous sync. Merge rules live in `merge.ts`.
  */
 export default defineSchema({
-  // One FSRS card per "<entryId>:<Skill>". The newest review wins.
+  // One FSRS card per "<entryId>:<Skill>". Review fields and manual fields merge separately.
   cards: defineTable({
     key: v.string(),
-    card: v.string(),
-    lastReview: v.number(),
-    failures: v.number(),
-    pausedUntil: v.number(),
+    ...cardFields,
     updatedAt: v.number(),
   })
     .index("by_key", ["key"])
@@ -31,10 +28,19 @@ export default defineSchema({
     .index("by_review", ["reviewId"])
     .index("by_updated", ["updatedAt"]),
 
-  // Personal entries and installed pack entries (anything beyond the bundled library).
+  // The whole library: bundled and pack entries (seeded from the repo) and personal entries.
   entries: defineTable({
     entryId: v.string(),
-    entry: v.string(),
+    ...entryContent,
+    ...entryClocks,
+    /** "bundled", "personal" or "pack:<packId>". */
+    origin: v.string(),
+    /** Latest shipped content for seeded entries; null for personal entries. */
+    shipped: v.union(v.object(entryContent), v.null()),
+    /** Shipped content changed after the learner edited the entry. */
+    upstreamChanged: v.boolean(),
+    /** No longer in the shipped content. Kept for its history; not introduced as new. */
+    retired: v.boolean(),
     updatedAt: v.number(),
   })
     .index("by_entry", ["entryId"])
@@ -60,15 +66,7 @@ export default defineSchema({
 
   // A single row of placement, preference and daily-counter state.
   settings: defineTable({
-    placementDone: v.boolean(),
-    placementIndex: v.number(),
-    nextCardId: v.number(),
-    minimumRank: v.number(),
-    interests: v.string(),
-    preferencesChangedAt: v.number(),
-    day: v.string(),
-    seconds: v.number(),
-    introduced: v.number(),
+    ...settingsFields,
     updatedAt: v.number(),
   }).index("by_updated", ["updatedAt"]),
 });

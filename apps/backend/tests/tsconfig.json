@@ -1,0 +1,6 @@
+{
+  "extends": "../convex/tsconfig.json",
+  "compilerOptions": { "resolveJsonModule": true, "types": ["node", "vite/client"] },
+  "include": ["./**/*", "../convex/**/*"],
+  "exclude": []
+}

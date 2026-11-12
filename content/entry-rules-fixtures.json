@@ -1,0 +1,243 @@
+{
+  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, metadata, sourceUrl, topic).",
+  "cases": [
+    {
+      "name": "minimal personal entry",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": null
+    },
+    {
+      "name": "ranked dictionary entry",
+      "entry": {
+        "id": "frw-a86a32bc2877e235dfd8",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily",
+        "lemma": "pourtant",
+        "rank": 6,
+        "sourceUrl": "https://fr.wiktionary.org/wiki/pourtant#fr",
+        "license": "CC BY-SA 4.0"
+      },
+      "rule": null
+    },
+    {
+      "name": "fields at the length limit",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily",
+        "lemma": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "license": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "rule": null
+    },
+    {
+      "name": "answer that is the whole example",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "{Avoir}",
+        "topic": "daily"
+      },
+      "rule": null
+    },
+    {
+      "name": "empty ID",
+      "entry": {
+        "id": "",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "id"
+    },
+    {
+      "name": "ID with a space",
+      "entry": {
+        "id": "personal 1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "id"
+    },
+    {
+      "name": "ID over 100 characters",
+      "entry": {
+        "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "id"
+    },
+    {
+      "name": "blank word",
+      "entry": {
+        "id": "personal-1",
+        "word": "   ",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "fields"
+    },
+    {
+      "name": "empty English",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "fields"
+    },
+    {
+      "name": "definition over 2,000 characters",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "fields"
+    },
+    {
+      "name": "example without braces",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, pourtant elle sort.",
+        "topic": "daily"
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "two marked answers",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "{Il} pleut, {pourtant} elle sort.",
+        "topic": "daily"
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "reversed braces",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, }pourtant{ elle sort.",
+        "topic": "daily"
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "blank answer",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, { } elle sort.",
+        "topic": "daily"
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "rank zero",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily",
+        "rank": 0
+      },
+      "rule": "metadata"
+    },
+    {
+      "name": "lemma over 200 characters",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily",
+        "lemma": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "rule": "metadata"
+    },
+    {
+      "name": "license over 500 characters",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily",
+        "license": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "rule": "metadata"
+    },
+    {
+      "name": "non-HTTPS source URL",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "daily",
+        "sourceUrl": "http://fr.wiktionary.org/wiki/pourtant"
+      },
+      "rule": "sourceUrl"
+    },
+    {
+      "name": "unknown topic",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "topic": "sport"
+      },
+      "rule": "topic"
+    }
+  ]
+}

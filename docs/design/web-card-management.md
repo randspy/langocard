@@ -1,6 +1,6 @@
 # Web card management — design
 
-Status: agreed, not yet implemented (2026-11-12).
+Status: agreed; slice 1 (backend v2) implemented (2026-11-12).
 
 A local React web app for browsing and managing the learner's vocabulary entries
 and FSRS cards. It requires sync protocol v2, which makes entries and cards
@@ -14,7 +14,7 @@ editable across devices.
 | 2 | Editable entries | All origins: bundled, pack and personal. |
 | 3 | Web role | Thin online client of Convex (live `useQuery`/`useMutation`); no local replica. Android stays offline-first and syncs. |
 | 4 | Library location | Convex holds the **full library** (seeded from the repo); the web only queries Convex. |
-| 5 | Re-seeding | Rows carry `origin`, `contentHash`, `editedAt`. Unedited rows are overwritten; edited rows are kept and flagged `upstreamChanged`; entries removed upstream are marked `retired`, never deleted. |
+| 5 | Re-seeding | Rows carry `origin`, a `shipped` content snapshot, `editedAt`. Unedited rows are overwritten; edited rows are kept and flagged `upstreamChanged`; entries removed upstream are marked `retired`, never deleted. |
 | 6 | Delete | Soft delete: `deletedAt` tombstone, synced to Android, restorable. Cards and review history are kept. Edit vs delete is last-write-wins. |
 | 7 | Card operations | View, suspend/resume, reset. No manual rescheduling. |
 | 8 | Web auth | Convex Auth; web functions call `requireOwner(ctx)`. Android keeps `SYNC_TOKEN` for `push`/`pull` only. |
@@ -37,13 +37,17 @@ Typed fields replace the opaque `entry` JSON string.
 entryId, word, english, definition, example (one {answer}), topic, lemma, rank,
 sourceUrl, license,
 origin: "bundled" | "pack:<id>" | "personal",
-contentHash: string | null      // hash of shipped content last seeded; null for personal
+shipped: EntryContent | null    // latest shipped content; null for personal
 editedAt: number | null         // server time of the last user edit
 deletedAt: number | null        // tombstone
 upstreamChanged: boolean        // shipped content changed after a user edit
 retired: boolean                // removed from shipped content
 updatedAt                        // server time of any write (pull cursor)
 ```
+
+An entry counts as *edited* when its content differs from `shipped`, so "take theirs"
+(copy `shipped` and bump `editedAt`) makes it follow future seeds again. Storing the
+snapshot rather than a hash also gives the conflicts screen the upstream text.
 
 Merge: the version with the later `max(editedAt, deletedAt)` wins. Restoring
 clears `deletedAt` and sets `editedAt`. Seed writes don't advance `editedAt`.
@@ -64,7 +68,7 @@ Two field groups, each with its own clock:
 Each group merges independently: the newer clock wins. A card is schedulable only
 when both `pausedUntil` and `suspendedUntil` are in the past.
 
-**Reset** sets `cardEditedAt` and the review group to a fresh FSRS card with
+**Reset** sets `cardEditedAt` and the review group to `card: null` (new) with
 `lastReview = cardEditedAt`, and clears both pauses. A review made before the
 reset loses even if it syncs later. A review made after the reset (applied locally on
 top of the reset state) wins. Review history is kept.
@@ -116,4 +120,5 @@ editing/suspending from Android.
 
 - Which entries are editable was set to "all"; revisit if pack edits interact badly
   with pack reinstall on Android.
-- Choose the hash function for `contentHash` (e.g. SHA-256 of the canonical entry JSON).
+- Seeding every pack means Android receives entries from packs it hasn't installed.
+  Slice 2 must decide whether it introduces them or keeps pack installation as an opt-in filter.
