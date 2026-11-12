@@ -70,7 +70,8 @@ Each group merges independently: the newer clock wins. A card is schedulable onl
 when both `pausedUntil` and `suspendedUntil` are in the past.
 
 **Reset** sets `cardEditedAt` and the review group to `card: null` (new) with
-`lastReview = cardEditedAt`, and clears both pauses. A review made before the
+`lastReview = cardEditedAt`, and clears the leech pause. A manual suspension is kept:
+resetting is about memory state, not about whether to study. A review made before the
 reset loses even if it syncs later. A review made after the reset (applied locally on
 top of the reset state) wins. Review history is kept.
 
@@ -111,8 +112,8 @@ All writes validate via `entryRules.ts`.
    status chip). Search word/lemma/English; filter by origin, topic, status (active,
    deleted, edited, upstream changed, suspended), rank band. Filters live in URL search params.
 2. **Entry** `/entries/$id`: edit form with inline validation and live cloze preview;
-   Delete/Restore; three skill panels with FSRS state, Suspend/Resume, Reset and
-   review history.
+   Delete/Restore; three skill panels with FSRS state, Suspend/Resume (indefinitely or until a date,
+   per skill or the whole entry), Reset (with confirmation) and review history.
 3. **New entry** `/entries/new`: same form; creates `personal-<uuid>`.
 4. **Upstream changes** `/conflicts`: side-by-side diff, Keep mine / Take theirs.
 5. **Sign-in**: GitHub.

@@ -30,6 +30,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_review", ["reviewId"])
+    .index("by_key", ["key"])
     .index("by_updated", ["updatedAt"]),
 
   // The whole library: bundled and pack entries (seeded from the repo) and personal entries.

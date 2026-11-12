@@ -4,9 +4,11 @@ import { useState } from "react";
 import { api } from "@backend/_generated/api";
 import { contentOf } from "@backend/entryRules";
 import { EntryForm, messageOf } from "@/components/EntryForm";
+import { SkillPanels } from "@/components/SkillPanels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { originLabel } from "@/lib/library";
+import { useNow } from "@/lib/useNow";
 
 export function EntryPage() {
   const { entryId } = useParams({ from: "/entries/$entryId" });
@@ -14,6 +16,11 @@ export function EntryPage() {
   const update = useMutation(api.entries.update);
   const remove = useMutation(api.entries.remove);
   const restore = useMutation(api.entries.restore);
+  const cards = useQuery(api.cards.forEntry, { entryId });
+  const suspend = useMutation(api.cards.suspend);
+  const resume = useMutation(api.cards.resume);
+  const reset = useMutation(api.cards.reset);
+  const now = useNow();
   const [error, setError] = useState<string | null>(null);
 
   if (entry === undefined) return <p className="text-muted">Loading…</p>;
@@ -67,6 +74,19 @@ export function EntryPage() {
           onSubmit={async (content) => { await update({ entryId, ...content }); }}
         />
       </section>
+      <div>
+        {cards === undefined ? <p className="text-muted">Loading cards…</p> : (
+          <SkillPanels
+            cards={cards}
+            now={now}
+            actions={{
+              suspend: async (skill, until) => { await suspend({ entryId, skill, until }); },
+              resume: async (skill) => { await resume({ entryId, skill }); },
+              reset: async (skill) => { await reset({ entryId, skill }); },
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

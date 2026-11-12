@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as cardState from "../cardState.js";
+import type * as cards from "../cards.js";
 import type * as entries from "../entries.js";
 import type * as entryRules from "../entryRules.js";
 import type * as http from "../http.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   cardState: typeof cardState;
+  cards: typeof cards;
   entries: typeof entries;
   entryRules: typeof entryRules;
   http: typeof http;
