@@ -13,3 +13,10 @@ local.properties
 **/build/
 *.jks
 *.keystore
+
+# Downloaded source corpora
+.content-cache/
+
+# Python content preparation caches
+__pycache__/
+*.pyc
