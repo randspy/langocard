@@ -53,13 +53,25 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private val data = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
         file.openRead().bufferedReader().use { JSONObject(it.readText()) }
     } else JSONObject().put("version", 1)
-    val entries = androidx.compose.runtime.mutableStateListOf<Entry>().apply {
-        addAll(bundled)
-        addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { extra -> bundled.none { it.id == extra.id } })
-    }
+    /** The active study library; see [StudyLibrary.active]. */
+    val entries = androidx.compose.runtime.mutableStateListOf<Entry>()
+    /** Entries removed from the shipped content: kept for their progress, never introduced as new. */
+    private var retired = emptySet<String>()
     init {
         val extra = ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { item -> bundled.none { it.id == item.id } }
         data.put("extraEntries", JSONArray().also { array -> extra.forEach { array.put(ContentFiles.entryJson(it)) } })
+        rebuildEntries()
+    }
+    private fun rebuildEntries() {
+        val extra = ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { item -> bundled.none { it.id == item.id } }
+        val active = StudyLibrary.active(bundled, extra, data.optJSONObject("remoteEntries") ?: JSONObject(), ::installedPack)
+        entries.clear(); entries.addAll(active.entries); retired = active.retired
+    }
+    /** Every entry ID this device knows, including deleted and dormant ones, so their cards are kept. */
+    private fun knownIds(): Set<String> = entries.map { it.id }.toHashSet().apply {
+        bundled.forEach { add(it.id) }
+        data.optJSONObject("remoteEntries")?.keys()?.forEach { add(it) }
+        data.optJSONArray("extraEntries")?.let { a -> (0 until a.length()).forEach { add(a.getJSONObject(it).getString("id")) } }
     }
     private val cards = data.optJSONObject("cards") ?: JSONObject().also { data.put("cards", it) }
     private val memory = cards.keys().asSequence().associateWith { MemoryCard.fromJson(cards.getString(it)) }.toMutableMap()
@@ -68,6 +80,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private val buried = data.optJSONObject("buried") ?: JSONObject().also { data.put("buried", it) }
     private val failures = data.optJSONObject("failures") ?: JSONObject().also { data.put("failures", it) }
     private val paused = data.optJSONObject("paused") ?: JSONObject().also { data.put("paused", it) }
+    /** Manual suspensions made in the web app (synced; this app only honours them). */
+    private val suspended get() = data.optJSONObject("suspended") ?: JSONObject()
     private val scheduler = Scheduler.builder().desiredRetention(0.9).build()
     var revision by mutableIntStateOf(0); private set
     var screen by androidx.compose.runtime.mutableStateOf("home"); private set
@@ -79,7 +93,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private var placing = false
     private var lastTick = android.os.SystemClock.elapsedRealtime()
     private val placementEntries = listOf("pourtant", "un enjeu", "se méfier", "une intrigue", "mettre en œuvre", "fiable")
-        .map { word -> entries.first { it.word == word } }
+        // Found by their shipped wording, then taken from the active library so web edits apply.
+        .map { word -> bundled.first { it.word == word }.let { b -> entries.firstOrNull { it.id == b.id } ?: b } }
     val placementDone get() = data.optBoolean("placementDone")
     val placementProgress get() = "$placementIndex / 18"
     val minimumRank get() = data.optInt("minimumRank", 2501)
@@ -97,9 +112,10 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     val spent: Int get() { rollover(); return data.optInt("seconds") }
     val studied get() = entries.count { e -> Skill.entries.any { cards.has("${e.id}:${it.name}") } }
     val pausedCount get() = paused.keys().asSequence().count { paused.optLong(it) > System.currentTimeMillis() }
+    val suspendedCount get() = suspended.let { s -> s.keys().asSequence().count { s.optLong(it) > System.currentTimeMillis() } }
     fun state(p: Prompt): MemoryCard? = memory[p.key]
     private fun eligible(p: Prompt, audio: Boolean) = (p.skill != Skill.Listening || audio) &&
-        paused.optLong(p.key) <= System.currentTimeMillis()
+        paused.optLong(p.key) <= System.currentTimeMillis() && suspended.optLong(p.key) <= System.currentTimeMillis()
     fun dueCount(audio: Boolean): Int = entries.sumOf { e -> Skill.entries.count { skill ->
         val p = Prompt(e, skill)
         eligible(p, audio) && (state(p)?.due?.let { !it.isAfter(Instant.now()) } == true)
@@ -140,8 +156,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         data.put("sync", sync ?: JSONObject()); SyncData.reset(data)
         memory.clear(); cards.keys().forEach { memory[it] = MemoryCard.fromJson(cards.getString(it)) }
         nextCardId = maxOf(data.optInt("nextCardId"), (memory.values.maxOfOrNull { it.cardId } ?: -1) + 1)
-        entries.clear(); entries.addAll(bundled)
-        entries.addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { extra -> bundled.none { it.id == extra.id } })
+        rebuildEntries()
         placementIndex = data.optInt("placementIndex"); placing = false
         home()
     }
@@ -152,14 +167,15 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         require(pack.getString("source").isNotBlank() && pack.getString("license").isNotBlank()) { "Pack must include source and license" }
         val incoming = ContentFiles.readEntries(pack.getJSONArray("entries"))
         require(incoming.isNotEmpty()) { "Empty pack" }
-        val installedIds = entries.map { it.id }.toHashSet()
+        val installedIds = entries.map { it.id }.toHashSet() + bundled.map { it.id }
         require(incoming.none { it.id in installedIds }) { "Pack contains an existing entry; no changes made" }
         val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
         incoming.forEach { extra.put(ContentFiles.entryJson(it)) }
         val sources = data.optJSONArray("sources") ?: JSONArray().also { data.put("sources", it) }
         sources.put(JSONObject().put("source", pack.getString("source")).put("license", pack.getString("license"))
             .put("packId", pack.optString("packId")).put("packVersion", pack.optInt("packVersion", 1)))
-        save(); entries.addAll(incoming); return incoming.size
+        // Rebuild rather than append: synced edits and deletions for these entries apply on top.
+        save(); rebuildEntries(); return incoming.size
     }
     fun installedPack(id: String): Boolean {
         if (id == bundledPack.getString("packId")) return true
@@ -170,7 +186,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(), example.trim(), "daily")
         ContentFiles.validateEntry(entry)
         val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
-        extra.put(ContentFiles.entryJson(entry)); save(); entries.add(entry)
+        extra.put(ContentFiles.entryJson(entry)); save(); rebuildEntries()
     }
     fun ankiExport(): String {
         val credits = linkedSetOf<String>()
@@ -228,7 +244,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val sibling = available.firstOrNull { p -> state(p) == null && Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }
         if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) { prompt = sibling; return }
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            prompt = available.filter { state(it) == null && it.entry.rank >= minimumRank }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
+            prompt = available.filter { state(it) == null && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
             if (prompt != null) return
         }
         finish()
@@ -318,9 +334,10 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private fun applyRemote(table: String, rows: List<JSONObject>) {
         if (rows.isEmpty()) return
         if (table == "settings") rollover()
-        val applied = SyncData.apply(data, table, rows, entries.map { it.id }.toSet())
-        entries.addAll(applied.entries)
+        val applied = SyncData.apply(data, table, rows, knownIds())
+        if (applied.library) rebuildEntries()
         memory.putAll(applied.cards)
+        applied.resetCards.forEach(memory::remove)
         nextCardId = maxOf(nextCardId, data.optInt("nextCardId"), (memory.values.maxOfOrNull { it.cardId } ?: -1) + 1)
         data.put("nextCardId", nextCardId)
         if (!placing) placementIndex = data.optInt("placementIndex")

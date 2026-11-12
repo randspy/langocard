@@ -103,7 +103,12 @@ A 20,000-lemma frequency reference and a hosted catalogue are now provided, but
 reference coverage is not counted as completed learning content.
 Optional cloud sync (Menu → Cloud sync) merges progress between devices through
 your own Convex deployment; see `../backend/README.md`. Studying never waits for
-the network. Notifications, AI and automatic speech scoring remain deferred.
+the network. Sync uses protocol v2, so the app also honours changes made in the web
+app: edited entries (including built-in and pack entries) replace the shipped
+wording, deleted entries leave the library, suspended cards aren't scheduled, and a
+reset card starts again as new. Packs remain opt-in: entries from a pack that isn't
+installed on any of your devices stay hidden until you download it. Entry rules and
+merge rules are checked against the cases in `../../content/*-fixtures.json`. Notifications, AI and automatic speech scoring remain deferred.
 Do not clear application data to update it; install newer APKs with `adb install -r`.
 
 ## Library tools

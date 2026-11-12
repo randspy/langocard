@@ -137,6 +137,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     Text("${model.sessionSeconds / 60}m ${model.sessionSeconds % 60}s of focused practice")
                     Text("${model.dueCount(speech.available)} reviews remain due. Related skills wait until another day; progress is saved.")
                     if (model.pausedCount > 0) Text("Repeatedly missed cards get a three-day pause. Review their examples in the library.")
+                    if (model.suspendedCount > 0) Text("${model.suspendedCount} cards are suspended in the web app.")
                     Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
                 }
                 else -> {

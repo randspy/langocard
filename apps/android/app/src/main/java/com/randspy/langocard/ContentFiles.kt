@@ -46,13 +46,15 @@ object ContentFiles {
         require(data.getInt("version") == 1) { "Unsupported study data" }
         val extra = readEntries(data.optJSONArray("extraEntries") ?: JSONArray())
         require(extra.none { it.id in bundled }) { "Entry collides with built-in library" }
-        val ids = bundled + extra.map { it.id }
+        // Synced library rows (web edits, entries from other devices) also own cards.
+        val remote = data.optJSONObject("remoteEntries") ?: JSONObject()
+        val ids = bundled + extra.map { it.id } + remote.keys().asSequence().filter { SyncData.rowEntry(remote.getJSONObject(it)) != null }
         val cards = data.getJSONObject("cards")
         cards.keys().forEach { key -> validateCard(key, cards.getString(key), ids) }
         require(data.optInt("seconds") >= 0 && data.optInt("introduced") >= 0 && data.optInt("placementIndex") in 0..18)
         if (data.has("minimumRank")) require(data.getInt("minimumRank") in listOf(1, 2501, 7001))
         // Validate optional collections before any file is replaced.
-        for (key in listOf("buried", "failures", "paused")) if (data.has(key)) data.getJSONObject(key)
+        for (key in listOf("buried", "failures", "paused", "suspended", "cardEdited", "resets")) if (data.has(key)) data.getJSONObject(key)
         if (data.has("reviews")) data.getJSONArray("reviews")
         if (data.has("sources")) data.getJSONArray("sources")
         return data

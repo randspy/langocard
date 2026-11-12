@@ -10,12 +10,14 @@ import javax.net.ssl.HttpsURLConnection
 /**
  * Optional cloud sync with the Convex backend in `apps/backend`.
  *
- * Local `learning-v1.json` remains the source of truth; studying never waits for the
- * network. Sync pushes local changes, then pulls rows other devices changed. The merge
- * rules mirror `apps/backend/convex/merge.ts`: the newest card review wins, reviews,
- * entries and sources are unions, buried siblings keep the latest day, and settings use
- * the field rules in [SyncData.mergeSettings]. Every rule is idempotent, so a failed
- * sync is simply retried.
+ * Sync protocol v2. Local `learning-v1.json` is what the app studies from; studying never
+ * waits for the network. Sync pushes local changes, then pulls rows the server merged.
+ * The merge rules mirror `apps/backend/convex/merge.ts` (shared cases in
+ * `content/merge-fixtures.json`): card review fields follow the newest review and the
+ * manual suspension follows the newest card edit; entries are the whole library, kept
+ * in `remoteEntries` and overriding local copies (see [StudyLibrary]); reviews and sources
+ * are unions; buried siblings keep the latest day; settings use [SyncData.mergeSettings].
+ * Every rule is idempotent, so a failed sync is simply retried.
  */
 object SyncData {
     val TABLES = listOf("entries", "sources", "cards", "reviews", "buried", "settings")
@@ -41,6 +43,56 @@ object SyncData {
     }
 
     fun lastReview(cardJson: String): Long = Card.fromJson(cardJson).lastReview?.toEpochMilli() ?: 0L
+
+    /** Convex sends numbers as doubles and missing values as null. */
+    private fun JSONObject.longOrNull(key: String): Long? = if (isNull(key)) null else getDouble(key).toLong()
+
+    // ---- Entries ----
+
+    fun entryVersion(row: JSONObject): Long = maxOf(row.longOrNull("editedAt") ?: 0L, row.longOrNull("deletedAt") ?: 0L)
+    fun entryWins(incoming: JSONObject, stored: JSONObject): Boolean = entryVersion(incoming) > entryVersion(stored)
+    fun isDeleted(row: JSONObject): Boolean {
+        val deletedAt = row.longOrNull("deletedAt") ?: return false
+        return deletedAt >= (row.longOrNull("editedAt") ?: 0L)
+    }
+
+    /** The entry a synced row describes, or null if it breaks the entry rules. */
+    fun rowEntry(row: JSONObject): Entry? = runCatching {
+        val rank = row.longOrNull("rank")?.toInt() ?: Int.MAX_VALUE
+        Entry(row.getString("entryId"), row.getString("word"), row.getString("english"), row.getString("definition"),
+            row.getString("example"), row.getString("topic"), row.optString("lemma"), rank,
+            row.optString("sourceUrl"), row.optString("license")).also(ContentFiles::validateEntry)
+    }.getOrNull()
+
+    /** A local entry as a v2 push row; devices never edit, so both clocks are null. */
+    fun entryRow(e: Entry): JSONObject = JSONObject().put("entryId", e.id).put("word", e.word).put("english", e.english)
+        .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic).put("lemma", e.lemma)
+        .put("rank", if (e.rank == Int.MAX_VALUE) JSONObject.NULL else e.rank)
+        .put("sourceUrl", e.sourceUrl).put("license", e.license).put("editedAt", JSONObject.NULL).put("deletedAt", JSONObject.NULL)
+
+    // ---- Cards ----
+
+    /** Mirrors `mergeCard` in merge.ts: review fields follow `lastReview`, manual fields `cardEditedAt`; ties keep stored. */
+    fun mergeCard(stored: JSONObject, incoming: JSONObject): JSONObject {
+        val review = if (incoming.getDouble("lastReview") > stored.getDouble("lastReview")) incoming else stored
+        val manual = if (incoming.getDouble("cardEditedAt") > stored.getDouble("cardEditedAt")) incoming else stored
+        return JSONObject().put("card", review.opt("card") ?: JSONObject.NULL)
+            .put("lastReview", review.getDouble("lastReview").toLong()).put("failures", review.getDouble("failures").toInt())
+            .put("pausedUntil", review.getDouble("pausedUntil").toLong())
+            .put("suspendedUntil", manual.getDouble("suspendedUntil").toLong()).put("cardEditedAt", manual.getDouble("cardEditedAt").toLong())
+    }
+
+    /** This device's view of one card in the v2 row shape. A reset or unstudied card has `card: null`. */
+    fun localCard(data: JSONObject, key: String): JSONObject {
+        val cards = data.optJSONObject("cards") ?: JSONObject()
+        val card = cards.optString(key).takeIf { cards.has(key) }
+        return JSONObject().put("card", card ?: JSONObject.NULL)
+            .put("lastReview", maxOf(card?.let(::lastReview) ?: 0L, data.optJSONObject("resets")?.optLong(key) ?: 0L))
+            .put("failures", data.optJSONObject("failures")?.optInt(key) ?: 0)
+            .put("pausedUntil", data.optJSONObject("paused")?.optLong(key) ?: 0L)
+            .put("suspendedUntil", data.optJSONObject("suspended")?.optLong(key) ?: 0L)
+            .put("cardEditedAt", data.optJSONObject("cardEdited")?.optLong(key) ?: 0L)
+    }
     fun sourceId(source: JSONObject): String =
         source.optString("packId").ifBlank { "${source.optString("source")}|${source.optString("license")}" }
     fun reviewId(review: JSONObject): String =
@@ -110,12 +162,16 @@ object SyncData {
             cards = pending.keys().asSequence().filter(cards::has).map { key ->
                 JSONObject().put("key", key).put("card", cards.getString(key)).put("lastReview", pending.getLong(key))
                     .put("failures", failures.optInt(key)).put("pausedUntil", paused.optLong(key))
+                    .put("suspendedUntil", data.optJSONObject("suspended")?.optLong(key) ?: 0L)
+                    .put("cardEditedAt", data.optJSONObject("cardEdited")?.optLong(key) ?: 0L)
             }.toList(),
             reviews = range(logs, "reviews") { review ->
                 JSONObject().put("reviewId", reviewId(review)).put("key", review.getString("key"))
                     .put("placement", review.optBoolean("placement")).put("log", review.get("log").toString())
             },
-            entries = range(extra, "entries") { JSONObject().put("entryId", it.getString("id")).put("entry", it.toString()) },
+            // Only personal entries are pushed; bundled and pack entries come from the server's seed.
+            entries = range(extra, "entries") { it }.filter { it.getString("id").startsWith("personal-") }
+                .mapNotNull { runCatching { entryRow(ContentFiles.readEntries(org.json.JSONArray().put(it)).single()) }.getOrNull() },
             sources = range(sources, "sources") { JSONObject().put("sourceId", sourceId(it)).put("source", it.toString()) },
             buried = buried.keys().asSequence().filter { buried.optString(it) >= today }
                 .map { JSONObject().put("key", it).put("day", buried.getString(it)) }.toList(),
@@ -142,20 +198,24 @@ object SyncData {
         state(data).getJSONObject("cursors").put(table, maxOf(0L, serverTime - CURSOR_OVERLAP_MS))
     }
 
-    class Applied(val entries: List<Entry> = emptyList(), val cards: Map<String, Card> = emptyMap())
+    /** What a pulled page changed: whether the library must be rebuilt, and cards set or reset. */
+    class Applied(val library: Boolean = false, val cards: Map<String, Card> = emptyMap(), val resetCards: Set<String> = emptySet())
 
     /** Merges one page of remote rows into [data]. Invalid rows are skipped, not fatal. */
     fun apply(data: JSONObject, table: String, rows: List<JSONObject>, entryIds: Set<String>): Applied {
         when (table) {
             "entries" -> {
-                val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
-                val known = entryIds.toMutableSet()
-                val added = rows.mapNotNull { row ->
-                    runCatching { ContentFiles.readEntries(JSONArray().put(JSONObject(row.getString("entry")))).single() }.getOrNull()
-                        ?.takeIf { known.add(it.id) }
+                // The server already merged these rows, so they replace what this device holds.
+                val remote = data.optJSONObject("remoteEntries") ?: JSONObject().also { data.put("remoteEntries", it) }
+                var changed = false
+                rows.forEach { row ->
+                    if (rowEntry(row) == null) return@forEach
+                    val stored = JSONObject()
+                    listOf("entryId", "word", "english", "definition", "example", "topic", "lemma", "rank", "sourceUrl",
+                        "license", "editedAt", "deletedAt", "origin", "retired").forEach { stored.put(it, row.opt(it) ?: JSONObject.NULL) }
+                    remote.put(row.getString("entryId"), stored); changed = true
                 }
-                added.forEach { extra.put(ContentFiles.entryJson(it)) }
-                return Applied(entries = added)
+                return Applied(library = changed)
             }
             "sources" -> {
                 val sources = data.optJSONArray("sources") ?: JSONArray().also { data.put("sources", it) }
@@ -164,26 +224,38 @@ object SyncData {
                     val source = runCatching { JSONObject(row.getString("source")) }.getOrNull() ?: return@forEach
                     if (source.optString("source").isNotBlank() && known.add(sourceId(source))) sources.put(source)
                 }
+                // A pack installed on another device becomes active here too.
+                return Applied(library = true)
             }
             "cards" -> {
                 val cards = data.optJSONObject("cards") ?: JSONObject().also { data.put("cards", it) }
-                val failures = data.optJSONObject("failures") ?: JSONObject().also { data.put("failures", it) }
-                val paused = data.optJSONObject("paused") ?: JSONObject().also { data.put("paused", it) }
+                fun map(name: String) = data.optJSONObject(name) ?: JSONObject().also { data.put(name, it) }
                 val pending = state(data).getJSONObject("pending")
                 val changed = mutableMapOf<String, Card>()
+                val reset = mutableSetOf<String>()
                 rows.forEach { row ->
                     val key = row.getString("key")
-                    val card = runCatching { ContentFiles.validateCard(key, row.getString("card"), entryIds) }.getOrNull() ?: return@forEach
-                    val remoteReview = row.getDouble("lastReview").toLong()
-                    if (cards.has(key) && remoteReview <= lastReview(cards.getString(key))) return@forEach
-                    cards.put(key, row.getString("card"))
-                    failures.put(key, row.getDouble("failures").toInt())
-                    val pausedUntil = row.getDouble("pausedUntil").toLong()
-                    if (pausedUntil > 0) paused.put(key, pausedUntil) else paused.remove(key)
-                    pending.remove(key)
-                    changed[key] = card
+                    if (key.substringBefore(':') !in entryIds || key.substringAfter(':') !in Skill.entries.map { it.name }) return@forEach
+                    val remoteCard = if (row.isNull("card")) null
+                        else runCatching { ContentFiles.validateCard(key, row.getString("card"), entryIds) }.getOrNull() ?: return@forEach
+                    val local = localCard(data, key)
+                    if (row.getDouble("lastReview") > local.getDouble("lastReview")) {
+                        if (remoteCard == null) {
+                            // A reset: the card is new again. Remember when, so older local reviews can't revive it.
+                            cards.remove(key); map("resets").put(key, row.getDouble("lastReview").toLong()); reset.add(key)
+                        } else { cards.put(key, row.getString("card")); map("resets").remove(key); changed[key] = remoteCard }
+                        map("failures").put(key, row.getDouble("failures").toInt())
+                        val pausedUntil = row.getDouble("pausedUntil").toLong()
+                        if (pausedUntil > 0) map("paused").put(key, pausedUntil) else map("paused").remove(key)
+                        pending.remove(key)
+                    }
+                    if (row.getDouble("cardEditedAt") > local.getDouble("cardEditedAt")) {
+                        val until = row.getDouble("suspendedUntil").toLong()
+                        if (until > 0) map("suspended").put(key, until) else map("suspended").remove(key)
+                        map("cardEdited").put(key, row.getDouble("cardEditedAt").toLong())
+                    }
                 }
-                return Applied(cards = changed)
+                return Applied(cards = changed, resetCards = reset)
             }
             "reviews" -> {
                 val logs = data.optJSONArray("reviews") ?: JSONArray().also { data.put("reviews", it) }

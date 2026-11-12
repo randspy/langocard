@@ -21,11 +21,14 @@ class SyncDataTest {
     /** Simulates one device pushing to a server and another pulling the same rows. */
     private fun transfer(from: JSONObject, to: JSONObject, today: String = "2026-11-12") {
         val outbox = SyncData.outbox(from, today)
-        val rows = mapOf("cards" to outbox.cards, "reviews" to outbox.reviews, "entries" to outbox.entries,
+        // The server marks pushed entries as personal (it refuses any other new entry).
+        val entries = outbox.entries.map { JSONObject(it.toString()).put("origin", "personal").put("retired", false) }
+        val rows = mapOf("cards" to outbox.cards, "reviews" to outbox.reviews, "entries" to entries,
             "sources" to outbox.sources, "buried" to outbox.buried, "settings" to listOf(outbox.settings))
         SyncData.TABLES.forEach { table ->
             val local = to.getJSONArray("extraEntries").let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("id") } }
-            SyncData.apply(to, table, rows.getValue(table), setOf("base") + local)
+            val remote = to.optJSONObject("remoteEntries")?.keys()?.asSequence()?.toList() ?: emptyList()
+            SyncData.apply(to, table, rows.getValue(table), setOf("base") + local + remote)
         }
         SyncData.markPushed(from, outbox)
     }
@@ -75,7 +78,8 @@ class SyncDataTest {
         phone.getJSONArray("reviews").put(JSONObject().put("key", "${entry.id}:Reading").put("placement", false).put("log", card.reviewLog().toJson()))
         phone.put("sources", JSONArray().put(JSONObject().put("source", "Wiktionary").put("license", "CC BY-SA").put("packId", "fr-1")))
         transfer(phone, tablet); transfer(phone, tablet)
-        assertEquals(1, tablet.getJSONArray("extraEntries").length())
+        assertEquals(listOf(entry.id), tablet.getJSONObject("remoteEntries").keys().asSequence().toList())
+        assertTrue(tablet.getJSONArray("extraEntries").length() == 0)
         assertEquals(1, tablet.getJSONArray("reviews").length())
         assertEquals(1, tablet.getJSONArray("sources").length())
         assertTrue(tablet.getJSONObject("cards").has("${entry.id}:Reading"))
@@ -85,10 +89,58 @@ class SyncDataTest {
         assertTrue(echo.reviews.isEmpty() && echo.entries.isEmpty() && echo.sources.isEmpty())
     }
 
+    private fun cardRow(key: String, card: String?, lastReview: Long, cardEditedAt: Long = 0, suspendedUntil: Long = 0) =
+        JSONObject().put("key", key).put("card", card ?: JSONObject.NULL).put("lastReview", lastReview.toDouble())
+            .put("failures", 0.0).put("pausedUntil", 0.0).put("suspendedUntil", suspendedUntil.toDouble()).put("cardEditedAt", cardEditedAt.toDouble())
+
+    @Test fun `only personal entries are pushed, in the typed v2 shape`() {
+        val data = device()
+        data.getJSONArray("extraEntries").put(ContentFiles.entryJson(entry)).put(ContentFiles.entryJson(entry.copy(id = "frw-pack-1")))
+        val row = SyncData.outbox(data, "2026-11-12").entries.single()
+        assertEquals(entry.id, row.getString("entryId"))
+        assertEquals("Elle prépare {une rencontre}.", row.getString("example"))
+        assertTrue(row.isNull("rank") && row.isNull("editedAt") && row.isNull("deletedAt"))
+    }
+
+    @Test fun `a reset makes the card new and older local reviews can't revive it`() {
+        val data = device()
+        val key = "base:Reading"
+        val reviewedAt = Instant.parse("2026-11-10T10:00:00Z")
+        data.getJSONObject("cards").put(key, reviewed(reviewedAt).toJson())
+        val resetAt = reviewedAt.toEpochMilli() + 1000
+        val applied = SyncData.apply(data, "cards", listOf(cardRow(key, null, resetAt, cardEditedAt = resetAt)), ids)
+        assertEquals(setOf(key), applied.resetCards)
+        assertFalse(data.getJSONObject("cards").has(key))
+        assertEquals(resetAt, SyncData.localCard(data, key).getLong("lastReview"))
+        // The same reset pulled again (cursor overlap) changes nothing.
+        assertTrue(SyncData.apply(data, "cards", listOf(cardRow(key, null, resetAt, cardEditedAt = resetAt)), ids).resetCards.isEmpty())
+    }
+
+    @Test fun `a web suspension applies without touching review state`() {
+        val data = device()
+        val key = "base:Listening"
+        val card = reviewed(Instant.parse("2026-11-12T08:00:00Z"))
+        data.getJSONObject("cards").put(key, card.toJson())
+        // The row's review clock is older than the local review, but its suspension is new.
+        SyncData.apply(data, "cards", listOf(cardRow(key, "{}", 1, cardEditedAt = 500, suspendedUntil = 253402300799999)), ids)
+        assertEquals(card.toJson(), data.getJSONObject("cards").getString(key))
+        assertEquals(253402300799999, data.getJSONObject("suspended").getLong(key))
+        assertEquals(500, data.getJSONObject("cardEdited").getLong(key))
+        // A later resume clears it.
+        SyncData.apply(data, "cards", listOf(cardRow(key, "{}", 1, cardEditedAt = 600)), ids)
+        assertFalse(data.getJSONObject("suspended").has(key))
+    }
+
+    @Test fun `invalid entry rows are skipped`() {
+        val data = device()
+        val bad = JSONObject(SyncData.entryRow(entry.copy(markedExample = "no answer")).toString()).put("origin", "personal")
+        assertFalse(SyncData.apply(data, "entries", listOf(bad), ids).library)
+        assertFalse(data.has("remoteEntries") && data.getJSONObject("remoteEntries").length() > 0)
+    }
+
     @Test fun `cards for unknown entries are skipped`() {
         val data = device()
-        val row = JSONObject().put("key", "missing:Reading").put("card", reviewed(Instant.now()).toJson())
-            .put("lastReview", 1.0).put("failures", 0.0).put("pausedUntil", 0.0)
+        val row = cardRow("missing:Reading", reviewed(Instant.now()).toJson(), 1)
         SyncData.apply(data, "cards", listOf(row), ids)
         assertFalse(data.getJSONObject("cards").has("missing:Reading"))
     }
