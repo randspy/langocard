@@ -52,10 +52,13 @@ frequent pack bundled in the APK (origin `bundled`), and the catalogue packs
 
 ## Access
 
-There are no accounts. Every function checks a shared secret against the
-`SYNC_TOKEN` environment variable on the deployment. Anyone with the deployment
-URL and token can read and replace your study data, so use a long random value
-and don't commit it.
+The Android sync functions (`sync:push`, `sync:pull`) check a shared secret against
+the `SYNC_TOKEN` environment variable on the deployment. The web app's functions
+instead require GitHub sign-in (Convex Auth) as the account in `ALLOWED_GITHUB_ID`;
+see [`apps/web/README.md`](../web/README.md) and `npm run setup-web-auth`.
+
+Anyone with the deployment URL and sync token can read and replace your study data,
+so use a long random value and don't commit it.
 
 ## Setup
 
