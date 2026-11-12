@@ -1,0 +1,35 @@
+name: Content
+
+on:
+  push:
+    paths:
+      - "content/**"
+      - "tools/content/**"
+      - "tools/android/**"
+      - "apps/android/app/src/main/assets/**"
+      - ".github/workflows/content.yml"
+  pull_request:
+    paths:
+      - "content/**"
+      - "tools/content/**"
+      - "tools/android/**"
+      - "apps/android/app/src/main/assets/**"
+      - ".github/workflows/content.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Verify source alignment and published packs
+        run: python3 -m unittest discover -s tools/content -p 'test_*.py'
+      - name: Verify emulator recovery guard
+        run: python3 -m unittest discover -s tools/android -p 'test_*.py'

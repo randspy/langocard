@@ -16,7 +16,10 @@ import java.time.Instant
 
 /** IDs identify meanings; changing examples must never change scheduling identity. */
 data class Entry(val id: String, val word: String, val english: String, val definition: String,
-                 val markedExample: String, val topic: String) {
+                 val markedExample: String, val topic: String,
+                 val lemma: String = "", val rank: Int = Int.MAX_VALUE,
+                 val sourceUrl: String = "", val license: String = "") {
+    val lexeme get() = lemma.ifBlank { word.removePrefix("un ").removePrefix("une ") }
     val answer get() = markedExample.substringAfter("{").substringBefore("}")
     val example get() = markedExample.replace("{", "").replace("}", "")
     val cloze get() = markedExample.replace("{$answer}", "________")
@@ -33,22 +36,30 @@ object StudyPolicy {
 }
 
 class LearningModel(application: Application) : AndroidViewModel(application) {
-    private val bundled = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
+    private val pilot = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
         lines.filter { it.isNotBlank() }.map { line ->
             val c = line.split('|'); require(c.size == 6)
             Entry(c[0], c[1], c[2], c[3], c[4], c[5])
         }.toList().also { require(it.size == 200 && it.map(Entry::id).distinct().size == 200) }
     }
+    private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
+    private val bundled = pilot + ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
+    val bundledCount get() = bundled.size
     private val file = AtomicFile(File(application.filesDir, "learning-v1.json"))
     private val data = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
         file.openRead().bufferedReader().use { JSONObject(it.readText()) }
     } else JSONObject().put("version", 1)
     val entries = androidx.compose.runtime.mutableStateListOf<Entry>().apply {
         addAll(bundled)
-        addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()))
+        addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { extra -> bundled.none { it.id == extra.id } })
+    }
+    init {
+        val extra = ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { item -> bundled.none { it.id == item.id } }
+        data.put("extraEntries", JSONArray().also { array -> extra.forEach { array.put(ContentFiles.entryJson(it)) } })
     }
     private val cards = data.optJSONObject("cards") ?: JSONObject().also { data.put("cards", it) }
     private val memory = cards.keys().asSequence().associateWith { MemoryCard.fromJson(cards.getString(it)) }.toMutableMap()
+    private var nextCardId = maxOf(data.optInt("nextCardId"), (memory.values.maxOfOrNull { it.cardId } ?: -1) + 1)
     private val logs = data.optJSONArray("reviews") ?: JSONArray().also { data.put("reviews", it) }
     private val buried = data.optJSONObject("buried") ?: JSONObject().also { data.put("buried", it) }
     private val failures = data.optJSONObject("failures") ?: JSONObject().also { data.put("failures", it) }
@@ -116,8 +127,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         replace(data, restored)
         data.put("cards", cards).put("reviews", logs).put("buried", buried).put("failures", failures).put("paused", paused)
         memory.clear(); cards.keys().forEach { memory[it] = MemoryCard.fromJson(cards.getString(it)) }
+        nextCardId = maxOf(data.optInt("nextCardId"), (memory.values.maxOfOrNull { it.cardId } ?: -1) + 1)
         entries.clear(); entries.addAll(bundled)
-        entries.addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()))
+        entries.addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()).filter { extra -> bundled.none { it.id == extra.id } })
         placementIndex = data.optInt("placementIndex"); placing = false
         home()
     }
@@ -128,12 +140,19 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         require(pack.getString("source").isNotBlank() && pack.getString("license").isNotBlank()) { "Pack must include source and license" }
         val incoming = ContentFiles.readEntries(pack.getJSONArray("entries"))
         require(incoming.isNotEmpty()) { "Empty pack" }
-        require(incoming.none { item -> entries.any { it.id == item.id } }) { "Pack contains an existing entry; no changes made" }
+        val installedIds = entries.map { it.id }.toHashSet()
+        require(incoming.none { it.id in installedIds }) { "Pack contains an existing entry; no changes made" }
         val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
         incoming.forEach { extra.put(ContentFiles.entryJson(it)) }
         val sources = data.optJSONArray("sources") ?: JSONArray().also { data.put("sources", it) }
-        sources.put(JSONObject().put("source", pack.getString("source")).put("license", pack.getString("license")))
+        sources.put(JSONObject().put("source", pack.getString("source")).put("license", pack.getString("license"))
+            .put("packId", pack.optString("packId")).put("packVersion", pack.optInt("packVersion", 1)))
         save(); entries.addAll(incoming); return incoming.size
+    }
+    fun installedPack(id: String): Boolean {
+        if (id == bundledPack.getString("packId")) return true
+        val sources = data.optJSONArray("sources") ?: return false
+        return (0 until sources.length()).any { sources.getJSONObject(it).optString("packId") == id }
     }
     fun addEntry(word: String, english: String, definition: String, example: String) {
         val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(), example.trim(), "daily")
@@ -141,7 +160,16 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
         extra.put(ContentFiles.entryJson(entry)); save(); entries.add(entry)
     }
-    fun ankiExport() = ContentFiles.anki(entries, data.optJSONArray("sources") ?: JSONArray())
+    fun ankiExport(): String {
+        val credits = linkedSetOf<String>()
+        fun credit(source: JSONObject) {
+            credits.add(JSONObject().put("source", source.getString("source")).put("license", source.getString("license")).toString())
+        }
+        credit(bundledPack)
+        val sources = data.optJSONArray("sources") ?: JSONArray()
+        for (i in 0 until sources.length()) credit(sources.getJSONObject(i))
+        return ContentFiles.anki(entries, JSONArray().also { array -> credits.forEach { array.put(JSONObject(it)) } })
+    }
     fun toggleInterest(topic: String) {
         val next = interests.toMutableSet().apply { if (!add(topic)) remove(topic) }
         if (next.isNotEmpty()) { data.put("interests", next.joinToString(",")); save() }
@@ -188,7 +216,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val sibling = available.firstOrNull { p -> state(p) == null && Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }
         if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) { prompt = sibling; return }
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            prompt = available.filter { state(it) == null }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else if (it.entry.topic in interests) 0 else 1 }.firstOrNull()
+            prompt = available.filter { state(it) == null }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
             if (prompt != null) return
         }
         finish()
@@ -196,7 +224,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun rate(rating: Rating, audio: Boolean) {
         val p = prompt ?: return
         val wasNewSense = Skill.entries.none { cards.has("${p.entry.id}:${it.name}") }
-        val card = state(p) ?: MemoryCard.builder().cardId(entries.indexOf(p.entry) * 3 + p.skill.ordinal).build()
+        val card = state(p) ?: MemoryCard.builder().cardId(nextCardId).build()
+        if (state(p) == null) { nextCardId++; data.put("nextCardId", nextCardId) }
         val result = scheduler.reviewCard(card, rating)
         cards.put(p.key, result.card().toJson())
         memory[p.key] = result.card()
@@ -206,7 +235,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         if (missed >= 4) { paused.put(p.key, System.currentTimeMillis() + 3 * 86400000L); failures.put(p.key, 0) }
         if (!placing) {
             // Bury siblings only: a failed card itself may return at its real FSRS due time.
-            Skill.entries.filter { it != p.skill }.forEach { buried.put("${p.entry.id}:${it.name}", today()) }
+            entries.filter { it.lexeme == p.entry.lexeme }.forEach { related ->
+                Skill.entries.filter { related.id != p.entry.id || it != p.skill }.forEach { buried.put("${related.id}:${it.name}", today()) }
+            }
             if (wasNewSense) data.put("introduced", data.optInt("introduced") + 1)
         } else { placementIndex++; data.put("placementIndex", placementIndex) }
         sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
@@ -215,7 +246,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun deferAudio() { if (prompt?.skill == Skill.Listening) next(false) }
     fun interval(rating: Rating): String {
         val p = prompt ?: return ""
-        val card = state(p) ?: MemoryCard.builder().cardId(entries.indexOf(p.entry) * 3 + p.skill.ordinal).build()
+        val card = state(p) ?: MemoryCard.builder().cardId(nextCardId).build()
         val result = scheduler.reviewCard(card, rating)
         val minutes = ((java.time.Duration.between(Instant.now(), result.card().due).seconds + 59) / 60).coerceAtLeast(1)
         return if (minutes < 60) "${minutes}m" else if (minutes < 1440) "${minutes / 60}h" else "${minutes / 1440}d"

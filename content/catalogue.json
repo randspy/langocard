@@ -5,7 +5,7 @@
     {
       "id": "fr-source-frequent-2026-11-v1",
       "title": "Frequent French",
-      "description": "Selected senses from frequency ranks 1–2,500. Synthetic offline pronunciation uses your installed French voice.",
+      "description": "Selected meanings from frequency ranks 1–2,500.",
       "meanings": 501,
       "lemmas": 339,
       "url": "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/fr-source-frequent-2026-11-v1.json",
@@ -14,7 +14,7 @@
     {
       "id": "fr-source-everyday-2026-11-v1",
       "title": "Everyday expansion",
-      "description": "Selected senses from frequency ranks 2,501–7,000. Synthetic offline pronunciation uses your installed French voice.",
+      "description": "Selected meanings from frequency ranks 2,501–7,000.",
       "meanings": 339,
       "lemmas": 275,
       "url": "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/fr-source-everyday-2026-11-v1.json",
@@ -23,7 +23,7 @@
     {
       "id": "fr-source-extended-2026-11-v1",
       "title": "Beyond the everyday",
-      "description": "Selected senses from frequency ranks 7,001–20,000. Synthetic offline pronunciation uses your installed French voice.",
+      "description": "Selected meanings from frequency ranks 7,001–20,000.",
       "meanings": 276,
       "lemmas": 254,
       "url": "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/fr-source-extended-2026-11-v1.json",

@@ -33,7 +33,7 @@ def publish(audit,out):
         payload=(json.dumps(pack,ensure_ascii=False,indent=2)+'\n').encode()
         assert len(payload)<20*1024*1024
         filename=pack_id+'.json';(out/filename).write_bytes(payload)
-        manifest.append(dict(id=pack_id,title=title,description=f'Selected senses from frequency ranks {low:,}–{high:,}. Synthetic offline pronunciation uses your installed French voice.',
+        manifest.append(dict(id=pack_id,title=title,description=f'Selected meanings from frequency ranks {low:,}–{high:,}.',
                              meanings=len(entries),lemmas=len({e['lemma'] for e in entries}),url=BASE+filename,sha256=hashlib.sha256(payload).hexdigest()))
     catalogue=dict(format='langocard-catalogue',version=1,packs=manifest)
     (out/'catalogue.json').write_text(json.dumps(catalogue,ensure_ascii=False,indent=2)+'\n')
@@ -45,7 +45,8 @@ def publish(audit,out):
     (ROOT/'apps/android/app/src/main/assets/CONTENT-NOTICE.md').write_bytes((out/'NOTICE.md').read_bytes())
     (out/'audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
     # The ranked reference list measures coverage; it is not counted as study cards.
-    (out/'ranked-lemmas.json').write_bytes((audit/'ranked-lemmas.json').read_bytes())
+    reference=json.loads((audit/'ranked-lemmas.json').read_text())
+    (out/'ranked-lemmas.json').write_text('[\n'+',\n'.join(json.dumps(row,ensure_ascii=False,separators=(',',':')) for row in reference)+'\n]\n')
     print(json.dumps(manifest,ensure_ascii=False,indent=2))
 
 if __name__=='__main__':
