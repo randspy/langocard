@@ -26,6 +26,7 @@ editable across devices.
 | 14 | Rule parity | `convex/entryRules.ts` shared by Convex and web; Kotlin mirrors it. Shared fixtures `content/entry-rules-fixtures.json` and `content/merge-fixtures.json` run in Vitest and Android unit tests. |
 | 15 | Pauses | `pausedUntil` = automatic leech pause (review clock); `suspendedUntil` = manual pause (edit clock). Field-level card merge. Android only honours web changes in v1. |
 | 16 | Order | Backend v2 → Android v2 sync → web skeleton + auth + Library → entry editing → card management → upstream changes. |
+| 17 | Packs on Android | Packs stay opt-in downloads. Convex holds every pack entry so the web can manage them, but Android only studies entries from installed packs (see below). |
 
 ## Data model (protocol v2)
 
@@ -75,6 +76,22 @@ top of the reset state) wins. Review history is kept.
 
 `reviews`, `sources`, `buried` and `settings` are unchanged.
 
+### Downloadable packs
+
+Installing a pack is still an explicit download on Android, verified against the
+catalogue digest. A `sources` row with the pack's `packId` records the installation.
+`sources` is a synced union, so installing a pack on one device installs it everywhere,
+and there is no uninstall (unchanged from v1).
+
+- Android pulls every entry row but keeps rows of **uninstalled** packs dormant. They aren't
+  shown, scheduled or counted.
+- On install, the downloaded pack is the base, and any dormant Convex row for the same ID
+  (an edit made on the web, a tombstone) is applied on top.
+- The active library on a device = bundled + personal + entries of installed packs.
+- The web shows all entries. The Library has an "installed / not installed" pack filter, derived
+  from `sources`, and pack entries can be edited before installation. Edits take effect when
+  the pack is installed.
+
 ### Server functions
 
 - `sync.push` / `sync.pull`: token-gated, v2 shapes, used by Android.
@@ -120,5 +137,3 @@ editing/suspending from Android.
 
 - Which entries are editable was set to "all"; revisit if pack edits interact badly
   with pack reinstall on Android.
-- Seeding every pack means Android receives entries from packs it hasn't installed.
-  Slice 2 must decide whether it introduces them or keeps pack installation as an opt-in filter.
