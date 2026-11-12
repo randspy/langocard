@@ -8,6 +8,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         applicationId = "com.randspy.langocard"
         minSdk = 36
         targetSdk = 37
@@ -40,7 +41,10 @@ dependencies {
 
     implementation(libs.fsrs)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.junit)
     testImplementation(libs.junit)
+    testImplementation(libs.json.test)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)

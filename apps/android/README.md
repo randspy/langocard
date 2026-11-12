@@ -83,11 +83,42 @@ pipeline are documented in `../../docs/research/french-content-sources.md`.
   network; France voices are preferred. Synthetic audio is labeled. Missing or
   failed audio never counts as a successful assessment. Install voice data in
   Android speech settings and reopen the app; check actual output in airplane
-  mode on the target device. App networking is not enabled.
+  mode on the target device. Studying works offline; networking is used only for explicitly requested pack downloads.
 - The library supports French/English search and replaying examples. Interest
   changes affect new-entry ordering, without changing learned card states.
 
 Run `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`.
-The pilot deliberately defers corpus import, downloadable packs, manual entries,
-backup/restore UI, Anki export, sync, notifications, AI and automatic speech scoring.
+The remaining content work is corpus preparation and a hosted pack catalogue.
+Sync, notifications, AI and automatic speech scoring remain deferred.
 Do not clear application data to update it; install newer APKs with `adb install -r`.
+
+## Library tools
+
+The home screen’s navigation drawer links to separate pages for vocabulary, entry
+creation, pack import/download, backup/restore, and Anki TSV export. The drawer
+contains navigation only; forms and file actions live on their destination pages. Android's document picker lets you choose
+where to save files. Restore requires confirmation and validates the backup before
+replacing the current library and scheduling data. Existing pilot progress migrates
+without clearing app data. Anki exports reading and production cards, with HTML
+escaped and content-source attribution retained. Export does not preserve FSRS
+scheduling or engine-generated audio; listening stays in Langocard.
+
+Packs contain `format: "langocard-pack"`, `version: 1`, `source`, `license`, and
+an `entries` array. Entry fields are `id`, `word`, `english`, `definition`, `example`
+(one answer in `{braces}`), and `topic` (`daily`, `culture`, or `news`). IDs must be
+unique, stable, and not collide with installed entries. Import is additive; duplicate
+IDs reject the whole pack. Packs and backups have a 20 MB size limit. Downloads
+accept direct HTTPS URLs; redirects are rejected. Imported material works offline.
+
+Prepare reviewed content on a computer:
+
+```sh
+python3 tools/content/prepare_pack.py approved.tsv french-pack.json \
+  --source 'Source URL, revision and contributor credits' \
+  --license 'License identifier and URL; modification notices'
+```
+
+The command runs from the repository root. Split large libraries into smaller packs.
+No hosted pack catalogue or independently reviewed 20,000-word library is included
+in this implementation. Source research still governs corpus preparation; this
+packaging tool does not align dictionary senses or verify linguistic accuracy.

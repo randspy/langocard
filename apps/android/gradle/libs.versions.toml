@@ -8,6 +8,8 @@ lifecycle = "2.11.0"
 composeBom = "2026.09.00"
 
 [libraries]
+androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
+json-test = { module = "org.json:json", version = "20240303" }
 fsrs = { module = "io.github.open-spaced-repetition:fsrs", version.ref = "fsrs" }
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
