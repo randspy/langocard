@@ -3,7 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { api } from "../convex/_generated/api";
 import schema from "../convex/schema";
-import { mergeSettings, type Settings } from "../convex/merge";
+import { mergeSettings, SUSPENDED_INDEFINITELY, type Settings } from "../convex/merge";
 
 const modules = import.meta.glob("../convex/**/*.*s");
 const token = "test-token";
@@ -12,12 +12,20 @@ const settings: Settings = {
   placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: 2501, interests: "daily",
   preferencesChangedAt: 0, day: "2026-11-12", seconds: 0, introduced: 0,
 };
+const card = (o: Partial<{ card: string | null; lastReview: number; failures: number; pausedUntil: number; suspendedUntil: number; cardEditedAt: number }> = {}) =>
+  ({ key: "e1:Reading", card: '{"v":1}', lastReview: 100, failures: 0, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0, ...o });
+const entry = (o: Partial<{ entryId: string; word: string; editedAt: number | null; deletedAt: number | null }> = {}) => ({
+  entryId: "personal-1", word: "pourtant", english: "however", definition: "Malgré cela.", example: "Il pleut, {pourtant} elle sort.",
+  topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", editedAt: null, deletedAt: null, ...o,
+});
 
 beforeEach(() => { process.env.SYNC_TOKEN = token; });
 afterEach(() => { delete process.env.SYNC_TOKEN; });
 
-async function pullAll(t: ReturnType<typeof convexTest>, table: "cards" | "reviews" | "buried" | "settings", since = 0) {
-  return (await t.query(api.sync.pull, { token, table, since, cursor: null })).page;
+type Table = "cards" | "reviews" | "entries" | "buried" | "settings";
+async function pullAll(t: ReturnType<typeof convexTest>, table: Table, since = 0) {
+  // Rows of any table; tests read the fields of the table they pulled.
+  return (await t.query(api.sync.pull, { token, table, since, cursor: null })).page as Record<string, any>[];
 }
 
 describe("sync", () => {
@@ -27,14 +35,28 @@ describe("sync", () => {
     await expect(t.query(api.sync.pull, { token: "nope", table: "cards", since: 0, cursor: null })).rejects.toThrow(/Invalid sync token/);
   });
 
+  test("rejects a v1 push shape", async () => {
+    const t = convexTest(schema, modules);
+    const v1Card = { key: "e1:Reading", card: "{}", lastReview: 1, failures: 0, pausedUntil: 0 };
+    await expect(t.mutation(api.sync.push, { token, ...empty, cards: [v1Card as never] })).rejects.toThrow();
+  });
+
   test("keeps the card with the latest review", async () => {
     const t = convexTest(schema, modules);
-    const card = (lastReview: number, failures = 0) => ({ key: "e1:Reading", card: `{"v":${lastReview}}`, lastReview, failures, pausedUntil: 0 });
-    await t.mutation(api.sync.push, { token, ...empty, cards: [card(200, 1)] });
-    await t.mutation(api.sync.push, { token, ...empty, cards: [card(100, 3)] });
+    await t.mutation(api.sync.push, { token, ...empty, cards: [card({ lastReview: 200, failures: 1 })] });
+    await t.mutation(api.sync.push, { token, ...empty, cards: [card({ lastReview: 100, failures: 3 })] });
     expect(await pullAll(t, "cards")).toMatchObject([{ key: "e1:Reading", lastReview: 200, failures: 1 }]);
-    await t.mutation(api.sync.push, { token, ...empty, cards: [card(300, 0)] });
+    await t.mutation(api.sync.push, { token, ...empty, cards: [card({ lastReview: 300 })] });
     expect(await pullAll(t, "cards")).toMatchObject([{ lastReview: 300, failures: 0 }]);
+  });
+
+  test("merges review and manual card fields separately", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.sync.push, { token, ...empty, cards: [card({ suspendedUntil: SUSPENDED_INDEFINITELY, cardEditedAt: 250 })] });
+    await t.mutation(api.sync.push, { token, ...empty, cards: [card({ card: '{"v":2}', lastReview: 300 })] });
+    expect(await pullAll(t, "cards")).toMatchObject([
+      { card: '{"v":2}', lastReview: 300, suspendedUntil: SUSPENDED_INDEFINITELY, cardEditedAt: 250 },
+    ]);
   });
 
   test("stores each review once", async () => {
@@ -43,6 +65,27 @@ describe("sync", () => {
     await t.mutation(api.sync.push, { token, ...empty, reviews: [review] });
     await t.mutation(api.sync.push, { token, ...empty, reviews: [review] });
     expect(await pullAll(t, "reviews")).toHaveLength(1);
+  });
+
+  test("adds personal entries and applies newer edits and deletes", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(api.sync.push, { token, ...empty, entries: [entry()] });
+    await t.mutation(api.sync.push, { token, ...empty, entries: [entry({ word: "néanmoins", editedAt: 100 })] });
+    await t.mutation(api.sync.push, { token, ...empty, entries: [entry({ word: "stale", editedAt: 50 })] });
+    await t.mutation(api.sync.push, { token, ...empty, entries: [entry({ word: "néanmoins", editedAt: 100, deletedAt: 150 })] });
+    const [row] = await pullAll(t, "entries");
+    expect(row).toMatchObject({ entryId: "personal-1", word: "néanmoins", origin: "personal", editedAt: 100, deletedAt: 150 });
+    expect(row).not.toHaveProperty("shipped");
+  });
+
+  test("rejects invalid entries and unknown non-personal entries", async () => {
+    const t = convexTest(schema, modules);
+    const result = await t.mutation(api.sync.push, {
+      token, ...empty,
+      entries: [entry({ entryId: "personal-bad", word: "" }), entry({ entryId: "frw-unknown" }), entry({ entryId: "personal-ok" })],
+    });
+    expect(result.rejected).toEqual(["personal-bad", "frw-unknown"]);
+    expect((await pullAll(t, "entries")).map((r) => r.entryId)).toEqual(["personal-ok"]);
   });
 
   test("pulls only rows changed after the cursor", async () => {
@@ -60,9 +103,9 @@ describe("sync", () => {
     const seen: string[] = [];
     let cursor: string | null = null;
     for (;;) {
-      const result: { page: { reviewId?: string }[]; isDone: boolean; continueCursor: string } =
+      const result: { page: object[]; isDone: boolean; continueCursor: string } =
         await t.query(api.sync.pull, { token, table: "reviews", since: 0, cursor, numItems: 7 });
-      seen.push(...result.page.map((row) => row.reviewId!));
+      seen.push(...result.page.map((row) => (row as { reviewId: string }).reviewId));
       if (result.isDone) break;
       cursor = result.continueCursor;
     }

@@ -1,23 +1,54 @@
 # Langocard backend
 
-Optional cloud sync for one learner, built on [Convex](https://convex.dev). The
-Android app stays offline-first: its local `learning-v1.json` remains the source of
-truth, and sync only pushes local changes and merges changes from other devices.
+Cloud sync for one learner, built on [Convex](https://convex.dev). The Android app
+stays offline-first: its local `learning-v1.json` remains what it studies from, and
+sync pushes local changes and merges changes from other devices and the web app.
+Convex also holds the whole vocabulary library, so it can be managed from the web.
+
+This is **sync protocol v2** (editable entries and cards). The design is in
+[`docs/design/web-card-management.md`](../../docs/design/web-card-management.md).
+v1 clients are rejected by argument validation. The Android app still speaks v1
+until [#7](https://github.com/randspy/langocard/issues/7) lands, so don't deploy this
+to the deployment your phone syncs with before then.
 
 ## What is stored
 
 | Table | Contents | Merge rule |
 | --- | --- | --- |
-| `cards` | FSRS card per `<entryId>:<Skill>`, with failure count and pause | Newest review wins |
+| `entries` | The whole library: bundled, pack and personal entries | Later of `editedAt`/`deletedAt` wins; deletion is a tombstone |
+| `cards` | FSRS card per `<entryId>:<Skill>`, with failures, leech pause and manual suspension | Review fields follow `lastReview`; `suspendedUntil` follows `cardEditedAt` |
 | `reviews` | Review history | Union, deduplicated by card key and review time |
-| `entries` | Personal entries and installed pack entries | Union by entry ID |
 | `sources` | Pack attribution | Union |
 | `buried` | Sibling skills hidden until the next day | Latest day wins |
 | `settings` | Placement, frequency band, interests, daily counters | Per field (see `convex/merge.ts`) |
 
-The Android app mirrors these rules in `Sync.kt`. Every rule is idempotent, so a
-failed or repeated sync is safe. On the same day on two devices, the daily
-study time keeps the larger value rather than the sum.
+Every rule is idempotent, so a failed or repeated sync is safe. On the same day on two
+devices, the daily study time keeps the larger value rather than the sum.
+
+- Devices may only **add** personal entries (`personal-…`). Bundled and pack entries
+  come from the seed. `push` returns the IDs it refused (invalid content or an unknown
+  non-personal entry) in `rejected`.
+- A card **reset** sets the FSRS card to `null` (new again) and advances both clocks,
+  so reviews made before it lose even if they sync later. Review history is kept.
+- `suspendedUntil` is `253402300799999` for an indefinite suspension.
+- Entry validation lives in `convex/entryRules.ts`. Android mirrors it and the merge
+  rules; `content/entry-rules-fixtures.json` and `content/merge-fixtures.json` hold
+  cases both implementations must pass.
+
+## Library seed
+
+`npm run seed` loads the shipped library into `entries`: the pilot list and the
+frequent pack bundled in the APK (origin `bundled`), and the catalogue packs
+(origin `pack:<packId>`). It is idempotent.
+
+- Entries you haven't edited take new shipped content.
+- Edited entries keep your wording. If the shipped content changed, they're flagged
+  `upstreamChanged`. The latest shipped version is kept in `shipped`.
+- Entries no longer shipped are marked `retired`, not deleted. Personal entries are never
+  touched.
+
+`npm run seed -- --dry-run` validates and counts without writing (CI runs it), and
+`-- --prod` targets production.
 
 ## Access
 
@@ -35,6 +66,7 @@ cd apps/backend
 npm install
 npx convex dev --once        # log in and create a project (development deployment)
 npx convex env set SYNC_TOKEN "$(openssl rand -hex 32)"
+npm run seed                    # load the library
 npm run link-android            # write URL + token into apps/android/local.properties
 ```
 
@@ -60,7 +92,7 @@ from a phone without a TLS tunnel.
 ## Develop
 
 ```sh
-npm run typecheck
+npm run typecheck   # functions and tests
 npm test            # convex-test + vitest, no deployment needed
 ```
 

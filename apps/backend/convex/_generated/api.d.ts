@@ -8,8 +8,11 @@
  * @module
  */
 
+import type * as entryRules from "../entryRules.js";
 import type * as merge from "../merge.js";
+import type * as seed from "../seed.js";
 import type * as sync from "../sync.js";
+import type * as validators from "../validators.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +21,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  entryRules: typeof entryRules;
   merge: typeof merge;
+  seed: typeof seed;
   sync: typeof sync;
+  validators: typeof validators;
 }>;
 
 /**

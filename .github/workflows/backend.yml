@@ -4,10 +4,16 @@ on:
   push:
     paths:
       - "apps/backend/**"
+      - "content/**"
+      - "apps/android/app/src/main/assets/pilot.tsv"
+      - "apps/android/app/src/main/assets/frequent-pack.json"
       - ".github/workflows/backend.yml"
   pull_request:
     paths:
       - "apps/backend/**"
+      - "content/**"
+      - "apps/android/app/src/main/assets/pilot.tsv"
+      - "apps/android/app/src/main/assets/frequent-pack.json"
       - ".github/workflows/backend.yml"
   workflow_dispatch:
 
@@ -35,3 +41,4 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run seed -- --dry-run
