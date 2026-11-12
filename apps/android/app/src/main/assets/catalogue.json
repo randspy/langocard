@@ -1,0 +1,33 @@
+{
+  "format": "langocard-catalogue",
+  "version": 1,
+  "packs": [
+    {
+      "id": "fr-source-frequent-2026-11-v1",
+      "title": "Frequent French",
+      "description": "Selected meanings from frequency ranks 1–2,500.",
+      "meanings": 501,
+      "lemmas": 339,
+      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/fr-source-frequent-2026-11-v1.json",
+      "sha256": "0ad3f9835b54fece73df241e8c0b9bc59f64c56494b2b767022463ca7c95ac1d"
+    },
+    {
+      "id": "fr-source-everyday-2026-11-v1",
+      "title": "Everyday expansion",
+      "description": "Selected meanings from frequency ranks 2,501–7,000.",
+      "meanings": 339,
+      "lemmas": 275,
+      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/fr-source-everyday-2026-11-v1.json",
+      "sha256": "67f239de72ae8c7fe735224d5e6b6198a37867a401ea2f6686e5e450cadbcab8"
+    },
+    {
+      "id": "fr-source-extended-2026-11-v1",
+      "title": "Beyond the everyday",
+      "description": "Selected meanings from frequency ranks 7,001–20,000.",
+      "meanings": 276,
+      "lemmas": 254,
+      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/fr-source-extended-2026-11-v1.json",
+      "sha256": "30c5b048a6a6ca22e04774edc1215c75a6acdfe81a651967d38225db196a1559"
+    }
+  ]
+}

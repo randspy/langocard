@@ -27,7 +27,7 @@ fun LibraryTools(model: LearningModel, section: String) {
     fun task(work: suspend () -> String) {
         scope.launch {
             busy = true
-            message = try { work() } catch (e: Exception) { e.message ?: "Could not complete this operation" }
+            message = try { work() } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { e.message ?: "Could not complete this operation" }
             finally { busy = false }
         }
     }
@@ -77,24 +77,14 @@ fun LibraryTools(model: LearningModel, section: String) {
         } }, enabled = !busy) { Text("Save entry") }
     }
     if (section == "packs") {
-        Text("Add prepared vocabulary from a file or a direct download link. Imported meanings stay available offline.")
+        PackCatalogue(model)
+        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+        Text("Other packs", style = MaterialTheme.typography.titleMedium)
+        Text("Import a prepared file, or use a direct HTTPS link.")
     OutlinedButton(onClick = { pack.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Import vocabulary pack") }
     OutlinedTextField(url, { url = it }, label = { Text("HTTPS vocabulary pack URL") }, modifier = Modifier.fillMaxWidth())
     OutlinedButton(onClick = { task {
-        val text = withContext(Dispatchers.IO) {
-            val address = java.net.URI(url.trim()).toURL()
-            require(address.protocol == "https" && address.userInfo == null) { "Use an HTTPS URL without credentials" }
-            val connection = address.openConnection() as javax.net.ssl.HttpsURLConnection
-            connection.connectTimeout = 15000; connection.readTimeout = 15000; connection.instanceFollowRedirects = false
-            try {
-                require(connection.responseCode == 200) { "Download returned HTTP ${connection.responseCode}; use a direct pack URL" }
-                connection.inputStream.use {
-                    val bytes = it.readNBytes(ContentFiles.MAX_BYTES + 1)
-                    require(bytes.size <= ContentFiles.MAX_BYTES) { "Pack exceeds 20 MB" }
-                    bytes.toString(Charsets.UTF_8)
-                }
-            } finally { connection.disconnect() }
-        }
+        val text = withContext(Dispatchers.IO) { PackDownloads.fetch(url.trim()) }
         "Downloaded ${model.importPack(text)} meanings; available offline"
     } }, enabled = !busy && url.isNotBlank()) { Text("Download pack") }
     }

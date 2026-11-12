@@ -1,0 +1,21 @@
+{
+  "ranked_lemmas": 20000,
+  "dictionary_lemmas": 19905,
+  "study_lemmas": 894,
+  "study_senses": 1152,
+  "source_sha256": {
+    "Lexique383.zip": "e181d132b3b0d3d87efc98d376968441b517353933011cebea5366321a6024e6",
+    "fr-extract.jsonl.gz": "61d27bfc4bef9eb8f19d6e280ebf310adb07196da41d2f5777ff5942bef66a28"
+  },
+  "selection": "70% subtitle rank + 30% book rank; unique same-edition translation-label/definition prefix match (numbering alone is NOT trusted), unnested definitions, unreferenced short examples containing a possible finite-verb form, exact lemma match; noun gender from Lexique",
+  "status": "Source-aligned and structurally checked, not independently language-reviewed. Excluded words are not marked learned or fabricated.",
+  "published_senses": 1116,
+  "published_lemmas": 868,
+  "excluded_pilot_lemmas": 200,
+  "known_sample_rejections": [
+    "frw-2a17fcda27685276aed5",
+    "frw-4dabba405a41606d260e",
+    "frw-70b85ca43846827de58d",
+    "frw-9bb19acfa42c9a277599"
+  ]
+}

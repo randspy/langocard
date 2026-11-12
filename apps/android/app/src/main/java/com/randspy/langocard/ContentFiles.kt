@@ -12,15 +12,19 @@ object ContentFiles {
         require(listOf(e.word, e.english, e.definition, e.markedExample).all { it.isNotBlank() && it.length <= 2000 }) { "Fill every field (maximum 2,000 characters each)" }
         require(e.markedExample.count { it == '{' } == 1 && e.markedExample.count { it == '}' } == 1 &&
             e.markedExample.indexOf('{') < e.markedExample.indexOf('}') && e.answer.isNotBlank()) { "Mark exactly one answer with {braces} in the example" }
+        require(e.rank > 0 && e.lemma.length <= 200 && e.license.length <= 500) { "Invalid vocabulary metadata" }
+        require(e.sourceUrl.isBlank() || (e.sourceUrl.startsWith("https://") && e.sourceUrl.length <= 2000)) { "Invalid source URL" }
         require(e.topic in setOf("daily", "culture", "news")) { "Unknown topic" }
     }
     fun entryJson(e: Entry) = JSONObject().put("id", e.id).put("word", e.word).put("english", e.english)
         .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic)
+        .put("lemma", e.lemma).put("rank", e.rank).put("sourceUrl", e.sourceUrl).put("license", e.license)
     fun readEntries(array: JSONArray): List<Entry> {
         require(array.length() <= 30000) { "Pack is too large" }
         val result = (0 until array.length()).map { i ->
             val o = array.getJSONObject(i)
-            Entry(o.getString("id"), o.getString("word"), o.getString("english"), o.getString("definition"), o.getString("example"), o.getString("topic")).also(::validateEntry)
+            Entry(o.getString("id"), o.getString("word"), o.getString("english"), o.getString("definition"), o.getString("example"), o.getString("topic"),
+                o.optString("lemma"), o.optInt("rank", Int.MAX_VALUE), o.optString("sourceUrl"), o.optString("license")).also(::validateEntry)
         }
         require(result.map { it.id }.distinct().size == result.size) { "Duplicate entry IDs" }
         return result
@@ -43,6 +47,7 @@ object ContentFiles {
             require(card.difficulty == null || card.difficulty in 1.0..10.0) { "Invalid difficulty" }
         }
         require(data.optInt("seconds") >= 0 && data.optInt("introduced") >= 0 && data.optInt("placementIndex") in 0..18)
+        if (data.has("minimumRank")) require(data.getInt("minimumRank") in listOf(1, 2501, 7001))
         // Validate optional collections before any file is replaced.
         for (key in listOf("buried", "failures", "paused")) if (data.has(key)) data.getJSONObject(key)
         if (data.has("reviews")) data.getJSONArray("reviews")
@@ -56,9 +61,10 @@ object ContentFiles {
         return buildString {
             append("#separator:Tab\n#html:true\n#columns:Front\tBack\tTags\n")
             entries.forEach { e ->
-                val back = "${html(e.english)}<br>${html(e.definition)}<br>${html(e.example)}<br>$attribution"
-                append("${html(e.word)}\t$back\tlangocard reading\n")
-                append("${html(e.english)}<br>${html(e.cloze)}\t${html(e.word)}<br>${html(e.example)}<br>$attribution\tlangocard production\n")
+                val credit = "${html(e.sourceUrl)} ${html(e.license)}<br>$attribution"
+                val back = "${html(e.english)}<br>${html(e.definition)}<br>${html(e.example)}<br>$credit"
+                append("${html(e.word)}<br>${html(e.example)}\t$back\tlangocard reading\n")
+                append("${html(e.english)}<br>${html(e.cloze)}\t${html(e.word)}<br>${html(e.example)}<br>$credit\tlangocard production\n")
             }
         }
     }

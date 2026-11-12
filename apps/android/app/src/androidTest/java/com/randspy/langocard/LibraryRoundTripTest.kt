@@ -21,8 +21,9 @@ class LibraryRoundTripTest {
             instrumentation.runOnMainSync {
                 val application = IsolatedApp(instrumentation.targetContext, directory)
                 val model = LearningModel(application)
+                val originalCount = model.entries.size
                 model.addEntry("une idée", "an idea", "Pensée nouvelle.", "Voici {une idée}.")
-                assertEquals(201, model.entries.size)
+                assertEquals(originalCount + 1, model.entries.size)
                 model.skipPlacement()
                 model.start(false, false)
                 assertEquals("une idée", model.prompt!!.entry.word)
@@ -30,7 +31,7 @@ class LibraryRoundTripTest {
                 val saved = model.backup()
                 val restored = LearningModel(application)
                 restored.restore(saved)
-                assertEquals(201, restored.entries.size)
+                assertEquals(originalCount + 1, restored.entries.size)
                 assertEquals(1, JSONObject(restored.backup()).getJSONObject("data").getJSONObject("cards").length())
                 assertEquals(1, JSONObject(restored.backup()).getJSONObject("data").getJSONArray("reviews").length())
                 val entry = Entry("test-pack-entry", "un récit", "a narrative", "Histoire racontée.", "Elle écrit {un récit}.", "culture")
@@ -41,12 +42,20 @@ class LibraryRoundTripTest {
                 try { restored.importPack(pack.toString()); fail("Duplicate accepted") } catch (_: IllegalArgumentException) { }
                 assertEquals(before, restored.backup())
                 restored.restore(saved)
-                assertEquals(201, restored.entries.size)
+                assertEquals(originalCount + 1, restored.entries.size)
                 assertFalse(restored.entries.any { it.id == "test-pack-entry" })
-                assertEquals(201, LearningModel(application).entries.size)
+                assertEquals(originalCount + 1, LearningModel(application).entries.size)
                 assertTrue(restored.ankiExport().contains("une idée"))
                 try { restored.restore("{}"); fail("Invalid backup accepted") } catch (_: Exception) { }
-                assertEquals(201, LearningModel(application).entries.size)
+                assertEquals(originalCount + 1, LearningModel(application).entries.size)
+                restored.addEntry("un essai", "an attempt", "Action pour essayer.", "Elle prépare {un essai}.")
+                restored.start(false, false)
+                assertEquals("un essai", restored.prompt!!.entry.word)
+                restored.rate(io.github.openspacedrepetition.Rating.GOOD, false)
+                val states = JSONObject(restored.backup()).getJSONObject("data").getJSONObject("cards")
+                val ids = states.keys().asSequence().map { io.github.openspacedrepetition.Card.fromJson(states.getString(it)).cardId }.toList()
+                assertEquals(2, ids.size)
+                assertEquals(ids.size, ids.distinct().size)
             }
         } finally { directory.deleteRecursively() }
     }

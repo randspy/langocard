@@ -53,13 +53,18 @@ avdmanager create avd --name Langocard_API_36 --package "system-images;android-3
 
 Use an `x86_64` system image on Intel hosts. The welcome screen also has an Android Studio Compose preview.
 
-## Offline learning pilot
+## Offline learning library
 
-The app bundles 200 **original draft** meaning entries (`app/src/main/assets/pilot.tsv`),
-including expressions and noun articles. This is a functional content pilot, not a
-frequency-ranked or independently language-reviewed 20,000-word corpus. No corpus
-text or third-party recordings are bundled. Source selection and the future pack
-pipeline are documented in `../../docs/research/french-content-sources.md`.
+The app bundles **701 meanings**: the original 200 draft entries plus 501
+source-aligned dictionary meanings. The in-app catalogue offers two additional
+packs (339 and 276 meanings), bringing the installed total to **1,316 meanings**.
+The first pack is already installed; learners do not need to author core cards.
+Source content is structurally checked, not independently language-reviewed.
+Definitions retain dictionary wording. Source attribution is available in the
+Content sources page, per-entry links, backups and Anki exports. No third-party
+recordings are bundled; installed offline French TTS supplies pronunciation.
+The measured coverage and preparation pipeline are documented in
+`../../docs/research/content-audit-2026-11-12.md`.
 
 - Optional placement checks six entries separately for reading, listening and
   production; it seeds only those assessed cards, not an inferred B2 vocabulary.
@@ -68,6 +73,11 @@ pipeline are documented in `../../docs/research/french-content-sources.md`.
   The pinned MIT-licensed `io.github.open-spaced-repetition:fsrs:1.0.0`
   ([Java-FSRS](https://github.com/open-spaced-repetition/java-fsrs)) schedules at
   90% desired retention using default parameters. Model fitting is deferred.
+- The personal B2 default starts new ranked dictionary entries above rank 2,500.
+  The packs page can change this to all ranks or 7,001+. This is a frequency
+  preference, not a CEFR mapping or a claim that lower-ranked words are known.
+  Existing reviews, started senses, unranked starter cards and personal entries
+  are preserved.
 - Due reviews take priority. At most five new meanings are introduced daily;
   existing meanings gain additional skills on later days. Related skills are
   buried until the next local calendar day. Failed cards retain their FSRS due
@@ -88,7 +98,9 @@ pipeline are documented in `../../docs/research/french-content-sources.md`.
   changes affect new-entry ordering, without changing learned card states.
 
 Run `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`.
-The remaining content work is corpus preparation and a hosted pack catalogue.
+The remaining editorial content work is expansion toward 20,000 usable study lemmas.
+A 20,000-lemma frequency reference and a hosted catalogue are now provided, but
+reference coverage is not counted as completed learning content.
 Sync, notifications, AI and automatic speech scoring remain deferred.
 Do not clear application data to update it; install newer APKs with `adb install -r`.
 
@@ -119,6 +131,37 @@ python3 tools/content/prepare_pack.py approved.tsv french-pack.json \
 ```
 
 The command runs from the repository root. Split large libraries into smaller packs.
-No hosted pack catalogue or independently reviewed 20,000-word library is included
-in this implementation. Source research still governs corpus preparation; this
-packaging tool does not align dictionary senses or verify linguistic accuracy.
+The catalogue is hosted on the `content-v1` Git branch with direct HTTPS raw URLs.
+Catalogue downloads verify pack SHA256 digests before validation/import.
+`build_corpus.py` provides conservative source alignment; `publish_catalogue.py`
+produces versioned packs and the bundled catalogue. The simpler preparation tool
+does not align arbitrary dictionary senses or verify linguistic accuracy. An
+independently reviewed 20,000-word study library is not yet complete.
+
+
+## Source pack verification
+
+Run Python source/manifest checks from repository root:
+
+```sh
+python3 -m unittest discover -s tools/content -p 'test_*.py'
+```
+
+Use the emulator-only wrapper from repository root for device tests:
+
+```sh
+python3 tools/android/test_emulator.py --live-catalogue
+```
+
+It sets an explicit emulator serial, refuses physical devices, keeps a recovery
+copy of existing emulator progress under `apps/android/build/test-recovery`, and
+reinstalls the debug APK after test-runner cleanup. Avoid a bare connected-test task
+with a personal phone attached: Gradle can select every connected device and remove
+the application APK during cleanup, requiring reinstall.
+
+The tests use isolated learning files. The optional live-catalogue check downloads
+the hosted catalogue/packs, rejects a wrong digest, restores installed packs and
+source metadata, and verifies combined Anki prompts remain distinct. Without
+`--live-catalogue`, the wrapper runs only the offline device checks.
+Library browsing is paginated to avoid composing thousands of rows at once.
+Different meanings and skills of the same lemma are spaced across days.

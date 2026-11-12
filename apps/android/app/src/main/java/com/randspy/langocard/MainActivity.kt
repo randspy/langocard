@@ -55,7 +55,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         }
     }
     var destination by rememberSaveable { mutableStateOf("study") }
-    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "export" to "Export to Anki")
+    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "export" to "Export to Anki", "sources" to "Content sources")
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val revision = model.revision
@@ -117,12 +117,13 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     }
                     Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
-                Text("PILOT · FR", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                Text("OFFLINE · FR", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
             }
             when (if (model.screen == "home") destination else model.screen) {
-                "library", "add", "packs", "backup", "export" -> {
+                "library", "add", "packs", "backup", "export", "sources" -> {
                     Text(destinations.getValue(destination), style = MaterialTheme.typography.headlineMedium)
-                    if (destination == "library") Library(model, speech, alwaysOpen = true)
+                    if (destination == "sources") ContentSources()
+                    else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
                 "review" -> Review(model, speech, revealed, played) { played = speech.say(current!!.entry.example) || played }
@@ -164,7 +165,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                         Text("Listening cards wait until an offline voice is available.")
                         OutlinedButton(onClick = settings) { Text("Open speech settings") }
                     }
-                    Text("200 original draft meanings and examples · France French · not independently language-reviewed or frequency-ranked yet.", style = MaterialTheme.typography.bodySmall)
+                    Text("${model.bundledCount} built-in meanings · Includes the original 200 drafts and frequency-ranked dictionary content. Further packs are available in the menu.", style = MaterialTheme.typography.bodySmall)
                     Text("FSRS · 90% target recall · up to 5 new meanings per day. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -255,16 +256,37 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed:
 private fun Library(model: LearningModel, speech: FrenchSpeech, alwaysOpen: Boolean = false) {
     var expanded by remember { mutableStateOf(alwaysOpen) }
     var search by remember { mutableStateOf("") }
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     if (!alwaysOpen) TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Close library" else "Browse library") }
     if (expanded) {
         OutlinedTextField(value = search, onValueChange = { search = it }, label = { Text("French or English") }, modifier = Modifier.fillMaxWidth())
-        model.entries.filter { it.word.contains(search, true) || it.english.contains(search, true) }.forEach { entry ->
+        val matches = model.entries.filter { it.word.contains(search, true) || it.english.contains(search, true) }
+        var page by remember(search) { mutableIntStateOf(0) }
+        val shownPage = page.coerceAtMost((matches.size - 1).coerceAtLeast(0) / 50)
+        Text("${matches.size} meanings found", style = MaterialTheme.typography.bodySmall)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            TextButton(enabled = shownPage > 0, onClick = { page = shownPage - 1 }) { Text("Previous") }
+            TextButton(enabled = (shownPage + 1) * 50 < matches.size, onClick = { page = shownPage + 1 }) { Text("Next 50") }
+        }
+        matches.drop(shownPage * 50).take(50).forEach { entry ->
             HorizontalDivider()
             Text(entry.word, style = MaterialTheme.typography.titleMedium)
             Text(entry.english)
             Text(entry.definition)
             Text(entry.example)
+            if (entry.sourceUrl.isNotBlank()) {
+                Text("Frequency rank ${entry.rank} · ${entry.license}", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = { uriHandler.openUri(entry.sourceUrl) }) { Text("Dictionary source") }
+            }
             if (speech.available) TextButton(onClick = { speech.say(entry.example) }) { Text("Listen") }
         }
     }
+}
+
+@Composable
+private fun ContentSources() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val notice = remember { context.assets.open("CONTENT-NOTICE.md").bufferedReader().use { it.readText() } }
+    Text("Original starter material and source-aligned dictionary packs are kept separate from your learning history. Dictionary packs are structurally checked, not independently language-reviewed.")
+    Text(notice, style = MaterialTheme.typography.bodyMedium)
 }

@@ -1,0 +1,13 @@
+{
+  "lexique": {
+    "url": "https://www.lexique.org/databases/Lexique383/Lexique383.zip",
+    "version": "3.83",
+    "sha256": "e181d132b3b0d3d87efc98d376968441b517353933011cebea5366321a6024e6"
+  },
+  "dictionary": {
+    "url": "https://kaikki.org/dictionary/downloads/fr/fr-extract.jsonl.gz",
+    "dump": "2026-10-01",
+    "extraction": "2026-10-30",
+    "sha256": "61d27bfc4bef9eb8f19d6e280ebf310adb07196da41d2f5777ff5942bef66a28"
+  }
+}
