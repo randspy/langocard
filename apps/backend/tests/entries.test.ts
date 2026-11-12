@@ -81,3 +81,40 @@ describe("entries", () => {
     expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ upstreamChanged: false, edited: false });
   });
 });
+
+describe("upstream changes", () => {
+  async function conflicted(t: T) {
+    const me = await owner(t);
+    await me.mutation(api.entries.update, { entryId: "frw-1", ...content({ definition: "Mine." }) });
+    await t.mutation(internal.seed.apply, { entries: [shipped({ definition: "Détenir." })] });
+    return me;
+  }
+
+  test("lists edited entries whose shipped content changed", async () => {
+    const t = setup();
+    const me = await conflicted(t);
+    expect(await me.query(api.entries.upstreamChanges, {})).toMatchObject([
+      { entryId: "frw-1", mine: { definition: "Mine." }, theirs: { definition: "Détenir." } },
+    ]);
+  });
+
+  test("keep mine clears the flag and keeps the edit", async () => {
+    const t = setup();
+    const me = await conflicted(t);
+    await me.mutation(api.entries.resolveUpstream, { entryId: "frw-1", choice: "keepMine" });
+    expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ definition: "Mine.", upstreamChanged: false, edited: true });
+    expect(await me.query(api.entries.upstreamChanges, {})).toEqual([]);
+  });
+
+  test("take theirs adopts shipped content, syncs, and follows later updates", async () => {
+    const t = setup();
+    const me = await conflicted(t);
+    const before = (await me.query(api.entries.get, { entryId: "frw-1" }))!.editedAt!;
+    await me.mutation(api.entries.resolveUpstream, { entryId: "frw-1", choice: "takeTheirs" });
+    const entry = await me.query(api.entries.get, { entryId: "frw-1" });
+    expect(entry).toMatchObject({ definition: "Détenir.", upstreamChanged: false, edited: false });
+    expect(entry!.editedAt).toBeGreaterThan(before);
+    await t.mutation(internal.seed.apply, { entries: [shipped({ definition: "Avoir en sa possession." })] });
+    expect(await me.query(api.entries.get, { entryId: "frw-1" })).toMatchObject({ definition: "Avoir en sa possession.", upstreamChanged: false });
+  });
+});

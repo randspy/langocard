@@ -1,6 +1,6 @@
 # Web card management — design
 
-Status: agreed; slice 1 (backend v2) implemented (2026-11-12).
+Status: implemented (2026-11-12); see issues #6–#11.
 
 A local React web app for browsing and managing the learner's vocabulary entries
 and FSRS cards. It requires sync protocol v2, which makes entries and cards

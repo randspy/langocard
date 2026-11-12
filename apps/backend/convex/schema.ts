@@ -49,6 +49,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_entry", ["entryId"])
+    .index("by_upstreamChanged", ["upstreamChanged"])
     .index("by_updated", ["updatedAt"]),
 
   // Attribution for installed packs.
