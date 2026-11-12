@@ -33,7 +33,7 @@ object StudyPolicy {
 }
 
 class LearningModel(application: Application) : AndroidViewModel(application) {
-    val entries = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
+    private val bundled = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
         lines.filter { it.isNotBlank() }.map { line ->
             val c = line.split('|'); require(c.size == 6)
             Entry(c[0], c[1], c[2], c[3], c[4], c[5])
@@ -43,6 +43,10 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private val data = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
         file.openRead().bufferedReader().use { JSONObject(it.readText()) }
     } else JSONObject().put("version", 1)
+    val entries = androidx.compose.runtime.mutableStateListOf<Entry>().apply {
+        addAll(bundled)
+        addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()))
+    }
     private val cards = data.optJSONObject("cards") ?: JSONObject().also { data.put("cards", it) }
     private val memory = cards.keys().asSequence().associateWith { MemoryCard.fromJson(cards.getString(it)) }.toMutableMap()
     private val logs = data.optJSONArray("reviews") ?: JSONArray().also { data.put("reviews", it) }
@@ -86,6 +90,58 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         catch (e: Exception) { file.failWrite(stream); throw e }
         revision++
     }
+    fun backup(): String {
+        persist()
+        return JSONObject().put("format", "langocard-backup").put("version", 1)
+            .put("data", JSONObject(data.toString())).toString(2)
+    }
+    fun validateBackup(text: String) { ContentFiles.backupData(text, bundled.map { it.id }.toSet()) }
+    fun restore(text: String) {
+        val restored = ContentFiles.backupData(text, bundled.map { it.id }.toSet())
+        // Validate first; write the replacement atomically before changing live state.
+        val stream = file.startWrite()
+        try { stream.write(restored.toString().toByteArray()); file.finishWrite(stream) }
+        catch (e: Exception) { file.failWrite(stream); throw e }
+        fun replace(target: JSONObject, source: JSONObject) {
+            target.keys().asSequence().toList().forEach(target::remove)
+            source.keys().forEach { target.put(it, source.get(it)) }
+        }
+        replace(cards, restored.optJSONObject("cards") ?: JSONObject())
+        while (logs.length() > 0) logs.remove(logs.length() - 1)
+        val importedLogs = restored.optJSONArray("reviews") ?: JSONArray()
+        for (i in 0 until importedLogs.length()) logs.put(importedLogs.get(i))
+        replace(buried, restored.optJSONObject("buried") ?: JSONObject())
+        replace(failures, restored.optJSONObject("failures") ?: JSONObject())
+        replace(paused, restored.optJSONObject("paused") ?: JSONObject())
+        replace(data, restored)
+        data.put("cards", cards).put("reviews", logs).put("buried", buried).put("failures", failures).put("paused", paused)
+        memory.clear(); cards.keys().forEach { memory[it] = MemoryCard.fromJson(cards.getString(it)) }
+        entries.clear(); entries.addAll(bundled)
+        entries.addAll(ContentFiles.readEntries(data.optJSONArray("extraEntries") ?: JSONArray()))
+        placementIndex = data.optInt("placementIndex"); placing = false
+        home()
+    }
+
+    fun importPack(text: String): Int {
+        val pack = JSONObject(text)
+        require(pack.getString("format") == "langocard-pack" && pack.getInt("version") == 1) { "Unsupported pack format" }
+        require(pack.getString("source").isNotBlank() && pack.getString("license").isNotBlank()) { "Pack must include source and license" }
+        val incoming = ContentFiles.readEntries(pack.getJSONArray("entries"))
+        require(incoming.isNotEmpty()) { "Empty pack" }
+        require(incoming.none { item -> entries.any { it.id == item.id } }) { "Pack contains an existing entry; no changes made" }
+        val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
+        incoming.forEach { extra.put(ContentFiles.entryJson(it)) }
+        val sources = data.optJSONArray("sources") ?: JSONArray().also { data.put("sources", it) }
+        sources.put(JSONObject().put("source", pack.getString("source")).put("license", pack.getString("license")))
+        save(); entries.addAll(incoming); return incoming.size
+    }
+    fun addEntry(word: String, english: String, definition: String, example: String) {
+        val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(), example.trim(), "daily")
+        ContentFiles.validateEntry(entry)
+        val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
+        extra.put(ContentFiles.entryJson(entry)); save(); entries.add(entry)
+    }
+    fun ankiExport() = ContentFiles.anki(entries, data.optJSONArray("sources") ?: JSONArray())
     fun toggleInterest(topic: String) {
         val next = interests.toMutableSet().apply { if (!add(topic)) remove(topic) }
         if (next.isNotEmpty()) { data.put("interests", next.joinToString(",")); save() }
@@ -132,7 +188,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val sibling = available.firstOrNull { p -> state(p) == null && Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }
         if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) { prompt = sibling; return }
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            prompt = available.filter { state(it) == null }.sortedBy { if (it.entry.topic in interests) 0 else 1 }.firstOrNull()
+            prompt = available.filter { state(it) == null }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else if (it.entry.topic in interests) 0 else 1 }.firstOrNull()
             if (prompt != null) return
         }
         finish()

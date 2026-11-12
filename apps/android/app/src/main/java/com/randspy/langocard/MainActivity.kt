@@ -13,12 +13,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.randspy.langocard.ui.theme.LangocardTheme
 import io.github.openspacedrepetition.Rating
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 
 class MainActivity : ComponentActivity() {
     private lateinit var model: LearningModel
@@ -50,13 +54,50 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
             while (true) { delay(1000); model.tick() }
         }
     }
+    var destination by rememberSaveable { mutableStateOf("study") }
+    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "export" to "Export to Anki")
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     val revision = model.revision
     val scroll = rememberScrollState()
-    LaunchedEffect(model.screen, model.prompt?.key, model.sessionReviews) { scroll.scrollTo(0) }
-    BackHandler(model.screen != "home") { speech.stop(); if (model.screen == "review") model.finish() else model.home() }
+    LaunchedEffect(model.screen, destination, model.prompt?.key, model.sessionReviews) { scroll.scrollTo(0) }
+    BackHandler(model.screen != "home" || destination != "study") {
+        speech.stop()
+        if (model.screen == "review") model.finish() else { model.home(); destination = "study" }
+    }
     val current = model.prompt
     var revealed by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
     var played by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
+    ModalNavigationDrawer(
+        drawerState = drawer,
+        gesturesEnabled = model.screen == "home",
+        drawerContent = {
+            ModalDrawerSheet {
+                Column(Modifier.widthIn(max = 320.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(vertical = 24.dp)) {
+                    Text("langocard", modifier = Modifier.padding(horizontal = 28.dp), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Your French, every day", modifier = Modifier.padding(start = 28.dp, top = 4.dp, bottom = 28.dp),
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    destinations.entries.forEachIndexed { index, (id, label) ->
+                        if (index == 3) {
+                            HorizontalDivider(Modifier.padding(horizontal = 28.dp, vertical = 16.dp))
+                            Text("MANAGE", modifier = Modifier.padding(start = 28.dp, bottom = 8.dp),
+                                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        NavigationDrawerItem(
+                            label = { Text(label) }, selected = destination == id,
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedBadgeColor = MaterialTheme.colorScheme.onPrimaryContainer),
+                            onClick = { destination = id; scope.launch { drawer.close() } },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+                            badge = if (id == "library") ({ Text(model.entries.size.toString()) }) else null,
+                        )
+                    }
+                }
+            }
+        },
+    ) {
     Scaffold(bottomBar = {
         if (model.screen == "review" && current != null) {
             ReviewControls(model, speech, revealed,
@@ -67,10 +108,23 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    if (model.screen == "home") {
+                        IconButton(onClick = { scope.launch { drawer.open() } },
+                            modifier = Modifier.semantics { contentDescription = "Open side menu" }) {
+                            Text("☰", style = MaterialTheme.typography.headlineSmall)
+                        }
+                    }
+                    Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                }
                 Text("PILOT · FR", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
             }
-            when (model.screen) {
+            when (if (model.screen == "home") destination else model.screen) {
+                "library", "add", "packs", "backup", "export" -> {
+                    Text(destinations.getValue(destination), style = MaterialTheme.typography.headlineMedium)
+                    if (destination == "library") Library(model, speech, alwaysOpen = true)
+                    else key(destination) { LibraryTools(model, destination) }
+                }
                 "review" -> Review(model, speech, revealed, played) { played = speech.say(current!!.entry.example) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
@@ -88,7 +142,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                             Text("TODAY", style = MaterialTheme.typography.labelLarge)
                             Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
                             LinearProgressIndicator(progress = { (model.spent / 900f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                            Text("${model.dueCount(speech.available)} due · ${model.studied} / 200 meanings started")
+                            Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.entries.size} meanings started")
                             Button(onClick = { model.start(!model.placementDone, speech.available) },
                                 enabled = model.spent < 900 || !model.placementDone, modifier = Modifier.fillMaxWidth()) {
                                 Text(if (!model.placementDone) "Find my starting point" else "Start a session")
@@ -112,11 +166,12 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     }
                     Text("200 original draft meanings and examples · France French · not independently language-reviewed or frequency-ranked yet.", style = MaterialTheme.typography.bodySmall)
                     Text("FSRS · 90% target recall · up to 5 new meanings per day. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
-                    Library(model, speech)
                 }
             }
         }
     }
+}
+
 }
 
 @Composable
@@ -197,10 +252,10 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed:
 }
 
 @Composable
-private fun Library(model: LearningModel, speech: FrenchSpeech) {
-    var expanded by remember { mutableStateOf(false) }
+private fun Library(model: LearningModel, speech: FrenchSpeech, alwaysOpen: Boolean = false) {
+    var expanded by remember { mutableStateOf(alwaysOpen) }
     var search by remember { mutableStateOf("") }
-    TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Close pilot library" else "Browse pilot library") }
+    if (!alwaysOpen) TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Close library" else "Browse library") }
     if (expanded) {
         OutlinedTextField(value = search, onValueChange = { search = it }, label = { Text("French or English") }, modifier = Modifier.fillMaxWidth())
         model.entries.filter { it.word.contains(search, true) || it.english.contains(search, true) }.forEach { entry ->
