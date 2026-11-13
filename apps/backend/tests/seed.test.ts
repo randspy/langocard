@@ -7,9 +7,9 @@ import schema from "../convex/schema";
 const modules = import.meta.glob("../convex/**/*.*s");
 const token = "test-token";
 const empty = { cards: [], reviews: [], entries: [], sources: [], buried: [] };
-const shipped = (o: Partial<{ entryId: string; word: string; definition: string; origin: string }> = {}) => ({
+const shipped = (o: Partial<{ entryId: string; word: string; definition: string; origin: string; gender: "masculine" | "feminine" | null }> = {}) => ({
   entryId: "frw-1", origin: "bundled", word: "avoir", english: "have", definition: "Posséder.", example: "{Avoir} de la force.",
-  topic: "daily", lemma: "avoir", rank: 6, sourceUrl: "https://fr.wiktionary.org/wiki/avoir#fr", license: "CC BY-SA 4.0", ...o,
+  topic: "daily", lemma: "avoir", rank: 6, sourceUrl: "https://fr.wiktionary.org/wiki/avoir#fr", license: "CC BY-SA 4.0", gender: null as "masculine" | "feminine" | null, ...o,
 });
 
 beforeEach(() => { process.env.SYNC_TOKEN = token; });

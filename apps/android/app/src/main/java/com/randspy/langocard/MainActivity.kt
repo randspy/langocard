@@ -72,6 +72,8 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
     val current = model.prompt
     var revealed by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
     var played by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
+    /** The article chosen on a Gender card; choosing reveals the answer. */
+    var chosen by remember(current?.key, model.sessionReviews) { mutableStateOf<Gender?>(null) }
     ModalNavigationDrawer(
         drawerState = drawer,
         gesturesEnabled = model.screen == "home",
@@ -104,7 +106,8 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
     ) {
     Scaffold(bottomBar = {
         if (model.screen == "review" && current != null) {
-            ReviewControls(model, speech, revealed,
+            if (current.skill == Skill.Gender) GenderControls(model, speech, chosen) { chosen = it }
+            else ReviewControls(model, speech, revealed,
                 canReveal = current.skill != Skill.Listening || (played && !speech.speaking && speech.available),
                 reveal = { revealed = true })
         }
@@ -130,7 +133,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
-                "review" -> Review(model, speech, revealed, played) { played = speech.say(current!!.entry.example) || played }
+                "review" -> Review(model, speech, revealed || chosen != null, played, chosen) { played = speech.say(current!!.entry.example) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
                     Text("${model.sessionReviews} assessments · ${model.sessionRecalled} recalled")
@@ -181,7 +184,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
 }
 
 @Composable
-private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, play: () -> Unit) {
+private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, chosen: Gender?, play: () -> Unit) {
     val p = model.prompt ?: return
     DisposableEffect(p.key) { onDispose { speech.stop() } }
     Text(if (model.isPlacement) "STARTING CHECK · ${model.placementProgress}" else "DAILY PRACTICE · ${model.spent / 60} / 15 min",
@@ -198,7 +201,12 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                 Skill.Production -> {
                     Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
                     Text(p.entry.cloze, style = MaterialTheme.typography.titleLarge)
-                    Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence.", style = MaterialTheme.typography.bodySmall)
+                    Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
+                }
+                Skill.Gender -> {
+                    Text(Gender.noun(p.entry.word), style = MaterialTheme.typography.headlineMedium)
+                    Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
+                    Text("Un or une?", style = MaterialTheme.typography.bodySmall)
                 }
                 Skill.Listening -> {
                     Text("Listen, then recall the meaning.", style = MaterialTheme.typography.titleLarge)
@@ -213,7 +221,13 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
             }
             if (revealed) {
                 HorizontalDivider()
-                Text(p.entry.word, style = MaterialTheme.typography.headlineMedium)
+                if (chosen != null && p.entry.gender != null) {
+                    val right = chosen == p.entry.gender
+                    Text(if (right) "✓ Right" else "✗ Not ${chosen.article}",
+                        color = if (right) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.titleMedium)
+                }
+                Text(p.entry.labelledWord, style = MaterialTheme.typography.headlineMedium)
                 if (!p.entry.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.entry.answer}")
                 Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
                 Text(p.entry.definition)
@@ -223,6 +237,24 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
         }
     }
     TextButton(onClick = { speech.stop(); model.finish() }) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+}
+
+/** A Gender card grades itself: choose un or une, see the answer, then go on. */
+@Composable
+private fun GenderControls(model: LearningModel, speech: FrenchSpeech, chosen: Gender?, choose: (Gender) -> Unit) {
+    val p = model.prompt ?: return
+    val gender = p.entry.gender ?: return
+    Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (chosen == null) Gender.entries.forEach { option ->
+                OutlinedButton(onClick = { choose(option) }, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
+                    Text(option.article, style = MaterialTheme.typography.titleLarge)
+                }
+            } else Button(onClick = { speech.stop(); model.rate(gender.grade(chosen), speech.available) },
+                modifier = Modifier.weight(1f).heightIn(min = 56.dp)) { Text("Next") }
+        }
+    }
 }
 
 /** Kept outside the scrolling card so every rating remains reachable without scrolling. */
@@ -275,7 +307,7 @@ private fun Library(model: LearningModel, speech: FrenchSpeech, alwaysOpen: Bool
         }
         matches.drop(shownPage * 50).take(50).forEach { entry ->
             HorizontalDivider()
-            Text(entry.word, style = MaterialTheme.typography.titleMedium)
+            Text(entry.labelledWord, style = MaterialTheme.typography.titleMedium)
             Text(entry.english)
             Text(entry.definition)
             Text(entry.example)

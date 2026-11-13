@@ -36,6 +36,8 @@ export const get = query({
     const { _id, _creationTime, updatedAt, ...row } = entry;
     return {
       ...row,
+      ...contentOf(row),
+      shipped: row.shipped && contentOf(row.shipped),
       edited: row.shipped !== null && !sameContent(contentOf(row), row.shipped),
       deleted: isDeleted(row),
     };
@@ -98,7 +100,7 @@ export const upstreamChanges = query({
     const rows = await ctx.db.query("entries").withIndex("by_upstreamChanged", (q) => q.eq("upstreamChanged", true)).take(1000);
     return rows
       .filter((row) => row.shipped !== null && !isDeleted(row))
-      .map((row) => ({ entryId: row.entryId, origin: row.origin, mine: contentOf(row), theirs: row.shipped! }))
+      .map((row) => ({ entryId: row.entryId, origin: row.origin, mine: contentOf(row), theirs: contentOf(row.shipped!) }))
       .sort((a, b) => a.mine.word.localeCompare(b.mine.word, "fr"));
   },
 });
@@ -116,7 +118,7 @@ export const resolveUpstream = mutation({
     if (choice === "keepMine") {
       await ctx.db.patch(entry._id, { upstreamChanged: false, updatedAt: Date.now() });
     } else {
-      await ctx.db.patch(entry._id, { ...entry.shipped, editedAt: nextClock(entry), upstreamChanged: false, updatedAt: Date.now() });
+      await ctx.db.patch(entry._id, { ...contentOf(entry.shipped), editedAt: nextClock(entry), upstreamChanged: false, updatedAt: Date.now() });
     }
   },
 });

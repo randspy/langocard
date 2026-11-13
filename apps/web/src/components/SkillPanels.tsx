@@ -12,7 +12,7 @@ import { useAsyncAction } from "@/lib/useAsyncAction";
 export type SkillCard = FunctionReturnType<typeof api.cards.forEntry>[number];
 
 export type CardActions = {
-  /** `until: null` suspends indefinitely; `skill` undefined applies to all three skills. */
+  /** `until: null` suspends indefinitely; `skill` undefined applies to all of the entry's skills. */
   suspend: (skill: Skill | undefined, until: number | null) => Promise<void>;
   resume: (skill: Skill | undefined) => Promise<void>;
   reset: (skill: Skill) => Promise<void>;

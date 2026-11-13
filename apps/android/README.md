@@ -70,6 +70,10 @@ The measured coverage and preparation pipeline are documented in
   production; it seeds only those assessed cards, not an inferred B2 vocabulary.
   Pausing/restarting preserves the position. Unassessed entries start fresh.
 - Reading, listening and sentence-gap production use distinct FSRS cards.
+  Nouns also get a Gender card (choose *un* or *une*, graded by the app: right is
+  Good, wrong is Again), for one meaning per noun. Gender cards arrive as a sibling
+  skill on a later day, at most ten new ones a day. In production, the right word
+  with the wrong article is rated Hard. See `../../docs/design/noun-gender.md`.
   The pinned MIT-licensed `io.github.open-spaced-repetition:fsrs:1.0.0`
   ([Java-FSRS](https://github.com/open-spaced-repetition/java-fsrs)) schedules at
   90% desired retention using default parameters. Model fitting is deferred.

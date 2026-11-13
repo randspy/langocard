@@ -2,7 +2,8 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { requireToken } from "./access";
 import { parseCard, parseReviewLog } from "./cardState";
-import { SKILLS, type Skill } from "./skills";
+import { contentOf } from "./entryRules";
+import { SKILLS, skillsOf, type Skill } from "./skills";
 import { SUSPENDED_INDEFINITELY, resetCard } from "./merge";
 
 /**
@@ -18,7 +19,9 @@ export const forEntry = query({
   args: { token: v.string(), entryId: v.string() },
   handler: async (ctx, { token, entryId }) => {
     requireToken(token);
-    return Promise.all(SKILLS.map(async (skill) => {
+    const entry = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique();
+    const skills = entry ? skillsOf(contentOf(entry)) : SKILLS;
+    return Promise.all(skills.map(async (skill) => {
       const key = `${entryId}:${skill}`;
       const row = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
       const reviews = (await ctx.db.query("reviews").withIndex("by_key", (q) => q.eq("key", key)).order("desc").take(HISTORY))
@@ -42,7 +45,7 @@ export const forEntry = query({
 async function cardRows(ctx: MutationCtx, entryId: string, skill: Skill | undefined) {
   const entry = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique();
   if (!entry) throw new ConvexError("Entry not found");
-  return Promise.all((skill ? [skill] : SKILLS).map(async (s) => {
+  return Promise.all((skill ? [skill] : skillsOf(contentOf(entry))).map(async (s) => {
     const key = `${entryId}:${s}`;
     return { key, row: await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique() };
   }));

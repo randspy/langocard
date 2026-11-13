@@ -117,7 +117,7 @@ export const pull = query({
       page: result.page.map(({ _id, _creationTime, ...row }) => {
         if ("shipped" in row) {
           const { shipped: _, ...entry } = row;
-          return entry;
+          return { ...entry, ...contentOf(entry) };
         }
         return row;
       }),

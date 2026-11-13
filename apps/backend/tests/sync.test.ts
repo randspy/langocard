@@ -14,9 +14,9 @@ const settings: Settings = {
 };
 const card = (o: Partial<{ card: string | null; lastReview: number; failures: number; pausedUntil: number; suspendedUntil: number; cardEditedAt: number }> = {}) =>
   ({ key: "e1:Reading", card: '{"v":1}', lastReview: 100, failures: 0, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0, ...o });
-const entry = (o: Partial<{ entryId: string; word: string; editedAt: number | null; deletedAt: number | null }> = {}) => ({
+const entry = (o: Partial<{ entryId: string; word: string; gender: "masculine" | "feminine" | null; editedAt: number | null; deletedAt: number | null }> = {}) => ({
   entryId: "personal-1", word: "pourtant", english: "however", definition: "Malgré cela.", example: "Il pleut, {pourtant} elle sort.",
-  topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", editedAt: null, deletedAt: null, ...o,
+  topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null as "masculine" | "feminine" | null, editedAt: null, deletedAt: null, ...o,
 });
 
 beforeEach(() => { process.env.SYNC_TOKEN = token; });

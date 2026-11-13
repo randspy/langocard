@@ -11,7 +11,14 @@ export const entryContent = {
   rank: v.union(v.number(), v.null()),
   sourceUrl: v.string(),
   license: v.string(),
+  gender: v.union(v.literal("masculine"), v.literal("feminine"), v.null()),
 };
+
+/**
+ * Entry content as stored. `gender` is missing only on rows written before it existed,
+ * until `migrations:fillGender` runs; `contentOf` reads them with the article gender.
+ */
+export const storedEntryContent = { ...entryContent, gender: v.optional(entryContent.gender) };
 
 /** Edit clocks on an entry. The later of the two decides between versions. */
 export const entryClocks = {

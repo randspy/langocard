@@ -82,7 +82,8 @@ def candidates(record,lemma,finite):
         yield dict(id='frw-'+stable,word=display,english='; '.join(translations[:3]),definition=definition,
                    example=min(examples,key=len),topic='daily',lemma=word,rank=lemma['rank'],
                    sourceUrl='https://fr.wiktionary.org/wiki/'+quote(word,safe='')+'#fr',
-                   license='CC BY-SA 4.0',sourceSense=index,sourcePos=pos)
+                   license='CC BY-SA 4.0',sourceSense=index,sourcePos=pos,
+                   gender=({'m':'masculine','f':'feminine'}[lemma['genders'][0]] if pos=='noun' else None))
 
 def build(lexique,dictionary,output,limit=20000):
     lock=json.loads((Path(__file__).resolve().parents[2]/'content/sources.lock.json').read_text())

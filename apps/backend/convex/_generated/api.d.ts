@@ -15,7 +15,9 @@ import type * as entries from "../entries.js";
 import type * as entryRules from "../entryRules.js";
 import type * as library from "../library.js";
 import type * as merge from "../merge.js";
+import type * as migrations from "../migrations.js";
 import type * as seed from "../seed.js";
+import type * as skills from "../skills.js";
 import type * as sync from "../sync.js";
 import type * as validators from "../validators.js";
 
@@ -33,7 +35,9 @@ declare const fullApi: ApiFromModules<{
   entryRules: typeof entryRules;
   library: typeof library;
   merge: typeof merge;
+  migrations: typeof migrations;
   seed: typeof seed;
+  skills: typeof skills;
   sync: typeof sync;
   validators: typeof validators;
 }>;

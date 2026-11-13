@@ -1,6 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
+import { cardFields, entryClocks, settingsFields, storedEntryContent } from "./validators";
 
 /**
  * Cloud copy of one learner's study data (sync protocol v2). Each row carries
@@ -32,12 +32,12 @@ export default defineSchema({
   // The whole library: bundled and pack entries (seeded from the repo) and personal entries.
   entries: defineTable({
     entryId: v.string(),
-    ...entryContent,
+    ...storedEntryContent,
     ...entryClocks,
     /** "bundled", "personal" or "pack:<packId>". */
     origin: v.string(),
     /** Latest shipped content for seeded entries; null for personal entries. */
-    shipped: v.union(v.object(entryContent), v.null()),
+    shipped: v.union(v.object(storedEntryContent), v.null()),
     /** Shipped content changed after the learner edited the entry. */
     upstreamChanged: v.boolean(),
     /** No longer in the shipped content. Kept for its history; not introduced as new. */

@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from "react";
-import { TOPICS, answerOf, clozeOf, entryErrors, sameContent, type EntryContent, type RuleError } from "@backend/entryRules";
+import { GENDERS, TOPICS, answerOf, articleGender, clozeOf, entryErrors, sameContent, type EntryContent, type Gender, type RuleError } from "@backend/entryRules";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import { GENDER_LABELS } from "@/lib/library";
 import { useAsyncAction } from "@/lib/useAsyncAction";
 
 /** The content the learner edits here; rank and source metadata come with the entry. */
-type Field = "word" | "english" | "definition" | "example" | "topic" | "lemma";
-const FIELDS: { field: Field; label: string; hint?: string; control: "input" | "textarea" | "topic" }[] = [
+type Field = "word" | "gender" | "english" | "definition" | "example" | "topic" | "lemma";
+const FIELDS: { field: Field; label: string; hint?: string; control: "input" | "textarea" | "topic" | "gender" }[] = [
   { field: "word", label: "French word or phrase", hint: "Include the article for nouns, e.g. “une rencontre”.", control: "input" },
+  { field: "gender", label: "Gender", hint: "Nouns get a Gender card on the phone: choose un or une.", control: "gender" },
   { field: "english", label: "English", control: "input" },
   { field: "definition", label: "Definition", control: "textarea" },
   { field: "example", label: "Example", hint: "Mark the answer with {braces}: “Il pleut, {pourtant} elle sort.”", control: "textarea" },
@@ -37,7 +39,15 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit }:
   const errorFor = (field: Field): RuleError | undefined =>
     submitted || touched.has(field) ? errors.find((e) => e.field === field) : undefined;
   const unchanged = sameContent(content, initial);
-  const set = (field: Field, value: string) => { setContent({ ...content, [field]: value }); setSavedAt(null); };
+  // A new entry's gender follows the article typed in the word until the learner picks one.
+  const [genderChosen, setGenderChosen] = useState(initial.word !== "");
+  const set = (field: Field, value: string) => {
+    const next = field === "gender" ? { ...content, gender: (value || null) as Gender | null } : { ...content, [field]: value };
+    if (field === "gender") setGenderChosen(true);
+    if (field === "word" && !genderChosen) next.gender = articleGender(value);
+    setContent(next);
+    setSavedAt(null);
+  };
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -54,7 +64,7 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit }:
           const id = `entry-${field}`;
           const props = {
             id,
-            value: content[field],
+            value: content[field] ?? "",
             "aria-invalid": error ? true : undefined,
             "aria-describedby": `${id}-hint ${id}-error`,
             onBlur: () => setTouched(new Set(touched).add(field)),
@@ -65,6 +75,12 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit }:
               <Label htmlFor={id}>{label}</Label>
               {control === "input" && <Input {...props} />}
               {control === "textarea" && <Textarea {...props} />}
+              {control === "gender" && (
+                <Select {...props} className="block">
+                  <option value="">Not a noun</option>
+                  {GENDERS.map((gender) => <option key={gender} value={gender}>{GENDER_LABELS[gender]}</option>)}
+                </Select>
+              )}
               {control === "topic" && (
                 <Select {...props} className="block">
                   {TOPICS.map((topic) => <option key={topic} value={topic} className="capitalize">{topic}</option>)}

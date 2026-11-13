@@ -9,6 +9,7 @@ import { LibraryView } from "./LibraryView";
 const entries = [
   libraryEntry({ entryId: "a", word: "pourtant", english: "however", rank: 20,
     skills: { Reading: { due: NOW - DAY, state: "REVIEW", pausedUntil: 0, suspendedUntil: 0 } } }),
+  libraryEntry({ entryId: "c", word: "une intrigue", english: "a plot", rank: 3000, gender: "feminine" }),
   libraryEntry({ entryId: "b", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-source-extended-2026-11-v1", installed: false }),
 ];
 
@@ -28,15 +29,23 @@ describe("LibraryView", () => {
     const row = screen.getByText("pourtant").closest("tr")!;
     expect(within(row).getByText("Due")).toBeInTheDocument();
     expect(within(row).getAllByText("New")).toHaveLength(2);
+    expect(within(row).getByTitle("Gender: not a noun")).toHaveTextContent("—");
     expect(screen.getByText(/not installed/)).toBeInTheDocument();
-    expect(screen.getByText("2 of 2 entries")).toBeInTheDocument();
+    expect(screen.getByText("3 of 3 entries")).toBeInTheDocument();
+  });
+
+  test("tags nouns with their gender and gives them a Gender card", () => {
+    render(<Harness />);
+    const row = screen.getByText("une intrigue").closest("tr")!;
+    expect(within(row).getByText("f.")).toBeInTheDocument();
+    expect(within(row).getAllByText("New")).toHaveLength(4);
   });
 
   test("searching narrows the list and updates the search params", async () => {
     render(<Harness />);
     await userEvent.type(screen.getByRole("searchbox", { name: /search/i }), "reli");
     expect(screen.queryByText("pourtant")).not.toBeInTheDocument();
-    expect(screen.getByText("1 of 2 entries")).toBeInTheDocument();
+    expect(screen.getByText("1 of 3 entries")).toBeInTheDocument();
     expect(screen.getByTestId("search")).toHaveTextContent('{"q":"reli"}');
   });
 

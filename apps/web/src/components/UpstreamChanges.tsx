@@ -11,7 +11,7 @@ export type Choice = "keepMine" | "takeTheirs";
 
 const FIELD_LABELS: Record<keyof EntryContent, string> = {
   word: "Word", english: "English", definition: "Definition", example: "Example", topic: "Topic",
-  lemma: "Lemma", rank: "Rank", sourceUrl: "Source", license: "License",
+  lemma: "Lemma", rank: "Rank", sourceUrl: "Source", license: "License", gender: "Gender",
 };
 
 export function UpstreamChanges({ changes, onResolve }: { changes: UpstreamChange[]; onResolve: (entryId: string, choice: Choice) => Promise<void> }) {

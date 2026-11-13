@@ -26,5 +26,5 @@ export function withToken(t: T, token = TOKEN) {
 
 export const shipped = (o: Record<string, unknown> = {}) => ({
   entryId: "frw-1", origin: "bundled", word: "avoir", english: "have", definition: "Posséder.", example: "{Avoir} de la force.",
-  topic: "daily", lemma: "avoir", rank: 6 as number | null, sourceUrl: "https://fr.wiktionary.org/wiki/avoir#fr", license: "CC BY-SA 4.0", ...o,
+  topic: "daily", lemma: "avoir", rank: 6 as number | null, sourceUrl: "https://fr.wiktionary.org/wiki/avoir#fr", license: "CC BY-SA 4.0", gender: null as "masculine" | "feminine" | null, ...o,
 });

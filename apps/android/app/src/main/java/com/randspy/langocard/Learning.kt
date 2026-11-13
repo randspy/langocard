@@ -22,18 +22,32 @@ import java.time.Instant
 data class Entry(val id: String, val word: String, val english: String, val definition: String,
                  val markedExample: String, val topic: String,
                  val lemma: String = "", val rank: Int = Int.MAX_VALUE,
-                 val sourceUrl: String = "", val license: String = "") {
+                 val sourceUrl: String = "", val license: String = "", val gender: Gender? = null) {
     val lexeme get() = lemma.ifBlank { word.removePrefix("un ").removePrefix("une ") }
+    /** The skills this entry has cards for: Gender only for nouns. */
+    val skills get() = if (gender == null) Skill.entries - Skill.Gender else Skill.entries
+    /** [word] with its gender tag for nouns: "une intrigue (f.)". */
+    val labelledWord get() = gender?.let { "$word (${it.tag})" } ?: word
     val answer get() = markedExample.substringAfter("{").substringBefore("}")
     val example get() = markedExample.replace("{", "").replace("}", "")
     val cloze get() = markedExample.replace("{$answer}", "________")
 }
-enum class Skill(val label: String) { Reading("Read"), Listening("Listen"), Production("Speak") }
+enum class Skill(val label: String) {
+    Reading("Read"), Listening("Listen"), Production("Speak"),
+    /** Choosing un or une for a noun; graded by the app, not the learner. */
+    Gender("Gender");
+    companion object {
+        /** The placement check samples these; Gender isn't part of it. */
+        val placement = listOf(Reading, Listening, Production)
+    }
+}
 data class Prompt(val entry: Entry, val skill: Skill) { val key get() = "${entry.id}:${skill.name}" }
 
 object StudyPolicy {
     const val DAILY_SECONDS = 15 * 60
     const val NEW_SENSES = 5
+    /** New Gender cards a day, counted apart from new meanings; they take seconds each. */
+    const val NEW_GENDER_CARDS = 10
     fun canIntroduce(overdue: Int, seconds: Int, introduced: Int) =
         overdue == 0 && seconds < DAILY_SECONDS && introduced < NEW_SENSES
     fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
@@ -43,7 +57,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private val pilot = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
         lines.filter { it.isNotBlank() }.map { line ->
             val c = line.split('|'); require(c.size == 6)
-            Entry(c[0], c[1], c[2], c[3], c[4], c[5])
+            Entry(c[0], c[1], c[2], c[3], c[4], c[5], gender = Gender.ofArticle(c[1]))
         }.toList().also { require(it.size == 200 && it.map(Entry::id).distinct().size == 200) }
     }
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
@@ -106,20 +120,26 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private fun today() = StudyPolicy.date(Instant.now())
     private fun rollover() {
         if (data.optString("day") != today()) {
-            data.put("day", today()).put("seconds", 0).put("introduced", 0)
+            data.put("day", today()).put("seconds", 0).put("introduced", 0).put("genderIntroduced", 0)
         }
     }
     val spent: Int get() { rollover(); return data.optInt("seconds") }
-    val studied get() = entries.count { e -> Skill.entries.any { cards.has("${e.id}:${it.name}") } }
+    val studied get() = entries.count { e -> e.skills.any { cards.has("${e.id}:${it.name}") } }
     val pausedCount get() = paused.keys().asSequence().count { paused.optLong(it) > System.currentTimeMillis() }
     val suspendedCount get() = suspended.let { s -> s.keys().asSequence().count { s.optLong(it) > System.currentTimeMillis() } }
     fun state(p: Prompt): MemoryCard? = memory[p.key]
-    private fun eligible(p: Prompt, audio: Boolean) = (p.skill != Skill.Listening || audio) &&
-        paused.optLong(p.key) <= System.currentTimeMillis() && suspended.optLong(p.key) <= System.currentTimeMillis()
-    fun dueCount(audio: Boolean): Int = entries.sumOf { e -> Skill.entries.count { skill ->
-        val p = Prompt(e, skill)
-        eligible(p, audio) && (state(p)?.due?.let { !it.isAfter(Instant.now()) } == true)
-    } }
+    /** Meanings whose Gender card is studied; see [GenderCards]. */
+    private fun genderOwners() = GenderCards.owners(entries) { memory[it]?.cardId }
+    /** Every card that could be studied now, before burying and scheduling. */
+    private fun prompts(audio: Boolean): List<Prompt> {
+        val owners = genderOwners()
+        val now = System.currentTimeMillis()
+        return entries.flatMap { e -> e.skills.map { Prompt(e, it) } }.filter { p ->
+            (p.skill != Skill.Listening || audio) && (p.skill != Skill.Gender || p.entry.id in owners) &&
+                paused.optLong(p.key) <= now && suspended.optLong(p.key) <= now
+        }
+    }
+    fun dueCount(audio: Boolean): Int = prompts(audio).count { p -> state(p)?.due?.let { !it.isAfter(Instant.now()) } == true }
     private fun save() {
         val stream = file.startWrite()
         try { stream.write(data.toString().toByteArray()); file.finishWrite(stream) }
@@ -182,8 +202,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val sources = data.optJSONArray("sources") ?: return false
         return (0 until sources.length()).any { sources.getJSONObject(it).optString("packId") == id }
     }
-    fun addEntry(word: String, english: String, definition: String, example: String) {
-        val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(), example.trim(), "daily")
+    fun addEntry(word: String, english: String, definition: String, example: String, gender: Gender?) {
+        val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(), example.trim(), "daily", gender = gender)
         ContentFiles.validateEntry(entry)
         val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
         extra.put(ContentFiles.entryJson(entry)); save(); rebuildEntries()
@@ -229,22 +249,24 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private fun next(audio: Boolean) {
         if (placing) {
             while (placementIndex < 18) {
-                val p = Prompt(placementEntries[placementIndex % 6], Skill.entries[placementIndex / 6])
+                val p = Prompt(placementEntries[placementIndex % 6], Skill.placement[placementIndex / 6])
                 if (p.skill != Skill.Listening || audio) { prompt = p; return }
                 placementIndex++ // unavailable audio remains unassessed, not marked known
             }
             data.put("placementDone", true); finish(); return
         }
-        val all = entries.flatMap { e -> Skill.entries.map { Prompt(e, it) } }
-        val available = all.filter { eligible(it, audio) && buried.optString(it.key) != today() }
+        val available = prompts(audio).filter { buried.optString(it.key) != today() }
         val due = available.filter { state(it)?.due?.let { date -> !date.isAfter(Instant.now()) } == true }
             .minByOrNull { state(it)!!.due }
         if (due != null) { prompt = due; return }
         // Existing senses gain additional skills on later days, before new senses.
-        val sibling = available.firstOrNull { p -> state(p) == null && Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }
+        // Gender comes last, a few a day: it needs the meaning to be familiar first.
+        val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
+        val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
+            Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
         if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) { prompt = sibling; return }
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            prompt = available.filter { state(it) == null && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
+            prompt = available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
             if (prompt != null) return
         }
         finish()
@@ -252,6 +274,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun rate(rating: Rating, audio: Boolean) {
         val p = prompt ?: return
         val wasNewSense = Skill.entries.none { cards.has("${p.entry.id}:${it.name}") }
+        if (p.skill == Skill.Gender && state(p) == null && !placing) data.put("genderIntroduced", data.optInt("genderIntroduced") + 1)
         val card = state(p) ?: MemoryCard.builder().cardId(nextCardId).build()
         if (state(p) == null) { nextCardId++; data.put("nextCardId", nextCardId) }
         val result = scheduler.reviewCard(card, rating)
@@ -265,10 +288,14 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         if (!placing) {
             // Bury siblings only: a failed card itself may return at its real FSRS due time.
             entries.filter { it.lexeme == p.entry.lexeme }.forEach { related ->
-                Skill.entries.filter { related.id != p.entry.id || it != p.skill }.forEach { buried.put("${related.id}:${it.name}", today()) }
+                related.skills.filter { related.id != p.entry.id || it != p.skill }.forEach { buried.put("${related.id}:${it.name}", today()) }
             }
             if (wasNewSense) data.put("introduced", data.optInt("introduced") + 1)
-        } else { placementIndex++; data.put("placementIndex", placementIndex) }
+        } else {
+            placementIndex++; data.put("placementIndex", placementIndex)
+            // Placement starts the noun, so its Gender card waits for a later day like any sibling.
+            if (p.entry.gender != null) buried.put("${p.entry.id}:${Skill.Gender.name}", today())
+        }
         sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
         save(); next(audio)
     }
