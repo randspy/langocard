@@ -1,8 +1,8 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { contentOf, entryErrors, sameContent, type EntryContent } from "./entryRules";
+import { requireToken } from "./access";
 import { entryVersion, isDeleted } from "./merge";
-import { requireOwner } from "./owner";
 import { entryContent } from "./validators";
 
 /**
@@ -28,9 +28,9 @@ function nextClock(entry: { editedAt: number | null; deletedAt: number | null })
 }
 
 export const get = query({
-  args: { entryId: v.string() },
-  handler: async (ctx, { entryId }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string() },
+  handler: async (ctx, { token, entryId }) => {
+    requireToken(token);
     const entry = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique();
     if (!entry) return null;
     const { _id, _creationTime, updatedAt, ...row } = entry;
@@ -43,9 +43,9 @@ export const get = query({
 });
 
 export const create = mutation({
-  args: entryContent,
-  handler: async (ctx, content) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), ...entryContent },
+  handler: async (ctx, { token, ...content }) => {
+    requireToken(token);
     const entryId = `personal-${crypto.randomUUID()}`;
     assertValid(entryId, content);
     await ctx.db.insert("entries", {
@@ -57,9 +57,9 @@ export const create = mutation({
 });
 
 export const update = mutation({
-  args: { entryId: v.string(), ...entryContent },
-  handler: async (ctx, { entryId, ...content }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string(), ...entryContent },
+  handler: async (ctx, { token, entryId, ...content }) => {
+    requireToken(token);
     assertValid(entryId, content);
     const entry = await load(ctx, entryId);
     if (isDeleted(entry)) throw new ConvexError("Restore the entry before editing it");
@@ -71,9 +71,9 @@ export const update = mutation({
 });
 
 export const remove = mutation({
-  args: { entryId: v.string() },
-  handler: async (ctx, { entryId }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string() },
+  handler: async (ctx, { token, entryId }) => {
+    requireToken(token);
     const entry = await load(ctx, entryId);
     if (isDeleted(entry)) return;
     await ctx.db.patch(entry._id, { deletedAt: nextClock(entry), updatedAt: Date.now() });
@@ -81,9 +81,9 @@ export const remove = mutation({
 });
 
 export const restore = mutation({
-  args: { entryId: v.string() },
-  handler: async (ctx, { entryId }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string() },
+  handler: async (ctx, { token, entryId }) => {
+    requireToken(token);
     const entry = await load(ctx, entryId);
     if (!isDeleted(entry)) return;
     await ctx.db.patch(entry._id, { editedAt: nextClock(entry), updatedAt: Date.now() });
@@ -92,9 +92,9 @@ export const restore = mutation({
 
 /** Edited entries whose shipped content changed since, with both versions to compare. */
 export const upstreamChanges = query({
-  args: {},
-  handler: async (ctx) => {
-    await requireOwner(ctx);
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    requireToken(token);
     const rows = await ctx.db.query("entries").withIndex("by_upstreamChanged", (q) => q.eq("upstreamChanged", true)).take(1000);
     return rows
       .filter((row) => row.shipped !== null && !isDeleted(row))
@@ -108,9 +108,9 @@ export const upstreamChanges = query({
  * the shipped content, after which the entry follows future content updates again.
  */
 export const resolveUpstream = mutation({
-  args: { entryId: v.string(), choice: v.union(v.literal("keepMine"), v.literal("takeTheirs")) },
-  handler: async (ctx, { entryId, choice }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string(), choice: v.union(v.literal("keepMine"), v.literal("takeTheirs")) },
+  handler: async (ctx, { token, entryId, choice }) => {
+    requireToken(token);
     const entry = await load(ctx, entryId);
     if (!entry.upstreamChanged || !entry.shipped) return;
     if (choice === "keepMine") {

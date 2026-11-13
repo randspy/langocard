@@ -1,4 +1,3 @@
-import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
@@ -9,9 +8,6 @@ import { cardFields, entryClocks, entryContent, settingsFields } from "./validat
  * since their previous sync. Merge rules live in `merge.ts`.
  */
 export default defineSchema({
-  // Web app sign-in (Convex Auth). Access is limited by `requireOwner` in owner.ts.
-  ...authTables,
-
   // One FSRS card per "<entryId>:<Skill>". Review fields and manual fields merge separately.
   cards: defineTable({
     key: v.string(),

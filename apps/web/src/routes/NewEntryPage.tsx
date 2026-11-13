@@ -1,15 +1,15 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
 import { api } from "@backend/_generated/api";
 import type { EntryContent } from "@backend/entryRules";
 import { EntryForm } from "@/components/EntryForm";
+import { useTokenMutation } from "@/lib/convex";
 
 const EMPTY: EntryContent = {
   word: "", english: "", definition: "", example: "", topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "",
 };
 
 export function NewEntryPage() {
-  const create = useMutation(api.entries.create);
+  const create = useTokenMutation(api.entries.create);
   const navigate = useNavigate();
   return (
     <section className="max-w-2xl space-y-6">

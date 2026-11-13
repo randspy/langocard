@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { SUSPENDED_INDEFINITELY } from "../convex/merge";
-import { OWNER_GITHUB_ID, setup, shipped, signIn, type T } from "./helpers";
+import { TOKEN, setup, shipped, withToken, type T } from "./helpers";
 
-const token = "test-token";
+const token = TOKEN;
 const empty = { cards: [], reviews: [], entries: [], sources: [], buried: [] };
-beforeEach(() => { process.env.ALLOWED_GITHUB_ID = OWNER_GITHUB_ID; process.env.SYNC_TOKEN = token; });
-afterEach(() => { delete process.env.ALLOWED_GITHUB_ID; delete process.env.SYNC_TOKEN; });
+beforeEach(() => { process.env.SYNC_TOKEN = token; });
+afterEach(() => { delete process.env.SYNC_TOKEN; });
 
 const reviewedCard = (lastReview: string) =>
   JSON.stringify({ cardId: 1, state: "REVIEW", step: null, stability: 4, difficulty: 5, due: "2026-11-20T08:00:00Z", lastReview });
@@ -20,7 +20,7 @@ async function setupWithCard(t: T) {
     cards: [{ key: "frw-1:Reading", card: reviewedCard("2026-11-12T08:00:00Z"), lastReview: at, failures: 1, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0 }],
     reviews: [{ reviewId: "r1", key: "frw-1:Reading", placement: false, log: '{"cardId":1,"rating":"GOOD","review_datetime":"2026-11-12T08:00:00Z","reviewDuration":null}' }],
   });
-  return { me: await signIn(t, OWNER_GITHUB_ID), at };
+  return { me: withToken(t), at };
 }
 const pullCards = async (t: T) =>
   (await t.query(api.sync.pull, { token, table: "cards", since: 0, cursor: null })).page as Record<string, unknown>[];
@@ -29,9 +29,9 @@ describe("cards", () => {
   test("refuses anyone but the owner", async () => {
     const t = setup();
     await setupWithCard(t);
-    const stranger = await signIn(t, "999");
-    await expect(stranger.mutation(api.cards.reset, { entryId: "frw-1" })).rejects.toThrow(/isn't allowed/);
-    await expect(stranger.query(api.cards.forEntry, { entryId: "frw-1" })).rejects.toThrow(/isn't allowed/);
+    const stranger = withToken(t, "wrong-token");
+    await expect(stranger.mutation(api.cards.reset, { entryId: "frw-1" })).rejects.toThrow(/Invalid sync token/);
+    await expect(stranger.query(api.cards.forEntry, { entryId: "frw-1" })).rejects.toThrow(/Invalid sync token/);
   });
 
   test("shows each skill's state and review history", async () => {

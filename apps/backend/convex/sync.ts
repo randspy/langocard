@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireToken } from "./access";
 import type { DataModel } from "./_generated/dataModel";
 import { contentOf, entryErrors } from "./entryRules";
 import { entryWins, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
@@ -7,15 +8,8 @@ import { cardFields, entryClocks, entryContent, settingsFields } from "./validat
 
 /**
  * Single-user sync API for the Android app (protocol v2). Every call carries the shared
- * secret configured with `npx convex env set SYNC_TOKEN <value>`; there are no accounts.
+ * `SYNC_TOKEN` (see access.ts).
  */
-function requireToken(token: string) {
-  const expected = process.env.SYNC_TOKEN;
-  if (!expected) throw new ConvexError("SYNC_TOKEN is not configured on the deployment");
-  let diff = token.length ^ expected.length;
-  for (let i = 0; i < expected.length; i++) diff |= (token.charCodeAt(i) || 0) ^ expected.charCodeAt(i);
-  if (diff !== 0) throw new ConvexError("Invalid sync token");
-}
 
 const MAX_BATCH = 500;
 

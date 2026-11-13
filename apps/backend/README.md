@@ -7,9 +7,8 @@ Convex also holds the whole vocabulary library, so it can be managed from the we
 
 This is **sync protocol v2** (editable entries and cards). The design is in
 [`docs/design/web-card-management.md`](../../docs/design/web-card-management.md).
-v1 clients are rejected by argument validation. The Android app still speaks v1
-until [#7](https://github.com/randspy/langocard/issues/7) lands, so don't deploy this
-to the deployment your phone syncs with before then.
+v1 clients are rejected by argument validation, so install an APK built from this
+version before syncing with a v2 deployment.
 
 ## What is stored
 
@@ -52,10 +51,11 @@ frequent pack bundled in the APK (origin `bundled`), and the catalogue packs
 
 ## Access
 
-The Android sync functions (`sync:push`, `sync:pull`) check a shared secret against
-the `SYNC_TOKEN` environment variable on the deployment. The web app's functions
-instead require GitHub sign-in (Convex Auth) as the account in `ALLOWED_GITHUB_ID`;
-see [`apps/web/README.md`](../web/README.md) and `npm run setup-web-auth`.
+Every public function checks a shared secret against the `SYNC_TOKEN` environment
+variable on the deployment (`convex/access.ts`): the Android sync functions
+(`sync:push`, `sync:pull`) and the web app's functions alike. There are no accounts.
+`npm run link-android` and `npm run link-web` copy the token into the apps' gitignored
+local settings.
 
 Anyone with the deployment URL and sync token can read and replace your study data,
 so use a long random value and don't commit it.
