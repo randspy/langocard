@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@backend/_generated/api";
 import { CONTENT_FIELDS, type EntryContent } from "@backend/entryRules";
 import { Button } from "@/components/ui/button";
 import { originLabel } from "@/lib/library";
+import { useAsyncAction } from "@/lib/useAsyncAction";
 
 export type UpstreamChange = FunctionReturnType<typeof api.entries.upstreamChanges>[number];
 export type Choice = "keepMine" | "takeTheirs";
@@ -30,14 +30,9 @@ export function UpstreamChanges({ changes, onResolve }: { changes: UpstreamChang
 }
 
 function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (entryId: string, choice: Choice) => Promise<void> }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { run, pending: busy, error } = useAsyncAction();
   const fields = CONTENT_FIELDS.filter((field) => change.mine[field] !== change.theirs[field]);
-  const resolve = async (choice: Choice) => {
-    setBusy(true);
-    setError(null);
-    try { await onResolve(change.entryId, choice); } catch { setError("Couldn't save the choice. Try again."); } finally { setBusy(false); }
-  };
+  const resolve = (choice: Choice) => run(() => onResolve(change.entryId, choice));
 
   return (
     <article className="rounded-lg border border-line bg-white" aria-label={change.mine.word}>
@@ -67,7 +62,7 @@ function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (ent
           ))}
         </tbody>
       </table>
-      {error && <p role="alert" className="px-4 pb-3 text-sm text-danger">{error}</p>}
+      {error && <p role="alert" className="px-4 pb-3 text-sm text-danger">Couldn't save the choice: {error}</p>}
     </article>
   );
 }

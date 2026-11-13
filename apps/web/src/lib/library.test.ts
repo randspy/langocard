@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { SUSPENDED_INDEFINITELY } from "@backend/merge";
 import { DAY, NOW, libraryEntry } from "@/test/fixtures";
 import { filterLibrary, skillStatus, validateSearch } from "./library";
 
@@ -51,10 +52,19 @@ describe("skillStatus", () => {
     expect(skillStatus({ ...summary, pausedUntil: NOW + DAY }, NOW).kind).toBe("paused");
     expect(skillStatus({ ...summary, suspendedUntil: NOW - 1 }, NOW).kind).toBe("due");
   });
+
+  test("a suspension without an end date has no until", () => {
+    expect(skillStatus({ ...summary, suspendedUntil: SUSPENDED_INDEFINITELY }, NOW)).toEqual({ kind: "suspended", until: null });
+    expect(skillStatus({ ...summary, suspendedUntil: NOW + DAY }, NOW)).toEqual({ kind: "suspended", until: NOW + DAY });
+  });
 });
 
 describe("validateSearch", () => {
   test("keeps known values and drops the rest", () => {
     expect(validateSearch({ q: "  ", origin: "pack", topic: "sport", status: "edited", extra: 1 })).toEqual({ origin: "pack", status: "edited" });
+  });
+
+  test("treats the default status as no filter", () => {
+    expect(validateSearch({ status: "active" })).toEqual({});
   });
 });

@@ -2,15 +2,19 @@ import { useState, type FormEvent } from "react";
 import { TOPICS, answerOf, clozeOf, entryErrors, sameContent, type EntryContent, type RuleError } from "@backend/entryRules";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
+import { useAsyncAction } from "@/lib/useAsyncAction";
 
+/** The content the learner edits here; rank and source metadata come with the entry. */
 type Field = "word" | "english" | "definition" | "example" | "topic" | "lemma";
-const FIELDS: { field: Field; label: string; hint?: string; multiline?: boolean }[] = [
-  { field: "word", label: "French word or phrase", hint: "Include the article for nouns, e.g. “une rencontre”." },
-  { field: "english", label: "English" },
-  { field: "definition", label: "Definition", multiline: true },
-  { field: "example", label: "Example", hint: "Mark the answer with {braces}: “Il pleut, {pourtant} elle sort.”", multiline: true },
-  { field: "lemma", label: "Lemma", hint: "Dictionary form, used to group related meanings. Optional." },
+const FIELDS: { field: Field; label: string; hint?: string; control: "input" | "textarea" | "topic" }[] = [
+  { field: "word", label: "French word or phrase", hint: "Include the article for nouns, e.g. “une rencontre”.", control: "input" },
+  { field: "english", label: "English", control: "input" },
+  { field: "definition", label: "Definition", control: "textarea" },
+  { field: "example", label: "Example", hint: "Mark the answer with {braces}: “Il pleut, {pourtant} elle sort.”", control: "textarea" },
+  { field: "lemma", label: "Lemma", hint: "Dictionary form, used to group related meanings. Optional.", control: "input" },
+  { field: "topic", label: "Topic", control: "topic" },
 ];
+const isEditable = (field: string): field is Field => FIELDS.some((f) => f.field === field);
 
 type Props = {
   initial: EntryContent;
@@ -26,8 +30,7 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit }:
   const [content, setContent] = useState(initial);
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const { run, pending: saving, error: serverError } = useAsyncAction();
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const errors = entryErrors(entryId, content);
@@ -40,22 +43,13 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit }:
     event.preventDefault();
     setSubmitted(true);
     if (errors.length > 0 || unchanged) return;
-    setSaving(true);
-    setServerError(null);
-    try {
-      await onSubmit(content);
-      setSavedAt(Date.now());
-    } catch (error) {
-      setServerError(messageOf(error));
-    } finally {
-      setSaving(false);
-    }
+    if (await run(() => onSubmit(content))) setSavedAt(Date.now());
   }
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5">
       <fieldset disabled={disabled || saving} className="space-y-5">
-        {FIELDS.map(({ field, label, hint, multiline }) => {
+        {FIELDS.map(({ field, label, hint, control }) => {
           const error = errorFor(field);
           const id = `entry-${field}`;
           const props = {
@@ -64,30 +58,28 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit }:
             "aria-invalid": error ? true : undefined,
             "aria-describedby": `${id}-hint ${id}-error`,
             onBlur: () => setTouched(new Set(touched).add(field)),
+            onChange: (e: { target: { value: string } }) => set(field, e.target.value),
           };
           return (
             <div key={field} className="space-y-1.5">
               <Label htmlFor={id}>{label}</Label>
-              {multiline
-                ? <Textarea {...props} onChange={(e) => set(field, e.target.value)} />
-                : <Input {...props} onChange={(e) => set(field, e.target.value)} />}
+              {control === "input" && <Input {...props} />}
+              {control === "textarea" && <Textarea {...props} />}
+              {control === "topic" && (
+                <Select {...props} className="block">
+                  {TOPICS.map((topic) => <option key={topic} value={topic} className="capitalize">{topic}</option>)}
+                </Select>
+              )}
               {hint && <p id={`${id}-hint`} className="text-xs text-muted">{hint}</p>}
               {error && <p id={`${id}-error`} className="text-sm text-danger">{error.message}</p>}
             </div>
           );
         })}
-        <div className="space-y-1.5">
-          <Label htmlFor="entry-topic">Topic</Label>
-          <Select id="entry-topic" value={content.topic} onChange={(e) => set("topic", e.target.value)} className="block">
-            {TOPICS.map((topic) => <option key={topic} value={topic} className="capitalize">{topic}</option>)}
-          </Select>
-          {errorFor("topic") && <p className="text-sm text-danger">{errorFor("topic")!.message}</p>}
-        </div>
       </fieldset>
 
       <Preview example={content.example} />
 
-      {submitted && errors.some((e) => e.field === "entryId" || e.field === "rank" || e.field === "license" || e.field === "sourceUrl") && (
+      {submitted && errors.some((e) => !isEditable(e.field)) && (
         <p className="text-sm text-danger">This entry's dictionary metadata is invalid; it can't be saved from here.</p>
       )}
       {serverError && <p role="alert" className="text-sm text-danger">{serverError}</p>}
@@ -109,10 +101,4 @@ function Preview({ example }: { example: string }) {
       <p className="mt-1 text-muted">Answer: <span className="font-medium text-ink">{answer}</span></p>
     </div>
   );
-}
-
-/** Convex errors carry the message the server threw in `data`. */
-export function messageOf(error: unknown): string {
-  if (error && typeof error === "object" && "data" in error && typeof error.data === "string") return error.data;
-  return error instanceof Error ? error.message : "Something went wrong";
 }
