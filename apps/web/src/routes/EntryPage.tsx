@@ -1,13 +1,13 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { useState } from "react";
 import { api } from "@backend/_generated/api";
 import { contentOf } from "@backend/entryRules";
-import { EntryForm, messageOf } from "@/components/EntryForm";
+import { EntryFlags } from "@/components/EntryBadges";
+import { EntryForm } from "@/components/EntryForm";
 import { SkillPanels } from "@/components/SkillPanels";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTokenMutation, useTokenQuery } from "@/lib/convex";
 import { originLabel } from "@/lib/library";
+import { useAsyncAction } from "@/lib/useAsyncAction";
 import { useNow } from "@/lib/useNow";
 
 export function EntryPage() {
@@ -21,20 +21,12 @@ export function EntryPage() {
   const resume = useTokenMutation(api.cards.resume);
   const reset = useTokenMutation(api.cards.reset);
   const now = useNow();
-  const [error, setError] = useState<string | null>(null);
+  const { run, error } = useAsyncAction();
 
   if (entry === undefined) return <p className="text-muted">Loading…</p>;
   if (entry === null) return <NotFound />;
 
-  const toggleDeleted = async () => {
-    setError(null);
-    try {
-      if (entry.deleted) await restore({ entryId });
-      else await remove({ entryId });
-    } catch (e) {
-      setError(messageOf(e));
-    }
-  };
+  const toggleDeleted = () => run(() => entry.deleted ? restore({ entryId }) : remove({ entryId }));
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -43,10 +35,7 @@ export function EntryPage() {
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className={entry.deleted ? "font-serif text-3xl text-muted line-through" : "font-serif text-3xl"}>{entry.word}</h1>
-            {entry.deleted && <Badge tone="danger">Deleted</Badge>}
-            {entry.edited && <Badge>Edited</Badge>}
-            {entry.upstreamChanged && <Badge tone="due">Upstream changed</Badge>}
-            {entry.retired && <Badge>Retired</Badge>}
+            <EntryFlags entry={entry} />
           </div>
           <p className="text-sm text-muted">
             {originLabel(entry.origin)}

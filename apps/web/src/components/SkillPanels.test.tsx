@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
+import { SUSPENDED_INDEFINITELY } from "@backend/merge";
 import { DAY, NOW } from "@/test/fixtures";
 import { SkillPanels, type CardActions, type SkillCard } from "./SkillPanels";
 
@@ -12,7 +13,7 @@ const reviewed: SkillCard = {
 };
 const cards: SkillCard[] = [
   reviewed,
-  { skill: "Listening", card: null, failures: 0, pausedUntil: 0, suspendedUntil: 253_402_300_799_999, reviews: [] },
+  { skill: "Listening", card: null, failures: 0, pausedUntil: 0, suspendedUntil: SUSPENDED_INDEFINITELY, reviews: [] },
   { skill: "Production", card: null, failures: 0, pausedUntil: 0, suspendedUntil: 0, reviews: [] },
 ];
 

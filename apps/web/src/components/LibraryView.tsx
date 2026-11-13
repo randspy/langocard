@@ -1,16 +1,13 @@
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { EntryFlags, SkillBadge } from "@/components/EntryBadges";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import {
-  FILTER_OPTIONS, SKILLS, filterLibrary, formatDate, originLabel, skillStatus,
-  type LibraryEntry, type LibrarySearch, type SkillStatus,
+  FILTERS, SKILLS, SKILL_LABELS, filterLibrary, originLabel, skillStatus,
+  type Filter, type LibraryEntry, type LibrarySearch,
 } from "@/lib/library";
 
 const PAGE = 200;
-const FILTER_LABELS: Record<keyof typeof FILTER_OPTIONS, string> = {
-  origin: "Origin", pack: "Pack", topic: "Topic", status: "Status", rank: "Rank",
-};
 
 type Props = {
   entries: LibraryEntry[];
@@ -39,17 +36,15 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
             onChange={(e) => set({ q: e.target.value || undefined })}
           />
         </div>
-        {(Object.keys(FILTER_OPTIONS) as (keyof typeof FILTER_OPTIONS)[]).map((key) => (
+        {(Object.keys(FILTERS) as Filter[]).map((filter) => (
           <Select
-            key={key}
-            aria-label={FILTER_LABELS[key]}
-            value={search[key] ?? ""}
-            onChange={(e) => set({ [key]: e.target.value || undefined })}
+            key={filter}
+            aria-label={FILTERS[filter].label}
+            value={search[filter] ?? ""}
+            onChange={(e) => set({ [filter]: e.target.value || undefined })}
           >
-            <option value="">{key === "status" ? "Active" : `Any ${FILTER_LABELS[key].toLowerCase()}`}</option>
-            {FILTER_OPTIONS[key].filter(([value]) => !(key === "status" && value === "active")).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
+            <option value="">{FILTERS[filter].unset}</option>
+            {FILTERS[filter].options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
         ))}
         {filtered && <Button variant="ghost" size="sm" onClick={() => { setShown(PAGE); onSearch(search.q ? { q: search.q } : {}); }}>Clear filters</Button>}
@@ -68,7 +63,7 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
               <th className="px-3 py-2 font-medium">Topic</th>
               <th className="px-3 py-2 text-right font-medium">Rank</th>
               <th className="px-3 py-2 font-medium">Origin</th>
-              {SKILLS.map(({ label }) => <th key={label} className="px-3 py-2 font-medium">{label}</th>)}
+              {SKILLS.map((skill) => <th key={skill} className="px-3 py-2 font-medium">{SKILL_LABELS[skill]}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -78,7 +73,7 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
                   <span className={entry.deleted ? "text-muted line-through" : "font-serif text-base"}>
                     {entryLink ? entryLink(entry) : entry.word}
                   </span>
-                  <EntryFlags entry={entry} />
+                  <EntryFlags entry={entry} className="ml-2" />
                 </td>
                 <td className="px-3 py-2 text-muted">{entry.english}</td>
                 <td className="px-3 py-2 capitalize">{entry.topic}</td>
@@ -87,8 +82,8 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
                   {originLabel(entry.origin)}
                   {!entry.installed && <span className="text-muted"> · not installed</span>}
                 </td>
-                {SKILLS.map(({ skill, label }) => (
-                  <td key={skill} className="px-3 py-2"><SkillBadge label={label} status={skillStatus(entry.skills[skill], now)} /></td>
+                {SKILLS.map((skill) => (
+                  <td key={skill} className="px-3 py-2"><SkillBadge label={SKILL_LABELS[skill]} status={skillStatus(entry.skills[skill], now)} /></td>
                 ))}
               </tr>
             ))}
@@ -101,24 +96,4 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
       )}
     </section>
   );
-}
-
-function EntryFlags({ entry }: { entry: LibraryEntry }) {
-  const flags = [
-    entry.deleted && ["Deleted", "danger"],
-    entry.edited && ["Edited", "neutral"],
-    entry.upstreamChanged && ["Upstream changed", "due"],
-    entry.retired && ["Retired", "neutral"],
-  ].filter(Boolean) as [string, "danger" | "neutral" | "due"][];
-  return flags.map(([label, tone]) => <Badge key={label} tone={tone} className="ml-2">{label}</Badge>);
-}
-
-export function SkillBadge({ status, label }: { status: SkillStatus; label: string }) {
-  switch (status.kind) {
-    case "new": return <Badge tone="new" title={`${label}: new`}>New</Badge>;
-    case "due": return <Badge tone="due" title={`${label}: due since ${formatDate(status.due)}`}>Due</Badge>;
-    case "scheduled": return <Badge tone="scheduled" title={`${label}: due ${formatDate(status.due)}`}>{formatDate(status.due)}</Badge>;
-    case "paused": return <Badge tone="paused" title={`${label}: paused after repeated misses until ${formatDate(status.until)}`}>Paused</Badge>;
-    case "suspended": return <Badge tone="suspended" title={`${label}: suspended`}>Suspended</Badge>;
-  }
 }
