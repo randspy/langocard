@@ -1,6 +1,7 @@
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@backend/_generated/api";
-import { SKILLS, type Skill, type SkillSummary } from "@backend/library";
+import type { SkillSummary } from "@backend/library";
+import { SKILLS, type Skill } from "@backend/skills";
 import { SUSPENDED_INDEFINITELY } from "@backend/merge";
 
 export type LibraryEntry = FunctionReturnType<typeof api.library.list>["entries"][number];

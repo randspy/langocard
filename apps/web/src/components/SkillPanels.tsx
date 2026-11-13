@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@backend/_generated/api";
-import type { Skill } from "@backend/library";
+import type { Skill } from "@backend/skills";
 import { SkillBadge } from "@/components/EntryBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
