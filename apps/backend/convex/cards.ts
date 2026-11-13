@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { requireToken } from "./access";
 import { parseCard, parseReviewLog } from "./cardState";
-import { SKILLS, type Skill } from "./library";
+import { SKILLS, type Skill } from "./skills";
 import { SUSPENDED_INDEFINITELY, resetCard } from "./merge";
 
 /**

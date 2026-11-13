@@ -4,9 +4,7 @@ import { requireToken } from "./access";
 import { parseCard } from "./cardState";
 import { contentOf, sameContent } from "./entryRules";
 import { isDeleted } from "./merge";
-
-export const SKILLS = ["Reading", "Listening", "Production"] as const;
-export type Skill = (typeof SKILLS)[number];
+import { SKILLS, type Skill } from "./skills";
 
 /** One skill's schedule as the Library shows it. `due: null` means new (never studied, or reset). */
 export type SkillSummary = { due: number | null; state: string | null; pausedUntil: number; suspendedUntil: number };
