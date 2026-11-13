@@ -291,7 +291,11 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
                 related.skills.filter { related.id != p.entry.id || it != p.skill }.forEach { buried.put("${related.id}:${it.name}", today()) }
             }
             if (wasNewSense) data.put("introduced", data.optInt("introduced") + 1)
-        } else { placementIndex++; data.put("placementIndex", placementIndex) }
+        } else {
+            placementIndex++; data.put("placementIndex", placementIndex)
+            // Placement starts the noun, so its Gender card waits for a later day like any sibling.
+            if (p.entry.gender != null) buried.put("${p.entry.id}:${Skill.Gender.name}", today())
+        }
         sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
         save(); next(audio)
     }
