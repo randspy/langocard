@@ -19,10 +19,6 @@ fun LibraryTools(model: LearningModel, section: String) {
     var message by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var pendingRestore by remember { mutableStateOf<String?>(null) }
-    var word by remember { mutableStateOf("") }
-    var english by remember { mutableStateOf("") }
-    var definition by remember { mutableStateOf("") }
-    var example by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
     fun task(work: suspend () -> String) {
         scope.launch {
@@ -64,18 +60,7 @@ fun LibraryTools(model: LearningModel, section: String) {
     }
     if (message.isNotEmpty()) Text(message)
     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-    if (section == "add") {
-        Text("Search the library first in either language. If the meaning is missing, add it here.")
-        OutlinedTextField(word, { word = it }, label = { Text("French, including noun article") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(english, { english = it }, label = { Text("English meaning") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(definition, { definition = it }, label = { Text("Simple French definition") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(example, { example = it }, label = { Text("Example: Elle {se rend compte} du problème.") }, modifier = Modifier.fillMaxWidth())
-        Button(onClick = { task {
-            model.addEntry(word, english, definition, example)
-            word = ""; english = ""; definition = ""; example = ""
-            "Entry added to your library"
-        } }, enabled = !busy) { Text("Save entry") }
-    }
+    if (section == "add") AddEntry(model)
     if (section == "packs") {
         PackCatalogue(model)
         HorizontalDivider(Modifier.padding(vertical = 12.dp))
