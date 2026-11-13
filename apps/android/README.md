@@ -108,7 +108,7 @@ app: edited entries (including built-in and pack entries) replace the shipped
 wording, deleted entries leave the library, suspended cards aren't scheduled, and a
 reset card starts again as new. Packs remain opt-in: entries from a pack that isn't
 installed on any of your devices stay hidden until you download it. Entry rules and
-merge rules are checked against the cases in `../../content/*-fixtures.json`. Notifications, AI and automatic speech scoring remain deferred.
+merge rules are checked against the cases in `../../content/*-fixtures.json`. Notifications and automatic speech scoring remain deferred.
 Do not clear application data to update it; install newer APKs with `adb install -r`.
 
 ## Library tools
@@ -145,6 +145,26 @@ produces versioned packs and the bundled catalogue. The simpler preparation tool
 does not align arbitrary dictionary senses or verify linguistic accuracy. An
 independently reviewed 20,000-word study library is not yet complete.
 
+
+## On-device AI drafting
+
+The Add an entry page can draft a personal entry from just its English meaning: the
+French word (unless you typed it), a simple French definition and an example with its
+`{answer}`. Drafts are filled into the form for you to check and edit; nothing is saved
+until you press Save entry, and the usual entry rules apply. Regenerate replaces only
+drafted fields you haven't edited. A reply that breaks the entry rules is retried once,
+then only the valid fields are filled. Saved entries carry no AI marker and sync like any
+personal entry.
+
+Drafting runs [Gemma 4 E2B](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm)
+(Apache-2.0) on the phone through LiteRT-LM, on the GPU where OpenCL is available and the
+CPU otherwise. The 2.6 GB model is not in the APK: Enable AI fill downloads it once from a
+pinned Hugging Face revision into app storage, resumes interrupted downloads, and checks
+size and SHA-256 before use. After that it works offline and nothing you type leaves the
+phone. The page offers to remove the model to free the space. Phones with less than about
+6 GB of memory don't show the option. The prompt and checks live in `EntryDrafter`;
+`ModelFile` handles download and verification (both unit-tested); LiteRT-LM is confined
+to `OnDeviceModel`.
 
 ## Source pack verification
 

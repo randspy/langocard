@@ -53,6 +53,7 @@ dependencies {
     }
 
     implementation(libs.fsrs)
+    implementation(libs.litertlm)
     implementation(libs.androidx.lifecycle.runtime.compose)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)

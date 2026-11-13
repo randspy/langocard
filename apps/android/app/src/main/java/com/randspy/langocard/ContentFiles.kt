@@ -9,13 +9,17 @@ object ContentFiles {
     const val MAX_BYTES = 20 * 1024 * 1024
     fun validateEntry(e: Entry) {
         require(e.id.matches(Regex("[a-zA-Z0-9_-]{1,100}"))) { "Invalid entry ID" }
-        require(listOf(e.word, e.english, e.definition, e.markedExample).all { it.isNotBlank() && it.length <= 2000 }) { "Fill every field (maximum 2,000 characters each)" }
-        require(e.markedExample.count { it == '{' } == 1 && e.markedExample.count { it == '}' } == 1 &&
-            e.markedExample.indexOf('{') < e.markedExample.indexOf('}') && e.answer.isNotBlank()) { "Mark exactly one answer with {braces} in the example" }
+        require(listOf(e.word, e.english, e.definition, e.markedExample).all(::validText)) { "Fill every field (maximum 2,000 characters each)" }
+        require(validAnswer(e.markedExample)) { "Mark exactly one answer with {braces} in the example" }
         require(e.rank > 0 && e.lemma.length <= 200 && e.license.length <= 500) { "Invalid vocabulary metadata" }
         require(e.sourceUrl.isBlank() || (e.sourceUrl.startsWith("https://") && e.sourceUrl.length <= 2000)) { "Invalid source URL" }
         require(e.topic in setOf("daily", "culture", "news")) { "Unknown topic" }
     }
+    /** A required text field: not blank and at most 2,000 characters. */
+    fun validText(s: String) = s.isNotBlank() && s.length <= 2000
+    /** The example marks exactly one non-blank answer with {braces}. */
+    fun validAnswer(markedExample: String) = markedExample.count { it == '{' } == 1 && markedExample.count { it == '}' } == 1 &&
+        markedExample.indexOf('{') < markedExample.indexOf('}') && markedExample.substringAfter("{").substringBefore("}").isNotBlank()
     fun entryJson(e: Entry) = JSONObject().put("id", e.id).put("word", e.word).put("english", e.english)
         .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic)
         .put("lemma", e.lemma).put("rank", e.rank).put("sourceUrl", e.sourceUrl).put("license", e.license)

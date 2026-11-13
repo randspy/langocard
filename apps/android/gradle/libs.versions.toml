@@ -6,10 +6,12 @@ kotlin = "2.4.21"
 activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 composeBom = "2026.09.00"
+litertlm = "0.19.1"
 
 [libraries]
 androidx-test-runner = { module = "androidx.test:runner", version = "1.6.2" }
 json-test = { module = "org.json:json", version = "20240303" }
+litertlm = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litertlm" }
 fsrs = { module = "io.github.open-spaced-repetition:fsrs", version.ref = "fsrs" }
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
