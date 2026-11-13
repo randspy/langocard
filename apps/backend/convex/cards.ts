@@ -1,9 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
+import { requireToken } from "./access";
 import { parseCard, parseReviewLog } from "./cardState";
 import { SKILLS, type Skill } from "./library";
 import { SUSPENDED_INDEFINITELY, resetCard } from "./merge";
-import { requireOwner } from "./owner";
 
 /**
  * Web app card management. Suspensions and resets advance a card's `cardEditedAt`
@@ -15,9 +15,9 @@ const skillArg = v.optional(v.union(...SKILLS.map((s) => v.literal(s))));
 const HISTORY = 100;
 
 export const forEntry = query({
-  args: { entryId: v.string() },
-  handler: async (ctx, { entryId }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string() },
+  handler: async (ctx, { token, entryId }) => {
+    requireToken(token);
     return Promise.all(SKILLS.map(async (skill) => {
       const key = `${entryId}:${skill}`;
       const row = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
@@ -65,26 +65,26 @@ async function setSuspension(ctx: MutationCtx, entryId: string, skill: Skill | u
 }
 
 export const suspend = mutation({
-  args: { entryId: v.string(), skill: skillArg, until: v.union(v.number(), v.null()) },
-  handler: async (ctx, { entryId, skill, until }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string(), skill: skillArg, until: v.union(v.number(), v.null()) },
+  handler: async (ctx, { token, entryId, skill, until }) => {
+    requireToken(token);
     if (until !== null && until <= Date.now()) throw new ConvexError("Choose a date in the future");
     await setSuspension(ctx, entryId, skill, until ?? SUSPENDED_INDEFINITELY);
   },
 });
 
 export const resume = mutation({
-  args: { entryId: v.string(), skill: skillArg },
-  handler: async (ctx, { entryId, skill }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string(), skill: skillArg },
+  handler: async (ctx, { token, entryId, skill }) => {
+    requireToken(token);
     await setSuspension(ctx, entryId, skill, 0);
   },
 });
 
 export const reset = mutation({
-  args: { entryId: v.string(), skill: skillArg },
-  handler: async (ctx, { entryId, skill }) => {
-    await requireOwner(ctx);
+  args: { token: v.string(), entryId: v.string(), skill: skillArg },
+  handler: async (ctx, { token, entryId, skill }) => {
+    requireToken(token);
     for (const { row } of await cardRows(ctx, entryId, skill)) {
       if (!row || (row.card === null && row.failures === 0 && row.pausedUntil === 0)) continue; // already new
       const now = Math.max(Date.now(), row.lastReview + 1, row.cardEditedAt + 1);

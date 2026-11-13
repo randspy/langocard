@@ -37,4 +37,4 @@ Cloud sync built on Convex, for a single learner. Android learning state stays l
 
 ## Web
 
-A local React app for managing the library and cards: edit, delete and add entries, and suspend or reset cards. Sign-in uses GitHub, limited to one account. See [web setup](apps/web/README.md). The app isn't hosted; release signing and web deployment are deferred until needed.
+A local React app for managing the library and cards: edit, delete and add entries, and suspend or reset cards. It runs locally and authenticates with the same `SYNC_TOKEN` as the phone. See [web setup](apps/web/README.md). The app isn't hosted; release signing and web deployment are deferred until needed.

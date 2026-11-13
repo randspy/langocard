@@ -1,23 +1,27 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
+import type { FunctionArgs, FunctionReference, FunctionReturnType } from "convex/server";
 import schema from "../convex/schema";
 
 export const modules = import.meta.glob("../convex/**/*.*s");
-export const OWNER_GITHUB_ID = "4242";
+/** The deployment's `SYNC_TOKEN` in tests. */
+export const TOKEN = "test-token";
 
 export function setup() {
   return convexTest(schema, modules);
 }
 export type T = ReturnType<typeof setup>;
 
-/** Creates a GitHub-backed user and returns a client signed in as them. */
-export async function signIn(t: T, githubId: string) {
-  const userId = await t.run(async (ctx) => {
-    const id = await ctx.db.insert("users", { name: `user ${githubId}` });
-    await ctx.db.insert("authAccounts", { userId: id, provider: "github", providerAccountId: githubId });
-    return id;
-  });
-  return t.withIdentity({ subject: `${userId}|session-${githubId}` });
+type Gated<Kind extends "query" | "mutation"> = FunctionReference<Kind, "public", { token: string }>;
+
+/** A client that adds `token` to every call, as the web app does. */
+export function withToken(t: T, token = TOKEN) {
+  return {
+    query: <Q extends Gated<"query">>(fn: Q, args: Omit<FunctionArgs<Q>, "token">): Promise<FunctionReturnType<Q>> =>
+      t.query(fn as Gated<"query">, { ...args, token }) as Promise<FunctionReturnType<Q>>,
+    mutation: <M extends Gated<"mutation">>(fn: M, args: Omit<FunctionArgs<M>, "token">): Promise<FunctionReturnType<M>> =>
+      t.mutation(fn as Gated<"mutation">, { ...args, token }) as Promise<FunctionReturnType<M>>,
+  };
 }
 
 export const shipped = (o: Record<string, unknown> = {}) => ({

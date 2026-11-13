@@ -15,24 +15,16 @@ directly, importing the backend's generated API and shared rules from
 Requires Node.js 20 or newer and a backend set up as in
 [`apps/backend/README.md`](../backend/README.md).
 
-1. Create a GitHub OAuth app (GitHub → Settings → Developer settings → OAuth Apps):
-   - Homepage URL: `http://localhost:5173`
-   - Authorization callback URL: `https://<deployment>.convex.site/api/auth/callback/github`.
-     This is your deployment URL with `.convex.site` instead of `.convex.cloud`.
-2. Find your numeric GitHub user ID: `gh api user --jq .id`, or
-   `https://api.github.com/users/<login>`.
-3. Configure the deployment and link the web app:
+1. Deploy the backend, set `SYNC_TOKEN` and link the web app:
 
    ```sh
    cd apps/backend
    npm install
-   AUTH_GITHUB_ID=<client id> AUTH_GITHUB_SECRET=<client secret> ALLOWED_GITHUB_ID=<numeric id> \
-     npm run setup-web-auth
    npx convex deploy        # or keep `npx convex dev` running
-   npm run link-web         # writes apps/web/.env.local
+   npm run link-web         # writes VITE_CONVEX_URL and VITE_SYNC_TOKEN to apps/web/.env.local
    ```
 
-4. Run the app:
+2. Run the app:
 
    ```sh
    cd apps/web
@@ -42,11 +34,11 @@ Requires Node.js 20 or newer and a backend set up as in
 
 ## Access
 
-Anyone can complete GitHub sign-in, but every web function checks that the account's
-numeric GitHub ID equals `ALLOWED_GITHUB_ID`. Anyone else sees "No access". The
-Android app keeps using `SYNC_TOKEN` and can't call the web functions. The app is
-only run locally, but the Convex functions themselves are public, which is why sign-in
-is required.
+There is no sign-in. Every backend function the app calls takes the deployment's
+`SYNC_TOKEN`, the same secret the Android app uses; `npm run link-web` copies it into
+`.env.local` (gitignored, readable only by you). The Convex functions are public, so the
+token is what keeps others out. The app is meant to run only on your machine: a build
+embeds the token, so never host or share `dist/`.
 
 ## Develop
 

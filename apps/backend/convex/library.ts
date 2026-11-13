@@ -1,8 +1,9 @@
+import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { requireToken } from "./access";
 import { parseCard } from "./cardState";
 import { contentOf, sameContent } from "./entryRules";
 import { isDeleted } from "./merge";
-import { requireOwner } from "./owner";
 
 export const SKILLS = ["Reading", "Listening", "Production"] as const;
 export type Skill = (typeof SKILLS)[number];
@@ -17,9 +18,9 @@ export type SkillSummary = { due: number | null; state: string | null; pausedUnt
  * because queries can't read the clock.
  */
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    await requireOwner(ctx);
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    requireToken(token);
     const skills = new Map<string, Partial<Record<Skill, SkillSummary>>>();
     for (const row of await ctx.db.query("cards").collect()) {
       const [entryId, skill] = row.key.split(":") as [string, Skill];

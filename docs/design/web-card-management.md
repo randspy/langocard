@@ -17,12 +17,12 @@ editable across devices.
 | 5 | Re-seeding | Rows carry `origin`, a `shipped` content snapshot, `editedAt`. Unedited rows are overwritten; edited rows are kept and flagged `upstreamChanged`; entries removed upstream are marked `retired`, never deleted. |
 | 6 | Delete | Soft delete: `deletedAt` tombstone, synced to Android, restorable. Cards and review history are kept. Edit vs delete is last-write-wins. |
 | 7 | Card operations | View, suspend/resume, reset. No manual rescheduling. |
-| 8 | Web auth | Convex Auth; web functions call `requireOwner(ctx)`. Android keeps `SYNC_TOKEN` for `push`/`pull` only. |
-| 9 | Sign-in | GitHub OAuth; owner pinned by numeric ID in the `ALLOWED_GITHUB_ID` env var. |
+| 8 | Web auth | No accounts. Every public function takes the shared `SYNC_TOKEN` (`requireToken` in `access.ts`), the same secret Android uses. |
+| 9 | Sign-in | None. `npm run link-web` writes the token to the web app's gitignored `.env.local`. (GitHub OAuth was planned, then dropped: the app is local-only.) |
 | 10 | Migration | None. Wipe/recreate the deployment, deploy v2, seed. Old APKs fail argument validation and can't write. |
 | 11 | Stack | Vite + React + TypeScript + TanStack Router + Tailwind + shadcn/ui in `apps/web`. Imports `apps/backend/convex/_generated` by relative path; no workspace. |
-| 12 | Hosting | Local only (`npm run dev`, `SITE_URL=http://localhost:5173`). `npm run link-web` writes `VITE_CONVEX_URL` so web and Android target the same deployment. |
-| 13 | Screens | Library, Entry, New entry, Upstream changes, Sign-in. |
+| 12 | Hosting | Local only (`npm run dev`). A build embeds the token, so it is never hosted. `npm run link-web` writes `VITE_CONVEX_URL` and `VITE_SYNC_TOKEN` so web and Android target the same deployment. |
+| 13 | Screens | Library, Entry, New entry, Upstream changes. |
 | 14 | Rule parity | `convex/entryRules.ts` shared by Convex and web; Kotlin mirrors it. Shared fixtures `content/entry-rules-fixtures.json` and `content/merge-fixtures.json` run in Vitest and Android unit tests. |
 | 15 | Pauses | `pausedUntil` = automatic leech pause (review clock); `suspendedUntil` = manual pause (edit clock). Field-level card merge. Android only honours web changes in v1. |
 | 16 | Order | Backend v2 → Android v2 sync → web skeleton + auth + Library → entry editing → card management → upstream changes. |
@@ -98,9 +98,10 @@ and there is no uninstall (unchanged from v1).
 - `sync.push` / `sync.pull`: token-gated, v2 shapes, used by Android.
 - `entries.list`, `entries.get`, `entries.create`, `entries.update`,
   `entries.remove`, `entries.restore`, `entries.resolveUpstream(keepMine | takeTheirs)`:
-  `requireOwner`.
+  token-gated.
 - `cards.forEntry`, `cards.suspend`, `cards.resume`, `cards.reset`,
-  `reviews.forEntry`: `requireOwner`.
+  `reviews.forEntry`: token-gated.
+- `access.check`: reports whether a token is accepted, for the web app's "No access" screen.
 - `seed` (action, run via `npm run seed`): reads `content/*.json` and
   `apps/android/app/src/main/assets/pilot.tsv`; idempotent.
 
@@ -116,7 +117,6 @@ All writes validate via `entryRules.ts`.
    per skill or the whole entry), Reset (with confirmation) and review history.
 3. **New entry** `/entries/new`: same form; creates `personal-<uuid>`.
 4. **Upstream changes** `/conflicts`: side-by-side diff, Keep mine / Take theirs.
-5. **Sign-in**: GitHub.
 
 Out of v1: bulk actions, CSV import, stats, pack install/uninstall on the web,
 editing/suspending from Android.
@@ -127,7 +127,7 @@ editing/suspending from Android.
    Vitest, `seed`. Wipe and seed the deployment.
 2. **Android v2 sync:** typed entries, bundled override, tombstones, field-level card
    merge, suspended cards skipped, Kotlin fixture tests. The phone works against v2.
-3. **Web skeleton:** Vite app, Convex Auth + GitHub, `requireOwner`, `link-web`,
+3. **Web skeleton:** Vite app, token access, `link-web`,
    `.github/workflows/web.yml` (typecheck, test, build on `apps/web/**` and
    `apps/backend/convex/**`), read-only Library.
 4. **Entry editing:** Entry and New entry pages, delete/restore.

@@ -1,13 +1,13 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { api } from "@backend/_generated/api";
 import { LibraryView } from "@/components/LibraryView";
+import { useTokenQuery } from "@/lib/convex";
 import { useNow } from "@/lib/useNow";
 
 export function LibraryPage() {
   const search = useSearch({ from: "/" });
   const navigate = useNavigate({ from: "/" });
-  const library = useQuery(api.library.list);
+  const library = useTokenQuery(api.library.list, {});
   const now = useNow();
   return (
     <>

@@ -1,24 +1,25 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
-import { OWNER_GITHUB_ID, setup, shipped, signIn } from "./helpers";
+import { TOKEN, setup, shipped, withToken } from "./helpers";
 
-beforeEach(() => { process.env.ALLOWED_GITHUB_ID = OWNER_GITHUB_ID; });
-afterEach(() => { delete process.env.ALLOWED_GITHUB_ID; });
+beforeEach(() => { process.env.SYNC_TOKEN = TOKEN; });
+afterEach(() => { delete process.env.SYNC_TOKEN; });
 
-describe("owner access", () => {
-  test("reports why access is refused", async () => {
+describe("access", () => {
+  test("reports whether a token is accepted", async () => {
     const t = setup();
-    expect(await t.query(api.owner.status, {})).toEqual({ status: "signedOut" });
-    expect(await (await signIn(t, "999")).query(api.owner.status, {})).toEqual({ status: "notAllowed" });
-    expect(await (await signIn(t, OWNER_GITHUB_ID)).query(api.owner.status, {})).toEqual({ status: "owner" });
+    expect(await t.query(api.access.check, { token: TOKEN })).toEqual({ status: "ok" });
+    expect(await t.query(api.access.check, { token: "wrong-token" })).toEqual({ status: "invalid" });
+    delete process.env.SYNC_TOKEN;
+    expect(await t.query(api.access.check, { token: TOKEN })).toEqual({ status: "notConfigured" });
   });
 
-  test("web functions refuse anyone but the owner", async () => {
+  test("web functions refuse a wrong or missing token", async () => {
     const t = setup();
-    await expect(t.query(api.library.list, {})).rejects.toThrow(/Sign in first/);
-    await expect((await signIn(t, "999")).query(api.library.list, {})).rejects.toThrow(/isn't allowed/);
-    delete process.env.ALLOWED_GITHUB_ID;
-    await expect((await signIn(t, OWNER_GITHUB_ID)).query(api.library.list, {})).rejects.toThrow(/not configured/);
+    await expect(withToken(t, "wrong-token").query(api.library.list, {})).rejects.toThrow(/Invalid sync token/);
+    await expect(withToken(t, "").query(api.library.list, {})).rejects.toThrow(/Invalid sync token/);
+    delete process.env.SYNC_TOKEN;
+    await expect(withToken(t).query(api.library.list, {})).rejects.toThrow(/not configured/);
   });
 });
 
@@ -39,7 +40,7 @@ describe("library.list", () => {
       const row = (await ctx.db.query("entries").collect()).find((e) => e.entryId === "frw-1")!;
       await ctx.db.patch(row._id, { definition: "Mine.", editedAt: 10, deletedAt: 20 });
     });
-    const { entries } = await (await signIn(t, OWNER_GITHUB_ID)).query(api.library.list, {});
+    const { entries } = await withToken(t).query(api.library.list, {});
     const byId = Object.fromEntries(entries.map((e) => [e.entryId, e]));
     expect(byId["frw-1"]).toMatchObject({
       edited: true, deleted: true, installed: true,

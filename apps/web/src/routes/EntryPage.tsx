@@ -1,5 +1,4 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "@backend/_generated/api";
 import { contentOf } from "@backend/entryRules";
@@ -7,19 +6,20 @@ import { EntryForm, messageOf } from "@/components/EntryForm";
 import { SkillPanels } from "@/components/SkillPanels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTokenMutation, useTokenQuery } from "@/lib/convex";
 import { originLabel } from "@/lib/library";
 import { useNow } from "@/lib/useNow";
 
 export function EntryPage() {
   const { entryId } = useParams({ from: "/entries/$entryId" });
-  const entry = useQuery(api.entries.get, { entryId });
-  const update = useMutation(api.entries.update);
-  const remove = useMutation(api.entries.remove);
-  const restore = useMutation(api.entries.restore);
-  const cards = useQuery(api.cards.forEntry, { entryId });
-  const suspend = useMutation(api.cards.suspend);
-  const resume = useMutation(api.cards.resume);
-  const reset = useMutation(api.cards.reset);
+  const entry = useTokenQuery(api.entries.get, { entryId });
+  const update = useTokenMutation(api.entries.update);
+  const remove = useTokenMutation(api.entries.remove);
+  const restore = useTokenMutation(api.entries.restore);
+  const cards = useTokenQuery(api.cards.forEntry, { entryId });
+  const suspend = useTokenMutation(api.cards.suspend);
+  const resume = useTokenMutation(api.cards.resume);
+  const reset = useTokenMutation(api.cards.reset);
   const now = useNow();
   const [error, setError] = useState<string | null>(null);
 

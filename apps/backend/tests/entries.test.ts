@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
-import { OWNER_GITHUB_ID, setup, shipped, signIn, type T } from "./helpers";
+import { TOKEN, setup, shipped, withToken, type T } from "./helpers";
 
-const token = "test-token";
-beforeEach(() => { process.env.ALLOWED_GITHUB_ID = OWNER_GITHUB_ID; process.env.SYNC_TOKEN = token; });
-afterEach(() => { delete process.env.ALLOWED_GITHUB_ID; delete process.env.SYNC_TOKEN; });
+const token = TOKEN;
+beforeEach(() => { process.env.SYNC_TOKEN = token; });
+afterEach(() => { delete process.env.SYNC_TOKEN; });
 
 const content = (o: Record<string, unknown> = {}) => {
   const { entryId: _, origin: __, ...rest } = shipped(o);
@@ -12,7 +12,7 @@ const content = (o: Record<string, unknown> = {}) => {
 };
 async function owner(t: T) {
   await t.mutation(internal.seed.apply, { entries: [shipped()] });
-  return signIn(t, OWNER_GITHUB_ID);
+  return withToken(t);
 }
 const pullEntries = async (t: T) =>
   (await t.query(api.sync.pull, { token, table: "entries", since: 0, cursor: null })).page as Record<string, unknown>[];
@@ -20,9 +20,9 @@ const pullEntries = async (t: T) =>
 describe("entries", () => {
   test("refuses anyone but the owner", async () => {
     const t = setup();
-    const stranger = await signIn(t, "999");
-    await expect(stranger.mutation(api.entries.create, content())).rejects.toThrow(/isn't allowed/);
-    await expect(stranger.query(api.entries.get, { entryId: "frw-1" })).rejects.toThrow(/isn't allowed/);
+    const stranger = withToken(t, "wrong-token");
+    await expect(stranger.mutation(api.entries.create, content())).rejects.toThrow(/Invalid sync token/);
+    await expect(stranger.query(api.entries.get, { entryId: "frw-1" })).rejects.toThrow(/Invalid sync token/);
   });
 
   test("creates personal entries that sync to devices", async () => {
