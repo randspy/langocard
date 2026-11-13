@@ -14,7 +14,7 @@ apps/
 
 ## Android
 
-Application ID: `com.randspy.langocard`. Supports Android 16 (API 36) and newer, with compile/target SDK 37. The offline French app includes 701 built-in meanings, with downloadable packs expanding the library to 1,316 meanings. It supports placement, reading/listening/production practice, FSRS scheduling, and saved progress. See the Android README for scope and content limitations.
+Application ID: `com.randspy.langocard`. Supports Android 16 (API 36) and newer, with compile/target SDK 37. The offline French app includes 701 built-in meanings, with downloadable packs expanding the library to 1,316 meanings. It supports placement, reading/listening/production practice, noun gender practice, FSRS scheduling, and saved progress. See the Android README for scope and content limitations.
 
 Open `apps/android` in Android Studio, or use the checked-in Gradle wrapper from a terminal. See [Android setup](apps/android/README.md) for prerequisites and emulator instructions.
 

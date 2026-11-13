@@ -10,12 +10,13 @@ import java.io.File
 class SharedFixturesTest {
     private fun fixtures(name: String) = JSONObject(File("../../../content/$name").readText())
     private val messages = mapOf(
-        "id" to "Invalid entry ID",
-        "fields" to "Fill every field (maximum 2,000 characters each)",
-        "answer" to "Mark exactly one answer with {braces} in the example",
-        "metadata" to "Invalid vocabulary metadata",
-        "sourceUrl" to "Invalid source URL",
-        "topic" to "Unknown topic",
+        "id" to setOf("Invalid entry ID"),
+        "fields" to setOf("Fill every field (maximum 2,000 characters each)"),
+        "answer" to setOf("Mark exactly one answer with {braces} in the example"),
+        "metadata" to setOf("Invalid vocabulary metadata"),
+        "sourceUrl" to setOf("Invalid source URL"),
+        "topic" to setOf("Unknown topic"),
+        "gender" to setOf("Unknown gender", "The gender doesn't match the article"),
     )
 
     @Test fun `entry rules match the backend`() {
@@ -26,7 +27,7 @@ class SharedFixturesTest {
             val name = case.getString("name")
             val error = runCatching { ContentFiles.readEntries(JSONArray().put(case.getJSONObject("entry"))) }.exceptionOrNull()
             if (case.isNull("rule")) assertNull(name, error)
-            else assertEquals(name, messages.getValue(case.getString("rule")), error?.message)
+            else assertTrue("$name: ${error?.message}", error?.message in messages.getValue(case.getString("rule")))
         }
     }
 

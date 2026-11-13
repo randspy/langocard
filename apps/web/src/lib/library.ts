@@ -1,14 +1,19 @@
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@backend/_generated/api";
 import type { SkillSummary } from "@backend/library";
-import { SKILLS, type Skill } from "@backend/skills";
+import type { Gender } from "@backend/entryRules";
+import { SKILLS, skillsOf, type Skill } from "@backend/skills";
 import { SUSPENDED_INDEFINITELY } from "@backend/merge";
 
 export type LibraryEntry = FunctionReturnType<typeof api.library.list>["entries"][number];
 
 /** The skills in display order, with the short names the learner sees on the phone. */
-export { SKILLS };
-export const SKILL_LABELS: Record<Skill, string> = { Reading: "Read", Listening: "Listen", Production: "Speak" };
+export { SKILLS, skillsOf };
+export const SKILL_LABELS: Record<Skill, string> = { Reading: "Read", Listening: "Listen", Production: "Speak", Gender: "Gender" };
+
+export const GENDER_LABELS: Record<Gender, string> = { masculine: "Masculine", feminine: "Feminine" };
+/** The short tag shown beside a noun: "m." or "f.". */
+export const GENDER_TAGS: Record<Gender, string> = { masculine: "m.", feminine: "f." };
 
 // ---- Search params (the Library's filters live in the URL) ----
 
@@ -20,6 +25,7 @@ export const FILTERS = {
   origin: { label: "Origin", unset: "Any origin", options: [["bundled", "Built-in"], ["pack", "Pack"], ["personal", "Personal"]] },
   pack: { label: "Pack", unset: "Any pack", options: [["installed", "Installed"], ["notInstalled", "Not installed"]] },
   topic: { label: "Topic", unset: "Any topic", options: [["daily", "Daily"], ["culture", "Culture"], ["news", "News"]] },
+  gender: { label: "Gender", unset: "Any word", options: [["noun", "Nouns"], ["masculine", "Masculine nouns"], ["feminine", "Feminine nouns"], ["none", "Not nouns"]] },
   status: {
     label: "Status",
     unset: "Active",
@@ -90,7 +96,16 @@ function hasStatus(e: LibraryEntry, status: LibrarySearch["status"], now: number
     case "edited": return e.edited;
     case "upstream": return e.upstreamChanged;
     case "retired": return e.retired;
-    case "suspended": return SKILLS.some((skill) => skillStatus(e.skills[skill], now).kind === "suspended");
+    case "suspended": return skillsOf(e).some((skill) => skillStatus(e.skills[skill], now).kind === "suspended");
+  }
+}
+
+function hasGender(gender: Gender | null, wanted: LibrarySearch["gender"]): boolean {
+  switch (wanted) {
+    case undefined: return true;
+    case "noun": return gender !== null;
+    case "none": return gender === null;
+    default: return gender === wanted;
   }
 }
 
@@ -108,6 +123,7 @@ export function filterLibrary(entries: LibraryEntry[], search: LibrarySearch, no
       (!search.origin || originGroup(e.origin) === search.origin) &&
       (!search.pack || (search.pack === "installed") === e.installed) &&
       (!search.topic || e.topic === search.topic) &&
+      hasGender(e.gender, search.gender) &&
       inRank(e.rank, search.rank) &&
       hasStatus(e, search.status, now))
     .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || a.word.localeCompare(b.word, "fr"));

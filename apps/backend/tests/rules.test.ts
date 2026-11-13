@@ -14,7 +14,7 @@ describe("entry rules (shared fixtures)", () => {
 
 describe("entry rules", () => {
   test("reports every broken field for form errors", () => {
-    const errors = entryErrors("bad id", { word: "", english: "", definition: "d", example: "no answer", topic: "x", lemma: "", rank: null, sourceUrl: "", license: "" });
+    const errors = entryErrors("bad id", { word: "", english: "", definition: "d", example: "no answer", topic: "x", lemma: "", rank: null, sourceUrl: "", license: "", gender: null });
     expect(errors.map((e) => e.field)).toEqual(["entryId", "word", "english", "example", "topic"]);
   });
 

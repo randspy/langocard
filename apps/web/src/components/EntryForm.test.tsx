@@ -6,8 +6,9 @@ import { EntryForm } from "./EntryForm";
 
 const initial: EntryContent = {
   word: "pourtant", english: "however", definition: "Malgré cela.", example: "Il pleut, {pourtant} elle sort.",
-  topic: "daily", lemma: "pourtant", rank: 20, sourceUrl: "", license: "",
+  topic: "daily", lemma: "pourtant", rank: 20, sourceUrl: "", license: "", gender: null,
 };
+const blank: EntryContent = { ...initial, word: "", english: "", definition: "", example: "", lemma: "", rank: null };
 
 function renderForm(onSubmit = vi.fn(async () => {})) {
   render(<EntryForm entryId="frw-1" initial={initial} submitLabel="Save changes" onSubmit={onSubmit} />);
@@ -42,6 +43,28 @@ describe("EntryForm", () => {
     renderForm();
     expect(screen.getByLabelText("Speaking practice preview")).toHaveTextContent("Il pleut, ________ elle sort.");
     expect(screen.getByLabelText("Speaking practice preview")).toHaveTextContent("Answer: pourtant");
+  });
+
+  test("a new entry's gender follows the typed article until the learner picks one", async () => {
+    const onSubmit = vi.fn(async () => {});
+    render(<EntryForm entryId="personal-new" initial={blank} submitLabel="Add entry" onSubmit={onSubmit} />);
+    const gender = screen.getByLabelText("Gender");
+    expect(gender).toHaveValue("");
+    await userEvent.type(screen.getByLabelText("French word or phrase"), "une rencontre");
+    expect(gender).toHaveValue("feminine");
+    await userEvent.selectOptions(gender, "");
+    await userEvent.type(screen.getByLabelText("French word or phrase"), "s");
+    expect(gender).toHaveValue("");
+  });
+
+  test("refuses a gender that contradicts the article", async () => {
+    const onSubmit = vi.fn(async () => {});
+    render(<EntryForm entryId="frw-1" initial={{ ...initial, word: "une intrigue", example: "Voici {une intrigue}.", gender: "feminine" }}
+      submitLabel="Save changes" onSubmit={onSubmit} />);
+    await userEvent.selectOptions(screen.getByLabelText("Gender"), "masculine");
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(screen.getByText("The gender doesn't match the article")).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   test("shows a server error", async () => {

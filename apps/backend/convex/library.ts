@@ -41,6 +41,7 @@ export const list = query({
       entryId: e.entryId,
       word: e.word,
       english: e.english,
+      gender: contentOf(e).gender,
       lemma: e.lemma,
       topic: e.topic,
       rank: e.rank,

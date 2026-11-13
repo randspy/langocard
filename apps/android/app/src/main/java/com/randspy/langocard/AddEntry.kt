@@ -28,7 +28,7 @@ fun AddEntry(model: LearningModel) {
     val availability by onDevice.availability.collectAsState()
 
     var english by remember { mutableStateOf("") }
-    val fields = remember { mutableStateMapOf(DraftField.Word to "", DraftField.Definition to "", DraftField.Example to "") }
+    val fields = remember { mutableStateMapOf(DraftField.Word to "", DraftField.Gender to "", DraftField.Definition to "", DraftField.Example to "") }
     var drafted by remember { mutableStateOf(emptySet<DraftField>()) }
     var message by remember { mutableStateOf("") }
     var drafting by remember { mutableStateOf<Job?>(null) }
@@ -72,6 +72,7 @@ fun AddEntry(model: LearningModel) {
             Text("Save anyway if this is a different meaning.", style = MaterialTheme.typography.bodySmall)
         }
     }
+    GenderChoice(fields, drafted, !busy) { drafted = drafted - DraftField.Gender }
     DraftedField(DraftField.Definition, fields, drafted, !busy) { drafted = drafted - DraftField.Definition }
     DraftedField(DraftField.Example, fields, drafted, !busy) { drafted = drafted - DraftField.Example }
 
@@ -97,13 +98,40 @@ fun AddEntry(model: LearningModel) {
     }
     Button(onClick = {
         message = try {
-            model.addEntry(fields.getValue(DraftField.Word), english, fields.getValue(DraftField.Definition), fields.getValue(DraftField.Example))
+            model.addEntry(fields.getValue(DraftField.Word), english, fields.getValue(DraftField.Definition),
+                fields.getValue(DraftField.Example), effectiveGender(fields)?.let(::genderOf))
             english = ""; fields.keys.forEach { fields[it] = "" }; drafted = emptySet()
             "Entry added to your library"
         } catch (e: Exception) { e.message ?: "Could not save this entry" }
     }, enabled = !busy) { Text("Save entry") }
     if (availability == OnDeviceModel.Availability.Available) {
         TextButton(onClick = onDevice::remove, enabled = !busy) { Text("Remove on-device AI (frees 2.6 GB)") }
+    }
+}
+
+/** The chosen gender value, or while none is chosen, the one the word's article states. */
+private fun effectiveGender(fields: Map<DraftField, String>): String? =
+    fields.getValue(DraftField.Gender).ifBlank { null } ?: Gender.ofArticle(fields.getValue(DraftField.Word))?.json
+
+/** Masculine · Feminine · Not a noun. Choosing one makes it the learner's, like editing a text field. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun GenderChoice(fields: MutableMap<DraftField, String>, drafted: Set<DraftField>, enabled: Boolean, onEdit: () -> Unit) {
+    val current = effectiveGender(fields)
+    Column {
+        Text("Gender", style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("masculine" to "Masculine", "feminine" to "Feminine", "none" to "Not a noun").forEach { (value, label) ->
+                FilterChip(selected = current == value, enabled = enabled, label = { Text(label) },
+                    onClick = { fields[DraftField.Gender] = value; onEdit() })
+            }
+        }
+        val note = when {
+            DraftField.Gender in drafted -> "Drafted by on-device AI"
+            fields.getValue(DraftField.Gender).isBlank() && current != null -> "From the article"
+            else -> null
+        }
+        note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }
 
@@ -122,6 +150,7 @@ private fun DraftedField(field: DraftField, fields: MutableMap<DraftField, Strin
 
 private fun label(field: DraftField) = when (field) {
     DraftField.Word -> "French, including noun article"
+    DraftField.Gender -> "Gender"
     DraftField.Definition -> "Simple French definition"
     DraftField.Example -> "Example: Elle {se rend compte} du problème."
 }

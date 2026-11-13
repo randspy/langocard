@@ -61,14 +61,15 @@ object SyncData {
         val rank = row.longOrNull("rank")?.toInt() ?: Int.MAX_VALUE
         Entry(row.getString("entryId"), row.getString("word"), row.getString("english"), row.getString("definition"),
             row.getString("example"), row.getString("topic"), row.optString("lemma"), rank,
-            row.optString("sourceUrl"), row.optString("license")).also(ContentFiles::validateEntry)
+            row.optString("sourceUrl"), row.optString("license"), Gender.read(row, row.getString("word"))).also(ContentFiles::validateEntry)
     }.getOrNull()
 
     /** A local entry as a v2 push row; devices never edit, so both clocks are null. */
     fun entryRow(e: Entry): JSONObject = JSONObject().put("entryId", e.id).put("word", e.word).put("english", e.english)
         .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic).put("lemma", e.lemma)
         .put("rank", if (e.rank == Int.MAX_VALUE) JSONObject.NULL else e.rank)
-        .put("sourceUrl", e.sourceUrl).put("license", e.license).put("editedAt", JSONObject.NULL).put("deletedAt", JSONObject.NULL)
+        .put("sourceUrl", e.sourceUrl).put("license", e.license).put("gender", Gender.json(e.gender))
+        .put("editedAt", JSONObject.NULL).put("deletedAt", JSONObject.NULL)
 
     // ---- Cards ----
 
@@ -213,6 +214,8 @@ object SyncData {
                     val stored = JSONObject()
                     listOf("entryId", "word", "english", "definition", "example", "topic", "lemma", "rank", "sourceUrl",
                         "license", "editedAt", "deletedAt", "origin", "retired").forEach { stored.put(it, row.opt(it) ?: JSONObject.NULL) }
+                    // A row without gender predates it; leaving the key out keeps the article gender.
+                    if (row.has("gender")) stored.put("gender", row.get("gender"))
                     remote.put(row.getString("entryId"), stored); changed = true
                 }
                 return Applied(library = changed)

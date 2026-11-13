@@ -5,7 +5,7 @@ import { filterLibrary, skillStatus, validateSearch } from "./library";
 
 const entries = [
   libraryEntry({ entryId: "a", word: "élève", english: "pupil", rank: 900, topic: "culture" }),
-  libraryEntry({ entryId: "b", word: "enjeu", english: "stake", rank: 3000, edited: true }),
+  libraryEntry({ entryId: "b", word: "un enjeu", english: "stake", rank: 3000, edited: true, gender: "masculine" }),
   libraryEntry({ entryId: "c", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-source-extended-2026-11-v1", installed: false }),
   libraryEntry({ entryId: "d", word: "ma trouvaille", english: "my find", rank: null, origin: "personal", deleted: true }),
   libraryEntry({ entryId: "e", word: "pourtant", english: "however", rank: 20, skills: { Listening: { due: null, state: null, pausedUntil: 0, suspendedUntil: NOW + DAY } } }),
@@ -28,6 +28,13 @@ describe("filterLibrary", () => {
     expect(ids({ topic: "culture" })).toEqual(["a"]);
     expect(ids({ rank: "2501-7000" })).toEqual(["b"]);
     expect(ids({ rank: "unranked", status: "all" })).toEqual(["d"]);
+  });
+
+  test("filters by gender", () => {
+    expect(ids({ gender: "noun" })).toEqual(["b"]);
+    expect(ids({ gender: "masculine" })).toEqual(["b"]);
+    expect(ids({ gender: "feminine" })).toEqual([]);
+    expect(ids({ gender: "none" })).toEqual(["e", "a", "c"]);
   });
 
   test("filters by status", () => {

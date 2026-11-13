@@ -16,6 +16,7 @@ class SourceAlignmentTests(unittest.TestCase):
         self.assertEqual(1, len(rows))
         self.assertEqual('Vêtement prévu pour se changer.', rows[0]['definition'])
         self.assertEqual('Elle prépare {un change} pour demain.', rows[0]['example'])
+        self.assertEqual('masculine', rows[0]['gender'])
 
     def test_ambiguous_label_and_quoted_examples_are_not_auto_aligned(self):
         record = dict(word='change', pos='noun', senses=[

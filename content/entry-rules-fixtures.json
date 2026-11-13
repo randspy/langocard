@@ -1,5 +1,5 @@
 {
-  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, metadata, sourceUrl, topic).",
+  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, metadata, sourceUrl, topic, gender). gender absent means the gender the word's article states (content written before gender existed).",
   "cases": [
     {
       "name": "minimal personal entry",
@@ -238,6 +238,109 @@
         "topic": "sport"
       },
       "rule": "topic"
+    },
+    {
+      "name": "noun whose gender matches its article",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "une intrigue",
+        "example": "Ce roman développe {une intrigue} complexe.",
+        "gender": "feminine"
+      },
+      "rule": null
+    },
+    {
+      "name": "gender absent is taken from the article",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "une intrigue",
+        "example": "Ce roman développe {une intrigue} complexe."
+      },
+      "rule": null
+    },
+    {
+      "name": "definite article states the gender too",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "le problème",
+        "example": "Nous réglons {le problème} demain.",
+        "gender": "masculine"
+      },
+      "rule": null
+    },
+    {
+      "name": "elided noun takes either gender",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "l'arbre",
+        "example": "Il plante {l'arbre} au fond du jardin.",
+        "gender": "masculine"
+      },
+      "rule": null
+    },
+    {
+      "name": "bare noun takes either gender",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "arbre",
+        "example": "Un {arbre} pousse ici.",
+        "gender": "masculine"
+      },
+      "rule": null
+    },
+    {
+      "name": "article without gender is not a noun",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "un peu",
+        "example": "Attends {un peu}, s'il te plaît.",
+        "gender": null
+      },
+      "rule": null
+    },
+    {
+      "name": "gender contradicting the article",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "une problème",
+        "example": "Nous réglons {une problème} demain.",
+        "gender": "masculine"
+      },
+      "rule": "gender"
+    },
+    {
+      "name": "unknown gender",
+      "entry": {
+        "id": "personal-1",
+        "english": "a plot",
+        "definition": "Ensemble des événements d'une fiction.",
+        "topic": "daily",
+        "word": "pourtant",
+        "example": "Il pleut, {pourtant} elle sort.",
+        "gender": "neuter"
+      },
+      "rule": "gender"
     }
   ]
 }

@@ -3,7 +3,7 @@ import { EntryFlags, SkillBadge } from "@/components/EntryBadges";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import {
-  FILTERS, SKILLS, SKILL_LABELS, filterLibrary, originLabel, skillStatus,
+  FILTERS, GENDER_TAGS, SKILLS, SKILL_LABELS, filterLibrary, originLabel, skillStatus, skillsOf,
   type Filter, type LibraryEntry, type LibrarySearch,
 } from "@/lib/library";
 
@@ -73,6 +73,7 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
                   <span className={entry.deleted ? "text-muted line-through" : "font-serif text-base"}>
                     {entryLink ? entryLink(entry) : entry.word}
                   </span>
+                  {entry.gender && <span className="ml-1.5 text-xs text-muted" title={entry.gender}>{GENDER_TAGS[entry.gender]}</span>}
                   <EntryFlags entry={entry} className="ml-2" />
                 </td>
                 <td className="px-3 py-2 text-muted">{entry.english}</td>
@@ -83,7 +84,11 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
                   {!entry.installed && <span className="text-muted"> · not installed</span>}
                 </td>
                 {SKILLS.map((skill) => (
-                  <td key={skill} className="px-3 py-2"><SkillBadge label={SKILL_LABELS[skill]} status={skillStatus(entry.skills[skill], now)} /></td>
+                  <td key={skill} className="px-3 py-2">
+                    {skillsOf(entry).includes(skill)
+                      ? <SkillBadge label={SKILL_LABELS[skill]} status={skillStatus(entry.skills[skill], now)} />
+                      : <span className="text-muted" title={`${SKILL_LABELS[skill]}: not a noun`}>—</span>}
+                  </td>
                 ))}
               </tr>
             ))}

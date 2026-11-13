@@ -6,7 +6,7 @@ import { UpstreamChanges, type UpstreamChange } from "./UpstreamChanges";
 
 const content = {
   word: "avoir", english: "have", definition: "Posséder.", example: "{Avoir} de la force.", topic: "daily",
-  lemma: "avoir", rank: 6, sourceUrl: "", license: "",
+  lemma: "avoir", rank: 6, sourceUrl: "", license: "", gender: null,
 };
 const change: UpstreamChange = { entryId: "frw-1", origin: "bundled", mine: { ...content, definition: "Mine." }, theirs: { ...content, definition: "Détenir." } };
 

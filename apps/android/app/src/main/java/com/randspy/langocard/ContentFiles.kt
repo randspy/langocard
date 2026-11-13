@@ -14,6 +14,7 @@ object ContentFiles {
         require(e.rank > 0 && e.lemma.length <= 200 && e.license.length <= 500) { "Invalid vocabulary metadata" }
         require(e.sourceUrl.isBlank() || (e.sourceUrl.startsWith("https://") && e.sourceUrl.length <= 2000)) { "Invalid source URL" }
         require(e.topic in setOf("daily", "culture", "news")) { "Unknown topic" }
+        require(e.gender == null || Gender.ofArticle(e.word).let { it == null || it == e.gender }) { "The gender doesn't match the article" }
     }
     /** A required text field: not blank and at most 2,000 characters. */
     fun validText(s: String) = s.isNotBlank() && s.length <= 2000
@@ -23,12 +24,14 @@ object ContentFiles {
     fun entryJson(e: Entry) = JSONObject().put("id", e.id).put("word", e.word).put("english", e.english)
         .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic)
         .put("lemma", e.lemma).put("rank", e.rank).put("sourceUrl", e.sourceUrl).put("license", e.license)
+        .put("gender", Gender.json(e.gender))
     fun readEntries(array: JSONArray): List<Entry> {
         require(array.length() <= 30000) { "Pack is too large" }
         val result = (0 until array.length()).map { i ->
             val o = array.getJSONObject(i)
             Entry(o.getString("id"), o.getString("word"), o.getString("english"), o.getString("definition"), o.getString("example"), o.getString("topic"),
-                o.optString("lemma"), o.optInt("rank", Int.MAX_VALUE), o.optString("sourceUrl"), o.optString("license")).also(::validateEntry)
+                o.optString("lemma"), o.optInt("rank", Int.MAX_VALUE), o.optString("sourceUrl"), o.optString("license"),
+                Gender.read(o, o.getString("word"))).also(::validateEntry)
         }
         require(result.map { it.id }.distinct().size == result.size) { "Duplicate entry IDs" }
         return result
@@ -74,6 +77,7 @@ object ContentFiles {
                 val back = "${html(e.english)}<br>${html(e.definition)}<br>${html(e.example)}<br>$credit"
                 append("${html(e.word)}<br>${html(e.example)}\t$back\tlangocard reading\n")
                 append("${html(e.english)}<br>${html(e.cloze)}\t${html(e.word)}<br>${html(e.example)}<br>$credit\tlangocard production\n")
+                if (e.gender != null) append("${html(Gender.noun(e.word))}<br>${html(e.english)}\t${html(e.gender.article + " " + Gender.noun(e.word))}<br>${html(e.example)}<br>$credit\tlangocard gender\n")
             }
         }
     }

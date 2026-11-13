@@ -4,7 +4,7 @@
  * Every rule is idempotent, so devices can resend the same data without changing
  * the result. Self-contained apart from `entryRules.ts`.
  */
-import { contentOf, sameContent, type EntryContent } from "./entryRules";
+import { contentOf, sameContent, type EntryContent, type StoredContent } from "./entryRules";
 
 export type Settings = {
   placementDone: boolean;
@@ -58,9 +58,9 @@ export function isDeleted(e: EntryClocks): boolean {
   return e.deletedAt !== null && e.deletedAt >= (e.editedAt ?? 0);
 }
 
-export type SeededEntry = EntryContent & {
+export type SeededEntry = StoredContent & {
   origin: string;
-  shipped: EntryContent | null;
+  shipped: StoredContent | null;
   upstreamChanged: boolean;
   retired: boolean;
 };

@@ -49,6 +49,11 @@ frequent pack bundled in the APK (origin `bundled`), and the catalogue packs
 `npm run seed -- --dry-run` validates and counts without writing (CI runs it), and
 `-- --prod` targets production.
 
+Shipped content files may omit `gender`; the seed then takes it from the word's
+article ("une intrigue" → feminine). Deployments with entries stored before gender
+existed need `npx convex run migrations:fillGender` once after deploying (repeat until it
+reports `updated: 0`); see `../../docs/design/noun-gender.md`.
+
 ## Access
 
 Every public function checks a shared secret against the `SYNC_TOKEN` environment

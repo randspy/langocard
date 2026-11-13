@@ -22,7 +22,7 @@ class LibraryRoundTripTest {
                 val application = IsolatedApp(instrumentation.targetContext, directory)
                 val model = LearningModel(application)
                 val originalCount = model.entries.size
-                model.addEntry("une idée", "an idea", "Pensée nouvelle.", "Voici {une idée}.")
+                model.addEntry("une idée", "an idea", "Pensée nouvelle.", "Voici {une idée}.", Gender.Feminine)
                 assertEquals(originalCount + 1, model.entries.size)
                 model.skipPlacement()
                 model.start(false, false)
@@ -48,7 +48,7 @@ class LibraryRoundTripTest {
                 assertTrue(restored.ankiExport().contains("une idée"))
                 try { restored.restore("{}"); fail("Invalid backup accepted") } catch (_: Exception) { }
                 assertEquals(originalCount + 1, LearningModel(application).entries.size)
-                restored.addEntry("un essai", "an attempt", "Action pour essayer.", "Elle prépare {un essai}.")
+                restored.addEntry("un essai", "an attempt", "Action pour essayer.", "Elle prépare {un essai}.", Gender.Masculine)
                 restored.start(false, false)
                 assertEquals("un essai", restored.prompt!!.entry.word)
                 restored.rate(io.github.openspacedrepetition.Rating.GOOD, false)
