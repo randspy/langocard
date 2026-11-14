@@ -5,7 +5,7 @@ from pathlib import Path
 from prepare_pack import prepare
 
 ROOT=Path(__file__).resolve().parents[2]
-BASE='https://raw.githubusercontent.com/randspy/langocard/content-v1/content/'
+BASE='https://raw.githubusercontent.com/randspy/langocard/content-v2/content/'
 SOURCE=('French Wiktionary contributors via Kaikki/Wiktextract, dump 2026-10-01, extraction 2026-10-30; '
         'https://kaikki.org/dictionary/rawdata.html; per-entry French Wiktionary URLs. '
         'Frequency: Lexique 3.83, Boris New, Christophe Pallier and contributors, '
@@ -28,7 +28,7 @@ def publish(audit,out):
         entries=[e for e in rows if low<=e['rank']<=high]
         if not entries:continue
         pack_id='fr-source-'+key+'-2026-11-v1'
-        pack=dict(format='langocard-pack',version=1,packId=pack_id,packVersion=1,source=SOURCE,license=LICENSE,
+        pack=dict(format='langocard-pack',version=2,packId=pack_id,packVersion=2,source=SOURCE,license=LICENSE,
                   status='source-aligned; not independently language-reviewed',entries=entries)
         payload=(json.dumps(pack,ensure_ascii=False,indent=2)+'\n').encode()
         assert len(payload)<20*1024*1024

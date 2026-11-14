@@ -22,7 +22,7 @@ class LibraryRoundTripTest {
                 val application = IsolatedApp(instrumentation.targetContext, directory)
                 val model = LearningModel(application)
                 val originalCount = model.entries.size
-                model.addEntry("une idée", "an idea", "Pensée nouvelle.", "Voici {une idée}.", Gender.Feminine)
+                model.addEntry("une idée", "an idea", "Pensée nouvelle.", listOf("Voici {une idée}."), Gender.Feminine)
                 assertEquals(originalCount + 1, model.entries.size)
                 model.skipPlacement()
                 model.start(false, false)
@@ -34,8 +34,8 @@ class LibraryRoundTripTest {
                 assertEquals(originalCount + 1, restored.entries.size)
                 assertEquals(1, JSONObject(restored.backup()).getJSONObject("data").getJSONObject("cards").length())
                 assertEquals(1, JSONObject(restored.backup()).getJSONObject("data").getJSONArray("reviews").length())
-                val entry = Entry("test-pack-entry", "un récit", "a narrative", "Histoire racontée.", "Elle écrit {un récit}.", "culture")
-                val pack = JSONObject().put("format", "langocard-pack").put("version", 1).put("source", "Test author")
+                val entry = Entry("test-pack-entry", "un récit", "a narrative", "Histoire racontée.", listOf(Example("Elle écrit {un récit}.")), "culture")
+                val pack = JSONObject().put("format", "langocard-pack").put("version", 2).put("source", "Test author")
                     .put("license", "Test license").put("entries", JSONArray().put(ContentFiles.entryJson(entry)))
                 assertEquals(1, restored.importPack(pack.toString()))
                 val before = restored.backup()
@@ -48,7 +48,7 @@ class LibraryRoundTripTest {
                 assertTrue(restored.ankiExport().contains("une idée"))
                 try { restored.restore("{}"); fail("Invalid backup accepted") } catch (_: Exception) { }
                 assertEquals(originalCount + 1, LearningModel(application).entries.size)
-                restored.addEntry("un essai", "an attempt", "Action pour essayer.", "Elle prépare {un essai}.", Gender.Masculine)
+                restored.addEntry("un essai", "an attempt", "Action pour essayer.", listOf("Elle prépare {un essai}."), Gender.Masculine)
                 restored.start(false, false)
                 assertEquals("un essai", restored.prompt!!.entry.word)
                 restored.rate(io.github.openspacedrepetition.Rating.GOOD, false)

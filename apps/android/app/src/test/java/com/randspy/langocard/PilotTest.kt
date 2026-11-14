@@ -11,10 +11,24 @@ import java.time.Instant
 
 class PilotTest {
     @Test fun `inflected clozes preserve the rest of the sentence literally`() {
-        val entry = Entry("beau", "avoir beau", "in vain", "Sans résultat.", "Il {a beau} insister, elle refuse.", "daily")
-        assertEquals("a beau", entry.answer)
-        assertEquals("Il ________ insister, elle refuse.", entry.cloze)
-        assertEquals("Il a beau insister, elle refuse.", entry.example)
+        val example = Example("Il {a beau} insister, elle refuse.")
+        assertEquals("a beau", example.answer)
+        assertEquals("Il ________ insister, elle refuse.", example.cloze)
+        assertEquals("Il a beau insister, elle refuse.", example.text)
+    }
+
+    @Test fun `examples rotate in order from the introductory one`() {
+        val entry = Entry("e", "pourtant", "however", "Malgré cela.",
+            listOf("Il pleut, {pourtant} elle sort.", "Il est las, {pourtant} il reste.", "Rien ne va, {pourtant} on rit.").map(::Example), "daily")
+        assertEquals(listOf(0, 1, 2, 0, 1), (0..4).map { entry.examples.indexOf(entry.exampleAt(it)) })
+        assertEquals(entry.examples.first(), entry.copy(examples = entry.examples.take(1)).exampleAt(7))
+    }
+
+    @Test fun `a prompt's example never changes its card key`() {
+        val entry = Entry("e", "pourtant", "however", "Malgré cela.",
+            listOf("Il pleut, {pourtant} elle sort.", "Il est las, {pourtant} il reste.").map(::Example), "daily")
+        assertEquals(Prompt(entry, Skill.Reading).key, Prompt(entry, Skill.Reading, entry.examples[1]).key)
+        assertEquals("e:Reading", Prompt(entry, Skill.Reading, entry.examples[1]).key)
     }
 
     @Test fun `backlog and daily budget block new vocabulary`() {
@@ -54,13 +68,16 @@ class PilotTest {
         assertEquals(200, rows.size)
         assertEquals(200, rows.map { it.first() }.distinct().size)
         rows.forEach { row ->
-            assertEquals(6, row.size)
+            assertTrue(row.size in 6..5 + ContentFiles.MAX_EXAMPLES)
             assertTrue(row.all(String::isNotBlank))
-            val e = Entry(row[0], row[1], row[2], row[3], row[4], row[5])
-            assertEquals(1, Regex("\\{[^}]+}").findAll(e.markedExample).count())
-            assertTrue(e.answer.isNotBlank())
-            assertFalse(e.example.contains('{'))
-            assertTrue(e.cloze.contains("________"))
+            val e = Entry(row[0], row[1], row[2], row[3], row.drop(5).map(::Example), row[4])
+            ContentFiles.validateEntry(e)
+            e.examples.forEach { example ->
+                assertEquals(1, Regex("\\{[^}]+}").findAll(example.marked).count())
+                assertTrue(example.answer.isNotBlank())
+                assertFalse(example.text.contains('{'))
+                assertTrue(example.cloze.contains("________"))
+            }
             assertTrue(e.topic in setOf("daily", "culture", "news"))
         }
     }

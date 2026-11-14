@@ -5,7 +5,8 @@ export const entryContent = {
   word: v.string(),
   english: v.string(),
   definition: v.string(),
-  example: v.string(),
+  /** 1 to `MAX_EXAMPLES` sentences, each with one `{answer}`; checked by `entryErrors`. */
+  examples: v.array(v.string()),
   topic: v.string(),
   lemma: v.string(),
   rank: v.union(v.number(), v.null()),

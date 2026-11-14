@@ -7,10 +7,19 @@ import io.github.openspacedrepetition.Card
 /** Interchange formats never execute markup or import unvalidated scheduling state. */
 object ContentFiles {
     const val MAX_BYTES = 20 * 1024 * 1024
+    /** A meaning has at most this many examples; mirrors `MAX_EXAMPLES` in `entryRules.ts`. */
+    const val MAX_EXAMPLES = 5
+    /** Formats that carry `examples`; files of earlier versions are rejected, not converted. */
+    const val PACK_VERSION = 2
+    const val BACKUP_VERSION = 2
+    const val DATA_VERSION = 2
+    /** Mirrors `entryErrors` in `entryRules.ts`; throws the message of the first rule broken. */
     fun validateEntry(e: Entry) {
         require(e.id.matches(Regex("[a-zA-Z0-9_-]{1,100}"))) { "Invalid entry ID" }
-        require(listOf(e.word, e.english, e.definition, e.markedExample).all(::validText)) { "Fill every field (maximum 2,000 characters each)" }
-        require(validAnswer(e.markedExample)) { "Mark exactly one answer with {braces} in the example" }
+        require((listOf(e.word, e.english, e.definition) + e.examples.map { it.marked }).all(::validText)) { "Fill every field (maximum 2,000 characters each)" }
+        require(e.examples.all { validAnswer(it.marked) }) { "Mark exactly one answer with {braces} in the example" }
+        require(e.examples.size in 1..MAX_EXAMPLES) { "Give 1 to $MAX_EXAMPLES examples" }
+        require(e.examples.map { it.marked.trim() }.distinct().size == e.examples.size) { "Each example must be different" }
         require(e.rank > 0 && e.lemma.length <= 200 && e.license.length <= 500) { "Invalid vocabulary metadata" }
         require(e.sourceUrl.isBlank() || (e.sourceUrl.startsWith("https://") && e.sourceUrl.length <= 2000)) { "Invalid source URL" }
         require(e.topic in setOf("daily", "culture", "news")) { "Unknown topic" }
@@ -22,14 +31,20 @@ object ContentFiles {
     fun validAnswer(markedExample: String) = markedExample.count { it == '{' } == 1 && markedExample.count { it == '}' } == 1 &&
         markedExample.indexOf('{') < markedExample.indexOf('}') && markedExample.substringAfter("{").substringBefore("}").isNotBlank()
     fun entryJson(e: Entry) = JSONObject().put("id", e.id).put("word", e.word).put("english", e.english)
-        .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic)
+        .put("definition", e.definition).put("examples", examplesJson(e)).put("topic", e.topic)
         .put("lemma", e.lemma).put("rank", e.rank).put("sourceUrl", e.sourceUrl).put("license", e.license)
         .put("gender", Gender.json(e.gender))
+    fun examplesJson(e: Entry) = JSONArray(e.examples.map { it.marked })
+    /** The `examples` of an entry in JSON; missing or malformed gives none, which [validateEntry] rejects. */
+    fun readExamples(o: JSONObject): List<Example> {
+        val array = o.optJSONArray("examples") ?: return emptyList()
+        return (0 until array.length()).map { Example(array.optString(it)) }
+    }
     fun readEntries(array: JSONArray): List<Entry> {
         require(array.length() <= 30000) { "Pack is too large" }
         val result = (0 until array.length()).map { i ->
             val o = array.getJSONObject(i)
-            Entry(o.getString("id"), o.getString("word"), o.getString("english"), o.getString("definition"), o.getString("example"), o.getString("topic"),
+            Entry(o.getString("id"), o.getString("word"), o.getString("english"), o.getString("definition"), readExamples(o), o.getString("topic"),
                 o.optString("lemma"), o.optInt("rank", Int.MAX_VALUE), o.optString("sourceUrl"), o.optString("license"),
                 Gender.read(o, o.getString("word"))).also(::validateEntry)
         }
@@ -48,9 +63,9 @@ object ContentFiles {
     fun backupData(text: String, bundled: Set<String>): JSONObject {
         require(text.toByteArray().size <= MAX_BYTES) { "Backup is too large" }
         val envelope = JSONObject(text)
-        require(envelope.getString("format") == "langocard-backup" && envelope.getInt("version") == 1) { "Unsupported backup" }
+        require(envelope.getString("format") == "langocard-backup" && envelope.getInt("version") == BACKUP_VERSION) { "Unsupported backup" }
         val data = envelope.getJSONObject("data")
-        require(data.getInt("version") == 1) { "Unsupported study data" }
+        require(data.getInt("version") == DATA_VERSION) { "Unsupported study data" }
         val extra = readEntries(data.optJSONArray("extraEntries") ?: JSONArray())
         require(extra.none { it.id in bundled }) { "Entry collides with built-in library" }
         // Synced library rows (web edits, entries from other devices) also own cards.
@@ -72,12 +87,15 @@ object ContentFiles {
         val attribution = html(sources.toString())
         return buildString {
             append("#separator:Tab\n#html:true\n#columns:Front\tBack\tTags\n")
+            // One note per skill: fronts use the introductory example, backs list every example.
             entries.forEach { e ->
                 val credit = "${html(e.sourceUrl)} ${html(e.license)}<br>$attribution"
-                val back = "${html(e.english)}<br>${html(e.definition)}<br>${html(e.example)}<br>$credit"
-                append("${html(e.word)}<br>${html(e.example)}\t$back\tlangocard reading\n")
-                append("${html(e.english)}<br>${html(e.cloze)}\t${html(e.word)}<br>${html(e.example)}<br>$credit\tlangocard production\n")
-                if (e.gender != null) append("${html(Gender.noun(e.word))}<br>${html(e.english)}\t${html(e.gender.article + " " + Gender.noun(e.word))}<br>${html(e.example)}<br>$credit\tlangocard gender\n")
+                val first = e.examples.first()
+                val all = e.examples.joinToString("<br>") { html(it.text) }
+                val back = "${html(e.english)}<br>${html(e.definition)}<br>$all<br>$credit"
+                append("${html(e.word)}<br>${html(first.text)}\t$back\tlangocard reading\n")
+                append("${html(e.english)}<br>${html(first.cloze)}\t${html(e.word)}<br>$all<br>$credit\tlangocard production\n")
+                if (e.gender != null) append("${html(Gender.noun(e.word))}<br>${html(e.english)}\t${html(e.gender.article + " " + Gender.noun(e.word))}<br>$all<br>$credit\tlangocard gender\n")
             }
         }
     }

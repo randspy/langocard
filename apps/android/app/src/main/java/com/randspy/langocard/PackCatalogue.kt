@@ -16,7 +16,7 @@ import javax.net.ssl.HttpsURLConnection
 
 /** One bounded HTTPS transport for catalogue and pack data, with optional pinned digest. */
 object PackDownloads {
-    const val CATALOGUE_URL = "https://raw.githubusercontent.com/randspy/langocard/content-v1/content/catalogue.json"
+    const val CATALOGUE_URL = "https://raw.githubusercontent.com/randspy/langocard/content-v2/content/catalogue.json"
     fun fetch(url: String, sha256: String? = null): String {
         val address = URI(url).toURL()
         require(address.protocol == "https" && address.userInfo == null) { "Use an HTTPS URL without credentials" }

@@ -11,11 +11,11 @@ import java.time.Instant
 
 class SyncDataTest {
     private val scheduler = Scheduler.builder().desiredRetention(0.9).build()
-    private val entry = Entry("personal-sync", "une rencontre", "a meeting", "Moment partagé.", "Elle prépare {une rencontre}.", "culture")
+    private val entry = Entry("personal-sync", "une rencontre", "a meeting", "Moment partagé.", listOf(Example("Elle prépare {une rencontre}.")), "culture")
     private val ids = setOf("base", entry.id)
 
     private fun reviewed(at: Instant, id: Int = 1): Card = scheduler.reviewCard(Card.builder().cardId(id).build(), Rating.GOOD, at).card()
-    private fun device() = JSONObject().put("version", 1).put("cards", JSONObject()).put("reviews", JSONArray())
+    private fun device() = JSONObject().put("version", 2).put("cards", JSONObject()).put("reviews", JSONArray())
         .put("extraEntries", JSONArray()).put("buried", JSONObject()).put("failures", JSONObject()).put("paused", JSONObject())
 
     /** Simulates one device pushing to a server and another pulling the same rows. */
@@ -98,7 +98,7 @@ class SyncDataTest {
         data.getJSONArray("extraEntries").put(ContentFiles.entryJson(entry)).put(ContentFiles.entryJson(entry.copy(id = "frw-pack-1")))
         val row = SyncData.outbox(data, "2026-11-12").entries.single()
         assertEquals(entry.id, row.getString("entryId"))
-        assertEquals("Elle prépare {une rencontre}.", row.getString("example"))
+        assertEquals("[\"Elle prépare {une rencontre}.\"]", row.getJSONArray("examples").toString())
         assertTrue(row.isNull("rank") && row.isNull("editedAt") && row.isNull("deletedAt"))
     }
 
@@ -133,7 +133,7 @@ class SyncDataTest {
 
     @Test fun `invalid entry rows are skipped`() {
         val data = device()
-        val bad = JSONObject(SyncData.entryRow(entry.copy(markedExample = "no answer")).toString()).put("origin", "personal")
+        val bad = JSONObject(SyncData.entryRow(entry.copy(examples = listOf(Example("no answer")))).toString()).put("origin", "personal")
         assertFalse(SyncData.apply(data, "entries", listOf(bad), ids).library)
         assertFalse(data.has("remoteEntries") && data.getJSONObject("remoteEntries").length() > 0)
     }

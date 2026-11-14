@@ -3,6 +3,7 @@ import json
 import unittest
 from pathlib import Path
 from build_corpus import candidates
+from prepare_pack import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -15,8 +16,22 @@ class SourceAlignmentTests(unittest.TestCase):
         rows = list(candidates(record, dict(pos=['NOM'], genders=['m'], rank=1), {'observe', 'prépare'}))
         self.assertEqual(1, len(rows))
         self.assertEqual('Vêtement prévu pour se changer.', rows[0]['definition'])
-        self.assertEqual('Elle prépare {un change} pour demain.', rows[0]['example'])
+        self.assertEqual(['Elle prépare {un change} pour demain.'], rows[0]['examples'])
         self.assertEqual('masculine', rows[0]['gender'])
+
+    def test_keeps_up_to_five_distinct_examples_shortest_first(self):
+        texts = ['Elle prépare un change pour demain matin, très tôt.', 'Elle prépare un change pour demain.',
+                 'Il prépare un change pour la soirée de samedi.', 'Elle prépare un change pour demain.',
+                 'Nous prenons un change pour la longue randonnée.', 'Tu prépares un change pour le voyage en train ?',
+                 'On prépare un change pour la piscine de dimanche.', 'Elle prépare un change pour le week-end.']
+        record = dict(word='change', pos='noun',
+            senses=[dict(glosses=['Vêtement prévu pour se changer.'], examples=[dict(text=t) for t in texts])],
+            translations=[dict(lang_code='en', word='change of clothes', sense='Vêtement prévu pour se changer.')])
+        [row] = candidates(record, dict(pos=['NOM'], genders=['m'], rank=1), {'prépare', 'prépares', 'prenons'})
+        self.assertEqual(5, len(row['examples']))
+        self.assertEqual('Elle prépare {un change} pour demain.', row['examples'][0])
+        self.assertEqual(sorted(row['examples'], key=len), row['examples'])
+        self.assertEqual(5, len(set(row['examples'])))
 
     def test_ambiguous_label_and_quoted_examples_are_not_auto_aligned(self):
         record = dict(word='change', pos='noun', senses=[
@@ -36,6 +51,8 @@ class SourceAlignmentTests(unittest.TestCase):
             self.assertEqual(entry['sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
             pack = json.loads(path.read_text())
             self.assertEqual(entry['meanings'], len(pack['entries']))
+            self.assertEqual(2, pack['version'])
+            self.assertTrue(all(1 <= len(row['examples']) <= 5 and 'example' not in row for row in pack['entries']))
             self.assertEqual(entry['lemmas'], len({row['lemma'] for row in pack['entries']}))
             for row in pack['entries']:
                 self.assertNotIn(row['id'], seen)
@@ -46,6 +63,21 @@ class SourceAlignmentTests(unittest.TestCase):
         self.assertEqual((ROOT/'content/fr-source-frequent-2026-11-v1.json').read_bytes(),
                          (ROOT/'apps/android/app/src/main/assets/frequent-pack.json').read_bytes())
         self.assertEqual(20000, len(json.loads((ROOT/'content/ranked-lemmas.json').read_text())))
+
+class PilotFormatTests(unittest.TestCase):
+    def test_pilot_rows_carry_topic_then_examples(self):
+        entries = prepare(ROOT/'apps/android/app/src/main/assets/pilot.tsv', 'Original pilot', 'Personal draft')['entries']
+        self.assertEqual(200, len(entries))
+        self.assertEqual('daily', entries[0]['topic'])
+        self.assertEqual(['Il pleut, {pourtant} elle sort.'], entries[0]['examples'])
+
+    def test_rejects_unmarked_or_repeated_examples(self):
+        import tempfile
+        for row in ['a|b|c|d|daily|{x} y|no answer', 'a|b|c|d|daily|{x} y|{x} y', 'a|b|c|d|daily']:
+            with tempfile.NamedTemporaryFile('w', suffix='.tsv') as f:
+                f.write(row); f.flush()
+                with self.assertRaises(ValueError):
+                    prepare(f.name, 'source', 'license')
 
 if __name__ == '__main__':
     unittest.main()

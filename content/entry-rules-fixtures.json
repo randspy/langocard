@@ -1,5 +1,5 @@
 {
-  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, metadata, sourceUrl, topic, gender). gender absent means the gender the word's article states (content written before gender existed).",
+  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, examples, metadata, sourceUrl, topic, gender). examples holds 1 to 5 distinct sentences, each with one {answer}. gender absent means the gender the word's article states (content written before gender existed).",
   "cases": [
     {
       "name": "minimal personal entry",
@@ -8,7 +8,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": null
@@ -20,7 +22,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily",
         "lemma": "pourtant",
         "rank": 6,
@@ -36,7 +40,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily",
         "lemma": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "license": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
@@ -50,7 +56,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "{Avoir}",
+        "examples": [
+          "{Avoir}"
+        ],
         "topic": "daily"
       },
       "rule": null
@@ -62,7 +70,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "id"
@@ -74,7 +84,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "id"
@@ -86,7 +98,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "id"
@@ -98,7 +112,9 @@
         "word": "   ",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "fields"
@@ -110,7 +126,9 @@
         "word": "pourtant",
         "english": "",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "fields"
@@ -122,7 +140,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "fields"
@@ -134,7 +154,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, pourtant elle sort.",
+        "examples": [
+          "Il pleut, pourtant elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "answer"
@@ -146,7 +168,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "{Il} pleut, {pourtant} elle sort.",
+        "examples": [
+          "{Il} pleut, {pourtant} elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "answer"
@@ -158,7 +182,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, }pourtant{ elle sort.",
+        "examples": [
+          "Il pleut, }pourtant{ elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "answer"
@@ -170,7 +196,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, { } elle sort.",
+        "examples": [
+          "Il pleut, { } elle sort."
+        ],
         "topic": "daily"
       },
       "rule": "answer"
@@ -182,7 +210,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily",
         "rank": 0
       },
@@ -195,7 +225,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily",
         "lemma": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       },
@@ -208,7 +240,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily",
         "license": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
       },
@@ -221,7 +255,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "daily",
         "sourceUrl": "http://fr.wiktionary.org/wiki/pourtant"
       },
@@ -234,7 +270,9 @@
         "word": "pourtant",
         "english": "however",
         "definition": "Malgré ce qui vient d'être dit.",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "topic": "sport"
       },
       "rule": "topic"
@@ -247,7 +285,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "une intrigue",
-        "example": "Ce roman développe {une intrigue} complexe.",
+        "examples": [
+          "Ce roman développe {une intrigue} complexe."
+        ],
         "gender": "feminine"
       },
       "rule": null
@@ -260,7 +300,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "une intrigue",
-        "example": "Ce roman développe {une intrigue} complexe."
+        "examples": [
+          "Ce roman développe {une intrigue} complexe."
+        ]
       },
       "rule": null
     },
@@ -272,7 +314,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "le problème",
-        "example": "Nous réglons {le problème} demain.",
+        "examples": [
+          "Nous réglons {le problème} demain."
+        ],
         "gender": "masculine"
       },
       "rule": null
@@ -285,7 +329,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "l'arbre",
-        "example": "Il plante {l'arbre} au fond du jardin.",
+        "examples": [
+          "Il plante {l'arbre} au fond du jardin."
+        ],
         "gender": "masculine"
       },
       "rule": null
@@ -298,7 +344,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "arbre",
-        "example": "Un {arbre} pousse ici.",
+        "examples": [
+          "Un {arbre} pousse ici."
+        ],
         "gender": "masculine"
       },
       "rule": null
@@ -311,7 +359,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "un peu",
-        "example": "Attends {un peu}, s'il te plaît.",
+        "examples": [
+          "Attends {un peu}, s'il te plaît."
+        ],
         "gender": null
       },
       "rule": null
@@ -324,7 +374,9 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "une problème",
-        "example": "Nous réglons {une problème} demain.",
+        "examples": [
+          "Nous réglons {une problème} demain."
+        ],
         "gender": "masculine"
       },
       "rule": "gender"
@@ -337,10 +389,163 @@
         "definition": "Ensemble des événements d'une fiction.",
         "topic": "daily",
         "word": "pourtant",
-        "example": "Il pleut, {pourtant} elle sort.",
+        "examples": [
+          "Il pleut, {pourtant} elle sort."
+        ],
         "gender": "neuter"
       },
       "rule": "gender"
+    },
+    {
+      "name": "two examples",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "Il est fatigué, {pourtant} il continue."
+        ]
+      },
+      "rule": null
+    },
+    {
+      "name": "five examples (the limit)",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "Il est fatigué, {pourtant} il continue.",
+          "Elle a peu dormi, {pourtant} elle sourit.",
+          "Le film est long, {pourtant} on ne s'ennuie pas.",
+          "Tout semblait facile, {pourtant} rien n'a marché."
+        ]
+      },
+      "rule": null
+    },
+    {
+      "name": "six examples",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "Il est fatigué, {pourtant} il continue.",
+          "Elle a peu dormi, {pourtant} elle sourit.",
+          "Le film est long, {pourtant} on ne s'ennuie pas.",
+          "Tout semblait facile, {pourtant} rien n'a marché.",
+          "Il fait froid, {pourtant} elle sort sans manteau."
+        ]
+      },
+      "rule": "examples"
+    },
+    {
+      "name": "no examples",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": []
+      },
+      "rule": "examples"
+    },
+    {
+      "name": "only the old example field",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "example": "Il pleut, {pourtant} elle sort."
+      },
+      "rule": "examples"
+    },
+    {
+      "name": "the same example twice",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "  Il pleut, {pourtant} elle sort. "
+        ]
+      },
+      "rule": "examples"
+    },
+    {
+      "name": "a later example without an answer",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "Il est fatigué, pourtant il continue."
+        ]
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "a later example with two answers",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "Il est {fatigué}, {pourtant} il continue."
+        ]
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "a blank later example",
+      "entry": {
+        "id": "personal-1",
+        "word": "pourtant",
+        "english": "however",
+        "definition": "Malgré ce qui vient d'être dit.",
+        "topic": "daily",
+        "examples": [
+          "Il pleut, {pourtant} elle sort.",
+          "   "
+        ]
+      },
+      "rule": "fields"
+    },
+    {
+      "name": "an inflected answer",
+      "entry": {
+        "id": "personal-1",
+        "word": "se rendre compte",
+        "english": "to realise",
+        "definition": "Prendre conscience de quelque chose.",
+        "topic": "daily",
+        "examples": [
+          "Elle {se rend compte} du problème.",
+          "Nous nous {sommes rendu compte} de l'erreur."
+        ]
+      },
+      "rule": null
     }
   ]
 }

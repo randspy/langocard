@@ -74,6 +74,10 @@ The measured coverage and preparation pipeline are documented in
   Good, wrong is Again), for one meaning per noun. Gender cards arrive as a sibling
   skill on a later day, at most ten new ones a day. In production, the right word
   with the wrong article is rated Hard. See `../../docs/design/noun-gender.md`.
+  A meaning can have up to five example sentences. Reading, listening and
+  production take turns through them, one per review of the meaning, starting with
+  the first, so the word is met in different sentences rather than remembered from
+  one. See `../../docs/design/several-examples.md`.
   The pinned MIT-licensed `io.github.open-spaced-repetition:fsrs:1.0.0`
   ([Java-FSRS](https://github.com/open-spaced-repetition/java-fsrs)) schedules at
   90% desired retention using default parameters. Model fitting is deferred.
@@ -91,14 +95,16 @@ The measured coverage and preparation pipeline are documented in
   Background time is excluded. The clock is checkpointed every ten seconds and
   on leaving the activity (an abrupt process termination can lose up to ten seconds).
 - Card states, placement, interests, history and daily counters are written using
-  `AtomicFile` to private `files/learning-v1.json` before advancing each answer.
+  `AtomicFile` to private `files/learning-v2.json` before advancing each answer.
+  The app ignores the older `learning-v1.json` (single-example entries): start fresh,
+  or sync.
   Asset IDs remain stable when example wording is corrected. No account required.
 - Listening requires an installed French TTS voice marked as not requiring a
   network; France voices are preferred. Synthetic audio is labeled. Missing or
   failed audio never counts as a successful assessment. Install voice data in
   Android speech settings and reopen the app; check actual output in airplane
   mode on the target device. Studying works offline; networking is used only for explicitly requested pack downloads and, once configured, cloud sync.
-- The library supports French/English search and replaying examples. Interest
+- The library supports French/English search and lists and replays every example. Interest
   changes affect new-entry ordering, without changing learned card states.
 
 Run `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`.
@@ -121,14 +127,16 @@ The home screen’s navigation drawer links to separate pages for vocabulary, en
 creation, pack import/download, backup/restore, and Anki TSV export. The drawer
 contains navigation only; forms and file actions live on their destination pages. Android's document picker lets you choose
 where to save files. Restore requires confirmation and validates the backup before
-replacing the current library and scheduling data. Existing pilot progress migrates
-without clearing app data. Anki exports reading and production cards, with HTML
-escaped and content-source attribution retained. Export does not preserve FSRS
+replacing the current library and scheduling data. Backups are version 2; version 1
+backups (single-example entries) are rejected. Anki exports reading and production
+cards, with HTML escaped and content-source attribution retained. Fronts use the first
+example and backs list them all. Export does not preserve FSRS
 scheduling or engine-generated audio; listening stays in Langocard.
 
-Packs contain `format: "langocard-pack"`, `version: 1`, `source`, `license`, and
-an `entries` array. Entry fields are `id`, `word`, `english`, `definition`, `example`
-(one answer in `{braces}`), and `topic` (`daily`, `culture`, or `news`). IDs must be
+Packs contain `format: "langocard-pack"`, `version: 2`, `source`, `license`, and
+an `entries` array. Entry fields are `id`, `word`, `english`, `definition`, `examples`
+(1 to 5 different sentences, each with one answer in `{braces}`; the first is shown
+first), and `topic` (`daily`, `culture`, or `news`). Version 1 packs are rejected. IDs must be
 unique, stable, and not collide with installed entries. Import is additive; duplicate
 IDs reject the whole pack. Packs and backups have a 20 MB size limit. Downloads
 accept direct HTTPS URLs; redirects are rejected. Imported material works offline.
@@ -141,8 +149,10 @@ python3 tools/content/prepare_pack.py approved.tsv french-pack.json \
   --license 'License identifier and URL; modification notices'
 ```
 
+Rows are `id|word|english|definition|topic|example`, with up to four more examples
+as extra columns, the same format as the bundled `pilot.tsv`.
 The command runs from the repository root. Split large libraries into smaller packs.
-The catalogue is hosted on the `content-v1` Git branch with direct HTTPS raw URLs.
+The catalogue is hosted on the `content-v2` Git branch with direct HTTPS raw URLs.
 Catalogue downloads verify pack SHA256 digests before validation/import.
 `build_corpus.py` provides conservative source alignment; `publish_catalogue.py`
 produces versioned packs and the bundled catalogue. The simpler preparation tool

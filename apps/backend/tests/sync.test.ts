@@ -14,8 +14,8 @@ const settings: Settings = {
 };
 const card = (o: Partial<{ card: string | null; lastReview: number; failures: number; pausedUntil: number; suspendedUntil: number; cardEditedAt: number }> = {}) =>
   ({ key: "e1:Reading", card: '{"v":1}', lastReview: 100, failures: 0, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0, ...o });
-const entry = (o: Partial<{ entryId: string; word: string; gender: "masculine" | "feminine" | null; editedAt: number | null; deletedAt: number | null }> = {}) => ({
-  entryId: "personal-1", word: "pourtant", english: "however", definition: "Malgré cela.", example: "Il pleut, {pourtant} elle sort.",
+const entry = (o: Partial<{ entryId: string; word: string; examples: string[]; gender: "masculine" | "feminine" | null; editedAt: number | null; deletedAt: number | null }> = {}) => ({
+  entryId: "personal-1", word: "pourtant", english: "however", definition: "Malgré cela.", examples: ["Il pleut, {pourtant} elle sort."],
   topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null as "masculine" | "feminine" | null, editedAt: null, deletedAt: null, ...o,
 });
 
@@ -39,6 +39,26 @@ describe("sync", () => {
     const t = convexTest(schema, modules);
     const v1Card = { key: "e1:Reading", card: "{}", lastReview: 1, failures: 0, pausedUntil: 0 };
     await expect(t.mutation(api.sync.push, { token, ...empty, cards: [v1Card as never] })).rejects.toThrow();
+  });
+
+  test("carries a meaning's examples in order and refuses the old single example", async () => {
+    const t = convexTest(schema, modules);
+    const examples = ["Il est las, {pourtant} il reste.", "Il pleut, {pourtant} elle sort."];
+    const result = await t.mutation(api.sync.push, { token, ...empty, entries: [entry({ examples })] });
+    expect(result.rejected).toEqual([]);
+    expect(await pullAll(t, "entries")).toMatchObject([{ entryId: "personal-1", examples }]);
+    expect((await pullAll(t, "entries"))[0]).not.toHaveProperty("example");
+    const { examples: _, ...old } = entry();
+    await expect(t.mutation(api.sync.push, { token, ...empty, entries: [{ ...old, example: "Il pleut, {pourtant} elle sort." } as never] })).rejects.toThrow();
+  });
+
+  test("rejects entries whose examples break the rules", async () => {
+    const t = convexTest(schema, modules);
+    const result = await t.mutation(api.sync.push, { token, ...empty, entries: [
+      entry({ entryId: "personal-none", examples: [] }),
+      entry({ entryId: "personal-twice", examples: ["Il pleut, {pourtant} elle sort.", "Il pleut, {pourtant} elle sort."] }),
+    ] });
+    expect(result.rejected).toEqual(["personal-none", "personal-twice"]);
   });
 
   test("keeps the card with the latest review", async () => {

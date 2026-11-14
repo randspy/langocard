@@ -37,7 +37,7 @@ describe("entries", () => {
   test("rejects invalid content with the entry rule message", async () => {
     const t = setup();
     const me = await owner(t);
-    await expect(me.mutation(api.entries.create, content({ example: "no answer" }))).rejects.toThrow(/Mark exactly one answer/);
+    await expect(me.mutation(api.entries.create, content({ examples: ["no answer"] }))).rejects.toThrow(/Mark exactly one answer/);
     await expect(me.mutation(api.entries.update, { entryId: "frw-1", ...content({ topic: "sport" }) })).rejects.toThrow(/Unknown topic/);
   });
 

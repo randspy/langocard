@@ -10,7 +10,7 @@ import javax.net.ssl.HttpsURLConnection
 /**
  * Optional cloud sync with the Convex backend in `apps/backend`.
  *
- * Sync protocol v2. Local `learning-v1.json` is what the app studies from; studying never
+ * Sync protocol v2. Local `learning-v2.json` is what the app studies from; studying never
  * waits for the network. Sync pushes local changes, then pulls rows the server merged.
  * The merge rules mirror `apps/backend/convex/merge.ts` (shared cases in
  * `content/merge-fixtures.json`): card review fields follow the newest review and the
@@ -60,13 +60,13 @@ object SyncData {
     fun rowEntry(row: JSONObject): Entry? = runCatching {
         val rank = row.longOrNull("rank")?.toInt() ?: Int.MAX_VALUE
         Entry(row.getString("entryId"), row.getString("word"), row.getString("english"), row.getString("definition"),
-            row.getString("example"), row.getString("topic"), row.optString("lemma"), rank,
+            ContentFiles.readExamples(row), row.getString("topic"), row.optString("lemma"), rank,
             row.optString("sourceUrl"), row.optString("license"), Gender.read(row, row.getString("word"))).also(ContentFiles::validateEntry)
     }.getOrNull()
 
     /** A local entry as a v2 push row; devices never edit, so both clocks are null. */
     fun entryRow(e: Entry): JSONObject = JSONObject().put("entryId", e.id).put("word", e.word).put("english", e.english)
-        .put("definition", e.definition).put("example", e.markedExample).put("topic", e.topic).put("lemma", e.lemma)
+        .put("definition", e.definition).put("examples", ContentFiles.examplesJson(e)).put("topic", e.topic).put("lemma", e.lemma)
         .put("rank", if (e.rank == Int.MAX_VALUE) JSONObject.NULL else e.rank)
         .put("sourceUrl", e.sourceUrl).put("license", e.license).put("gender", Gender.json(e.gender))
         .put("editedAt", JSONObject.NULL).put("deletedAt", JSONObject.NULL)
@@ -212,7 +212,7 @@ object SyncData {
                 rows.forEach { row ->
                     if (rowEntry(row) == null) return@forEach
                     val stored = JSONObject()
-                    listOf("entryId", "word", "english", "definition", "example", "topic", "lemma", "rank", "sourceUrl",
+                    listOf("entryId", "word", "english", "definition", "examples", "topic", "lemma", "rank", "sourceUrl",
                         "license", "editedAt", "deletedAt", "origin", "retired").forEach { stored.put(it, row.opt(it) ?: JSONObject.NULL) }
                     // A row without gender predates it; leaving the key out keeps the article gender.
                     if (row.has("gender")) stored.put("gender", row.get("gender"))

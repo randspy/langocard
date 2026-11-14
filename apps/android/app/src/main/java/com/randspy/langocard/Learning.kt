@@ -18,9 +18,26 @@ import org.json.JSONObject
 import java.io.File
 import java.time.Instant
 
-/** IDs identify meanings; changing examples must never change scheduling identity. */
+/**
+ * A French sentence that uses a meaning, with exactly one marked answer: "Il pleut, {pourtant} elle sort."
+ * The answer is the word as this sentence uses it, so it may be an inflected form.
+ * Mirrors `answerOf`, `textOf` and `clozeOf` in `apps/backend/convex/entryRules.ts`.
+ */
+data class Example(val marked: String) {
+    val answer get() = marked.substringAfter("{").substringBefore("}")
+    /** The sentence as read or spoken, without the answer marks. */
+    val text get() = marked.replace("{", "").replace("}", "")
+    /** The sentence with the answer replaced by a gap, as Production shows it. */
+    val cloze get() = marked.replace("{$answer}", "________")
+    override fun toString() = marked
+}
+
+/**
+ * IDs identify meanings; changing examples must never change scheduling identity.
+ * [examples] holds 1 to [ContentFiles.MAX_EXAMPLES] sentences; the first is the introductory example.
+ */
 data class Entry(val id: String, val word: String, val english: String, val definition: String,
-                 val markedExample: String, val topic: String,
+                 val examples: List<Example>, val topic: String,
                  val lemma: String = "", val rank: Int = Int.MAX_VALUE,
                  val sourceUrl: String = "", val license: String = "", val gender: Gender? = null) {
     val lexeme get() = lemma.ifBlank { word.removePrefix("un ").removePrefix("une ") }
@@ -28,9 +45,11 @@ data class Entry(val id: String, val word: String, val english: String, val defi
     val skills get() = if (gender == null) Skill.entries - Skill.Gender else Skill.entries
     /** [word] with its gender tag for nouns: "une intrigue (f.)". */
     val labelledWord get() = gender?.let { "$word (${it.tag})" } ?: word
-    val answer get() = markedExample.substringAfter("{").substringBefore("}")
-    val example get() = markedExample.replace("{", "").replace("}", "")
-    val cloze get() = markedExample.replace("{$answer}", "________")
+    /**
+     * The example a meaning shows after [exposures] reviews: they rotate in order, starting
+     * from the introductory example. Mirrors `exampleAt` in `entryRules.ts`.
+     */
+    fun exampleAt(exposures: Int): Example = examples[exposures % examples.size]
 }
 enum class Skill(val label: String) {
     Reading("Read"), Listening("Listen"), Production("Speak"),
@@ -41,7 +60,10 @@ enum class Skill(val label: String) {
         val placement = listOf(Reading, Listening, Production)
     }
 }
-data class Prompt(val entry: Entry, val skill: Skill) { val key get() = "${entry.id}:${skill.name}" }
+/** One card to study, with the [example] it shows. The example never affects the card's [key]. */
+data class Prompt(val entry: Entry, val skill: Skill, val example: Example = entry.examples.first()) {
+    val key get() = "${entry.id}:${skill.name}"
+}
 
 object StudyPolicy {
     const val DAILY_SECONDS = 15 * 60
@@ -56,17 +78,18 @@ object StudyPolicy {
 class LearningModel(application: Application) : AndroidViewModel(application) {
     private val pilot = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
         lines.filter { it.isNotBlank() }.map { line ->
-            val c = line.split('|'); require(c.size == 6)
-            Entry(c[0], c[1], c[2], c[3], c[4], c[5], gender = Gender.ofArticle(c[1]))
+            // id|word|english|definition|topic|example|example…
+            val c = line.split('|'); require(c.size >= 6)
+            Entry(c[0], c[1], c[2], c[3], c.drop(5).map(::Example), c[4], gender = Gender.ofArticle(c[1]))
         }.toList().also { require(it.size == 200 && it.map(Entry::id).distinct().size == 200) }
     }
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
     private val bundled = pilot + ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
     val bundledCount get() = bundled.size
-    private val file = AtomicFile(File(application.filesDir, "learning-v1.json"))
+    private val file = AtomicFile(File(application.filesDir, "learning-v${ContentFiles.DATA_VERSION}.json"))
     private val data = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
         file.openRead().bufferedReader().use { JSONObject(it.readText()) }
-    } else JSONObject().put("version", 1)
+    } else JSONObject().put("version", ContentFiles.DATA_VERSION)
     /** The active study library; see [StudyLibrary.active]. */
     val entries = androidx.compose.runtime.mutableStateListOf<Entry>()
     /** Entries removed from the shipped content: kept for their progress, never introduced as new. */
@@ -148,7 +171,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     fun backup(): String {
         persist()
-        return JSONObject().put("format", "langocard-backup").put("version", 1)
+        return JSONObject().put("format", "langocard-backup").put("version", ContentFiles.BACKUP_VERSION)
             .put("data", JSONObject(data.toString()).apply { remove("sync") }).toString(2)
     }
     fun validateBackup(text: String) { ContentFiles.backupData(text, bundled.map { it.id }.toSet()) }
@@ -183,7 +206,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
 
     fun importPack(text: String): Int {
         val pack = JSONObject(text)
-        require(pack.getString("format") == "langocard-pack" && pack.getInt("version") == 1) { "Unsupported pack format" }
+        require(pack.getString("format") == "langocard-pack" && pack.getInt("version") == ContentFiles.PACK_VERSION) { "Unsupported pack format" }
         require(pack.getString("source").isNotBlank() && pack.getString("license").isNotBlank()) { "Pack must include source and license" }
         val incoming = ContentFiles.readEntries(pack.getJSONArray("entries"))
         require(incoming.isNotEmpty()) { "Empty pack" }
@@ -202,8 +225,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val sources = data.optJSONArray("sources") ?: return false
         return (0 until sources.length()).any { sources.getJSONObject(it).optString("packId") == id }
     }
-    fun addEntry(word: String, english: String, definition: String, example: String, gender: Gender?) {
-        val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(), example.trim(), "daily", gender = gender)
+    fun addEntry(word: String, english: String, definition: String, examples: List<String>, gender: Gender?) {
+        val entry = Entry("personal-" + java.util.UUID.randomUUID(), word.trim(), english.trim(), definition.trim(),
+            examples.map { Example(it.trim()) }, "daily", gender = gender)
         ContentFiles.validateEntry(entry)
         val extra = data.optJSONArray("extraEntries") ?: JSONArray().also { data.put("extraEntries", it) }
         extra.put(ContentFiles.entryJson(entry)); save(); rebuildEntries()
@@ -246,30 +270,46 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun home() { screen = "home"; prompt = null; save() }
     fun skipPlacement() { data.put("placementDone", true); placing = false; home() }
     val isPlacement get() = placing
+    /**
+     * How many times the meaning has been shown in a sentence: its logged Reading, Listening
+     * and Production reviews, placement and other devices' reviews included. Gender cards
+     * show no sentence, so they don't count.
+     */
+    private fun exposures(entryId: String): Int {
+        val shown = Skill.placement.map { "$entryId:${it.name}" }.toSet()
+        return (0 until logs.length()).count { logs.getJSONObject(it).optString("key") in shown }
+    }
+    /** [p] showing the meaning's next example, so each exposure meets the word in another sentence. */
+    private fun shown(p: Prompt) = p.copy(example = p.entry.exampleAt(exposures(p.entry.id)))
     private fun next(audio: Boolean) {
+        val chosen = choose(audio)
+        if (chosen != null) prompt = shown(chosen)
+        else { if (placing) data.put("placementDone", true); finish() }
+    }
+    /** The card to study next, or null when the session (or placement) is over. */
+    private fun choose(audio: Boolean): Prompt? {
         if (placing) {
             while (placementIndex < 18) {
                 val p = Prompt(placementEntries[placementIndex % 6], Skill.placement[placementIndex / 6])
-                if (p.skill != Skill.Listening || audio) { prompt = p; return }
+                if (p.skill != Skill.Listening || audio) return p
                 placementIndex++ // unavailable audio remains unassessed, not marked known
             }
-            data.put("placementDone", true); finish(); return
+            return null
         }
         val available = prompts(audio).filter { buried.optString(it.key) != today() }
         val due = available.filter { state(it)?.due?.let { date -> !date.isAfter(Instant.now()) } == true }
             .minByOrNull { state(it)!!.due }
-        if (due != null) { prompt = due; return }
+        if (due != null) return due
         // Existing senses gain additional skills on later days, before new senses.
         // Gender comes last, a few a day: it needs the meaning to be familiar first.
         val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
         val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
-        if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) { prompt = sibling; return }
+        if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) return sibling
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            prompt = available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
-            if (prompt != null) return
+            return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
         }
-        finish()
+        return null
     }
     fun rate(rating: Rating, audio: Boolean) {
         val p = prompt ?: return

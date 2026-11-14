@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import ruleFixtures from "../../../content/entry-rules-fixtures.json";
 import mergeFixtures from "../../../content/merge-fixtures.json";
-import { answerOf, clozeOf, entryErrors, fromAndroidJson } from "../convex/entryRules";
+import { answerOf, clozeOf, entryErrors, exampleAt, fromAndroidJson, sameContent, textOf, type EntryContent } from "../convex/entryRules";
 import { entryWins, isDeleted, mergeCard, SUSPENDED_INDEFINITELY, type CardState } from "../convex/merge";
 
 describe("entry rules (shared fixtures)", () => {
@@ -14,13 +14,29 @@ describe("entry rules (shared fixtures)", () => {
 
 describe("entry rules", () => {
   test("reports every broken field for form errors", () => {
-    const errors = entryErrors("bad id", { word: "", english: "", definition: "d", example: "no answer", topic: "x", lemma: "", rank: null, sourceUrl: "", license: "", gender: null });
-    expect(errors.map((e) => e.field)).toEqual(["entryId", "word", "english", "example", "topic"]);
+    const errors = entryErrors("bad id", { word: "", english: "", definition: "d", examples: ["{ok}", "no answer"], topic: "x", lemma: "", rank: null, sourceUrl: "", license: "", gender: null });
+    expect(errors.map((e) => [e.field, e.index])).toEqual([
+      ["entryId", undefined], ["word", undefined], ["english", undefined], ["examples", 1], ["topic", undefined],
+    ]);
   });
 
   test("derives the answer and the cloze", () => {
     expect(answerOf("Il pleut, {pourtant} elle sort.")).toBe("pourtant");
     expect(clozeOf("Il pleut, {pourtant} elle sort.")).toBe("Il pleut, ________ elle sort.");
+    expect(textOf("Il pleut, {pourtant} elle sort.")).toBe("Il pleut, pourtant elle sort.");
+  });
+
+  test("rotates through the examples, starting with the introductory one", () => {
+    const examples = ["{a}", "{b}", "{c}"];
+    expect([0, 1, 2, 3, 4].map((n) => exampleAt(examples, n))).toEqual(["{a}", "{b}", "{c}", "{a}", "{b}"]);
+    expect(exampleAt(["{only}"], 7)).toBe("{only}");
+  });
+
+  test("compares examples in order", () => {
+    const entry: EntryContent = { word: "w", english: "e", definition: "d", examples: ["{a}", "{b}"], topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null };
+    expect(sameContent(entry, { ...entry, examples: ["{a}", "{b}"] })).toBe(true);
+    expect(sameContent(entry, { ...entry, examples: ["{b}", "{a}"] })).toBe(false);
+    expect(sameContent(entry, { ...entry, examples: ["{a}"] })).toBe(false);
   });
 });
 

@@ -6,6 +6,8 @@ from pathlib import Path
 from urllib.parse import quote
 
 BAD={'obsolete','archaic','dated','rare','offensive','vulgar','derogatory','slur','form-of','plural','Canada','Quebec'}
+# A meaning ships at most this many examples (shortest first); see entryRules.ts.
+MAX_EXAMPLES=5
 POS={'noun':'NOM','verb':'VER','adj':'ADJ','adv':'ADV','prep':'PRE','conj':'CON','pron':'PRO'}
 
 def ranked_lemmas(path,limit):
@@ -80,7 +82,7 @@ def candidates(record,lemma,finite):
         if not examples:continue
         stable=hashlib.sha256((word+'\0'+pos+'\0'+definition).encode()).hexdigest()[:20]
         yield dict(id='frw-'+stable,word=display,english='; '.join(translations[:3]),definition=definition,
-                   example=min(examples,key=len),topic='daily',lemma=word,rank=lemma['rank'],
+                   examples=sorted(set(examples),key=lambda e:(len(e),e))[:MAX_EXAMPLES],topic='daily',lemma=word,rank=lemma['rank'],
                    sourceUrl='https://fr.wiktionary.org/wiki/'+quote(word,safe='')+'#fr',
                    license='CC BY-SA 4.0',sourceSense=index,sourcePos=pos,
                    gender=({'m':'masculine','f':'feminine'}[lemma['genders'][0]] if pos=='noun' else None))
