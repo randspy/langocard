@@ -99,7 +99,7 @@ fun AddEntry(model: LearningModel) {
     Button(onClick = {
         message = try {
             model.addEntry(fields.getValue(DraftField.Word), english, fields.getValue(DraftField.Definition),
-                fields.getValue(DraftField.Example), effectiveGender(fields)?.let(::genderOf))
+                listOf(fields.getValue(DraftField.Example)), effectiveGender(fields)?.let(::genderOf))
             english = ""; fields.keys.forEach { fields[it] = "" }; drafted = emptySet()
             "Entry added to your library"
         } catch (e: Exception) { e.message ?: "Could not save this entry" }

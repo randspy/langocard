@@ -133,7 +133,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
-                "review" -> Review(model, speech, revealed || chosen != null, played, chosen) { played = speech.say(current!!.entry.example) || played }
+                "review" -> Review(model, speech, revealed || chosen != null, played, chosen) { played = speech.say(current!!.example.text) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
                     Text("${model.sessionReviews} assessments · ${model.sessionRecalled} recalled")
@@ -195,12 +195,12 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
             when (p.skill) {
                 Skill.Reading -> {
                     Text(p.entry.word, style = MaterialTheme.typography.headlineMedium)
-                    Text(p.entry.example)
+                    Text(p.example.text)
                     Text("Recall the meaning before revealing.", style = MaterialTheme.typography.bodySmall)
                 }
                 Skill.Production -> {
                     Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
-                    Text(p.entry.cloze, style = MaterialTheme.typography.titleLarge)
+                    Text(p.example.cloze, style = MaterialTheme.typography.titleLarge)
                     Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
                 }
                 Skill.Gender -> {
@@ -228,11 +228,11 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                         style = MaterialTheme.typography.titleMedium)
                 }
                 Text(p.entry.labelledWord, style = MaterialTheme.typography.headlineMedium)
-                if (!p.entry.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.entry.answer}")
+                if (!p.example.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.example.answer}")
                 Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
                 Text(p.entry.definition)
-                Text(p.entry.example)
-                if (speech.available) OutlinedButton(onClick = { speech.say(p.entry.example) }) { Text("Hear example") }
+                Text(p.example.text)
+                if (speech.available) OutlinedButton(onClick = { speech.say(p.example.text) }) { Text("Hear example") }
             }
         }
     }
@@ -310,12 +310,14 @@ private fun Library(model: LearningModel, speech: FrenchSpeech, alwaysOpen: Bool
             Text(entry.labelledWord, style = MaterialTheme.typography.titleMedium)
             Text(entry.english)
             Text(entry.definition)
-            Text(entry.example)
+            entry.examples.forEach { example ->
+                Text(example.text)
+                if (speech.available) TextButton(onClick = { speech.say(example.text) }) { Text("Listen") }
+            }
             if (entry.sourceUrl.isNotBlank()) {
                 Text("Frequency rank ${entry.rank} · ${entry.license}", style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = { uriHandler.openUri(entry.sourceUrl) }) { Text("Dictionary source") }
             }
-            if (speech.available) TextButton(onClick = { speech.say(entry.example) }) { Text("Listen") }
         }
     }
 }

@@ -1,8 +1,8 @@
 {
   "format": "langocard-pack",
-  "version": 1,
+  "version": 2,
   "packId": "fr-source-everyday-2026-11-v1",
-  "packVersion": 1,
+  "packVersion": 2,
   "source": "French Wiktionary contributors via Kaikki/Wiktextract, dump 2026-10-01, extraction 2026-10-30; https://kaikki.org/dictionary/rawdata.html; per-entry French Wiktionary URLs. Frequency: Lexique 3.83, Boris New, Christophe Pallier and contributors, https://openlexicon.fr/datasets-info/Lexique383/README-Lexique.html. Adaptations: filtered definitions and examples, English sense alignment, noun articles, cloze markup, frequency ranks.",
   "license": "CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/; see NOTICE.md for attribution and modifications",
   "status": "source-aligned; not independently language-reviewed",
@@ -12,7 +12,9 @@
       "word": "une dette",
       "english": "debt",
       "definition": "Obligation sociale ou sentiment subjectif d’obligation de rendre quelque chose de la même valeur que celle qu’on a auparavant reçue.",
-      "example": "Il a {une dette} envers la société.",
+      "examples": [
+        "Il a {une dette} envers la société."
+      ],
       "topic": "daily",
       "lemma": "dette",
       "rank": 2536,
@@ -26,7 +28,9 @@
       "word": "liquide",
       "english": "liquid",
       "definition": "Fluide, qui tend à couler.",
-      "example": "Ce breuvage n’est pas assez {liquide}.",
+      "examples": [
+        "Ce breuvage n’est pas assez {liquide}."
+      ],
       "topic": "daily",
       "lemma": "liquide",
       "rank": 2546,
@@ -40,7 +44,9 @@
       "word": "un liquide",
       "english": "liquid",
       "definition": "Fluide qui peut couler, et possède son volume propre, qui ne varie (peu) qu’avec la température ou la pression.",
-      "example": "Tout corps plongé dans {un liquide} éprouve de bas en haut une pression égale au poids du liquide déplacé.",
+      "examples": [
+        "Tout corps plongé dans {un liquide} éprouve de bas en haut une pression égale au poids du liquide déplacé."
+      ],
       "topic": "daily",
       "lemma": "liquide",
       "rank": 2546,
@@ -54,7 +60,9 @@
       "word": "liquide",
       "english": "liquid",
       "definition": "Rapidement disponible, en parlant d’actifs financiers.",
-      "example": "Un portefeuille d’actif assez {liquide}.",
+      "examples": [
+        "Un portefeuille d’actif assez {liquide}."
+      ],
       "topic": "daily",
       "lemma": "liquide",
       "rank": 2546,
@@ -68,7 +76,9 @@
       "word": "liquide",
       "english": "unencumbered (by debt)",
       "definition": "Qui est net et clair, qui n’est pas sujet à contestation, qui n’est pas chargé de dettes.",
-      "example": "On ne peut saisir que pour une dette {liquide} et certaine.",
+      "examples": [
+        "On ne peut saisir que pour une dette {liquide} et certaine."
+      ],
       "topic": "daily",
       "lemma": "liquide",
       "rank": 2546,
@@ -82,7 +92,9 @@
       "word": "essuyer",
       "english": "suffer; endure",
       "definition": "Devoir supporter, éprouver, subir.",
-      "example": "{Essuyer} des affronts, des outrages.",
+      "examples": [
+        "{Essuyer} des affronts, des outrages."
+      ],
       "topic": "daily",
       "lemma": "essuyer",
       "rank": 2559,
@@ -96,7 +108,9 @@
       "word": "surgir",
       "english": "arrive",
       "definition": "Arriver ; aborder.",
-      "example": "{Surgir} à bon port, atteindre au but de ses vœux, réussir dans quelque chose qu’on avait entrepris.",
+      "examples": [
+        "{Surgir} à bon port, atteindre au but de ses vœux, réussir dans quelque chose qu’on avait entrepris."
+      ],
       "topic": "daily",
       "lemma": "surgir",
       "rank": 2577,
@@ -110,7 +124,9 @@
       "word": "recouvrir",
       "english": "cover; overlay; lag",
       "definition": "Couvrir de nouveau.",
-      "example": "Faire {recouvrir} un livre.",
+      "examples": [
+        "Faire {recouvrir} un livre."
+      ],
       "topic": "daily",
       "lemma": "recouvrir",
       "rank": 2584,
@@ -124,7 +140,9 @@
       "word": "obscur",
       "english": "obscure; dark",
       "definition": "Où il y a peu, où il n’y a pas de lumière.",
-      "example": "Il fait {obscur} dans cet endroit, ce lieu n’est pas bien éclairé, on n’y voit pas clair.",
+      "examples": [
+        "Il fait {obscur} dans cet endroit, ce lieu n’est pas bien éclairé, on n’y voit pas clair."
+      ],
       "topic": "daily",
       "lemma": "obscur",
       "rank": 2589,
@@ -138,7 +156,9 @@
       "word": "un boucher",
       "english": "butcher",
       "definition": "Homme cruel et sanguinaire.",
-      "example": "C’est {un boucher}, un vrai boucher.",
+      "examples": [
+        "C’est {un boucher}, un vrai boucher."
+      ],
       "topic": "daily",
       "lemma": "boucher",
       "rank": 2623,
@@ -152,7 +172,9 @@
       "word": "une médecine",
       "english": "medicine",
       "definition": "Science des maladies et art de les guérir.",
-      "example": "Faire sa médecine. – Docteur, étudiant en médecine. – La Faculté, les écoles de médecine. – Des livres, des thèses de médecine. – Pratiquer, exercer {la médecine}.",
+      "examples": [
+        "Faire sa médecine. – Docteur, étudiant en médecine. – La Faculté, les écoles de médecine. – Des livres, des thèses de médecine. – Pratiquer, exercer {la médecine}."
+      ],
       "topic": "daily",
       "lemma": "médecine",
       "rank": 2625,
@@ -166,7 +188,9 @@
       "word": "une grille",
       "english": "railing; gate",
       "definition": "Certaines clôtures ou séparations qui sont formées principalement de barreaux montants et parallèles et qui ont quelquefois des ornements.",
-      "example": "Ouvrir, fermer {la grille}.",
+      "examples": [
+        "Ouvrir, fermer {la grille}."
+      ],
       "topic": "daily",
       "lemma": "grille",
       "rank": 2639,
@@ -180,7 +204,9 @@
       "word": "humide",
       "english": "damp; humid; moist",
       "definition": "Qui est chargé de quelque substance ou vapeur aqueuse.",
-      "example": "L’hiver a été fort {humide}.",
+      "examples": [
+        "L’hiver a été fort {humide}."
+      ],
       "topic": "daily",
       "lemma": "humide",
       "rank": 2645,
@@ -194,7 +220,9 @@
       "word": "relâcher",
       "english": "release",
       "definition": "Laisser aller, en parlant d’un prisonnier, de quelqu’un qu’on retenait malgré lui et à qui on rend la liberté.",
-      "example": "Faute de preuves, on a dû le {relâcher}.",
+      "examples": [
+        "Faute de preuves, on a dû le {relâcher}."
+      ],
       "topic": "daily",
       "lemma": "relâcher",
       "rank": 2655,
@@ -208,7 +236,9 @@
       "word": "une reconnaissance",
       "english": "recognition",
       "definition": "Action de reconnaître, d’admettre comme légal un gouvernement étranger.",
-      "example": "{La reconnaissance} de ce gouvernement par l’Angleterre ne se fit point attendre.",
+      "examples": [
+        "{La reconnaissance} de ce gouvernement par l’Angleterre ne se fit point attendre."
+      ],
       "topic": "daily",
       "lemma": "reconnaissance",
       "rank": 2660,
@@ -222,7 +252,9 @@
       "word": "enfiler",
       "english": "slip on; pull on; fling on",
       "definition": "Mettre, passer un vêtement rapidement (ex: un manteau, un pardessus, un pull).",
-      "example": "Je suis vite montée {enfiler} quelque chose de plus confortable.",
+      "examples": [
+        "Je suis vite montée {enfiler} quelque chose de plus confortable."
+      ],
       "topic": "daily",
       "lemma": "enfiler",
       "rank": 2692,
@@ -236,7 +268,9 @@
       "word": "constater",
       "english": "ascertain; establish",
       "definition": "Établir pour réel.",
-      "example": "Il faut {constater} ce fait avant que d’en tirer aucune induction.",
+      "examples": [
+        "Il faut {constater} ce fait avant que d’en tirer aucune induction."
+      ],
       "topic": "daily",
       "lemma": "constater",
       "rank": 2701,
@@ -250,7 +284,9 @@
       "word": "ennuyeux",
       "english": "troublesome; bothersome; pesky",
       "definition": "Qui cause du souci.",
-      "example": "J’ai un problème {ennuyeux}.",
+      "examples": [
+        "J’ai un problème {ennuyeux}."
+      ],
       "topic": "daily",
       "lemma": "ennuyeux",
       "rank": 2713,
@@ -264,7 +300,9 @@
       "word": "une signature",
       "english": "signature",
       "definition": "Action de signer.",
-      "example": "Tribunal de {la signature}, Tribunal établi par le Siège pour connaître de certaines affaires.",
+      "examples": [
+        "Tribunal de {la signature}, Tribunal établi par le Siège pour connaître de certaines affaires."
+      ],
       "topic": "daily",
       "lemma": "signature",
       "rank": 2718,
@@ -278,7 +316,9 @@
       "word": "défaire",
       "english": "defeat",
       "definition": "Mettre en déroute.",
-      "example": "{Défaire} l’ennemi. — Son armée fut complètement défaite.",
+      "examples": [
+        "{Défaire} l’ennemi. — Son armée fut complètement défaite."
+      ],
       "topic": "daily",
       "lemma": "défaire",
       "rank": 2758,
@@ -292,7 +332,9 @@
       "word": "une bourse",
       "english": "stock exchange",
       "definition": "Marché d’échange de ces valeurs.",
-      "example": "{La bourse} a monté, a baissé.",
+      "examples": [
+        "{La bourse} a monté, a baissé."
+      ],
       "topic": "daily",
       "lemma": "bourse",
       "rank": 2766,
@@ -306,7 +348,9 @@
       "word": "une soie",
       "english": "tang",
       "definition": "Partie du fer d’une épée, d’un sabre, d’un couteau, qui entre dans la poignée, dans le manche afin d’y placer la main pour la tenir.",
-      "example": "{La soie} d’une épée, d’un sabre.",
+      "examples": [
+        "{La soie} d’une épée, d’un sabre."
+      ],
       "topic": "daily",
       "lemma": "soie",
       "rank": 2775,
@@ -320,7 +364,9 @@
       "word": "un panneau",
       "english": "panel",
       "definition": "Toute partie d’un ouvrage d’architecture, de menuiserie, etc., qui offre un champ, une surface de moyenne grandeur, encadrée ou ornée de moulures.",
-      "example": "Panneau de sculpture se dit des ornements sculptés dans {un panneau}.",
+      "examples": [
+        "Panneau de sculpture se dit des ornements sculptés dans {un panneau}."
+      ],
       "topic": "daily",
       "lemma": "panneau",
       "rank": 2819,
@@ -334,7 +380,9 @@
       "word": "tracer",
       "english": "draw; plot; rule",
       "definition": "Tirer des traits, indiquer les lignes d’une figure, etc.",
-      "example": "{Tracer} un plan, une épure.",
+      "examples": [
+        "{Tracer} un plan, une épure."
+      ],
       "topic": "daily",
       "lemma": "tracer",
       "rank": 2829,
@@ -348,7 +396,9 @@
       "word": "un flot",
       "english": "flood",
       "definition": "Marée montante, par opposition à jusant, la marée descendante.",
-      "example": "{Le flot} remonte très loin dans ce fleuve.",
+      "examples": [
+        "{Le flot} remonte très loin dans ce fleuve."
+      ],
       "topic": "daily",
       "lemma": "flot",
       "rank": 2830,
@@ -362,7 +412,9 @@
       "word": "une conclusion",
       "english": "conclusion",
       "definition": "Ce qui termine et qui résume un discours, un récit, etc.",
-      "example": "{La conclusion} de son discours fit beaucoup d’impression sur l’auditoire.",
+      "examples": [
+        "{La conclusion} de son discours fit beaucoup d’impression sur l’auditoire."
+      ],
       "topic": "daily",
       "lemma": "conclusion",
       "rank": 2833,
@@ -376,7 +428,9 @@
       "word": "cavalier",
       "english": "cavalier",
       "definition": "Dégagé, libre, aisé.",
-      "example": "Avoir l’air {cavalier}, la mine cavalière.",
+      "examples": [
+        "Avoir l’air {cavalier}, la mine cavalière."
+      ],
       "topic": "daily",
       "lemma": "cavalier",
       "rank": 2868,
@@ -390,7 +444,9 @@
       "word": "un cavalier",
       "english": "knight",
       "definition": "Pièce du jeu d’échecs, qui peut se déplacer tout autour de lui, uniquement en avançant de deux cases de l’échiquier en ligne droite plus une de côté.",
-      "example": "Il faut que le roi se déplace quand {le cavalier} lui donne échec.",
+      "examples": [
+        "Il faut que le roi se déplace quand {le cavalier} lui donne échec."
+      ],
       "topic": "daily",
       "lemma": "cavalier",
       "rank": 2868,
@@ -404,7 +460,9 @@
       "word": "pratiquement",
       "english": "in practice",
       "definition": "Dans la pratique.",
-      "example": "Vous avez raison théoriquement, mais {pratiquement} vous auriez tort.",
+      "examples": [
+        "Vous avez raison théoriquement, mais {pratiquement} vous auriez tort."
+      ],
       "topic": "daily",
       "lemma": "pratiquement",
       "rank": 2885,
@@ -418,7 +476,9 @@
       "word": "extrêmement",
       "english": "extremely; supremely",
       "definition": "D’une manière extrême, au dernier degré, au dernier point, à la dernière limite.",
-      "example": "Il vous aime {extrêmement}.",
+      "examples": [
+        "Il vous aime {extrêmement}."
+      ],
       "topic": "daily",
       "lemma": "extrêmement",
       "rank": 2887,
@@ -432,7 +492,9 @@
       "word": "une morale",
       "english": "ethics; moral treatise",
       "definition": "Traité de morale.",
-      "example": "{La morale} d’Aristote. On dit aussi Les Morales d’Aristote, parce que ce philosophe a fait plusieurs traités sous ce titre.",
+      "examples": [
+        "{La morale} d’Aristote. On dit aussi Les Morales d’Aristote, parce que ce philosophe a fait plusieurs traités sous ce titre."
+      ],
       "topic": "daily",
       "lemma": "morale",
       "rank": 2898,
@@ -446,7 +508,9 @@
       "word": "redresser",
       "english": "straighten; redress (a wrong); set right",
       "definition": "Rendre droite une chose qui l’avait été auparavant, ou qui devait l’être.",
-      "example": "{Redresser} une planche courbée.",
+      "examples": [
+        "{Redresser} une planche courbée."
+      ],
       "topic": "daily",
       "lemma": "redresser",
       "rank": 2906,
@@ -460,7 +524,9 @@
       "word": "flatter",
       "english": "flatter",
       "definition": "Louer excessivement dans le dessein de plaire, de séduire, d’exploiter.",
-      "example": "Il ne sait point {flatter}.",
+      "examples": [
+        "Il ne sait point {flatter}."
+      ],
       "topic": "daily",
       "lemma": "flatter",
       "rank": 2907,
@@ -474,7 +540,9 @@
       "word": "manifester",
       "english": "demonstrate",
       "definition": "Faire une manifestation.",
-      "example": "La police ne permit pas de {manifester}.",
+      "examples": [
+        "La police ne permit pas de {manifester}."
+      ],
       "topic": "daily",
       "lemma": "manifester",
       "rank": 2909,
@@ -488,7 +556,9 @@
       "word": "un barrage",
       "english": "roadblock; road block",
       "definition": "Barrière qui ferme un chemin.",
-      "example": "Établir momentanément {un barrage} à l’entrée d’une rue où l’on pave.",
+      "examples": [
+        "Établir momentanément {un barrage} à l’entrée d’une rue où l’on pave."
+      ],
       "topic": "daily",
       "lemma": "barrage",
       "rank": 2919,
@@ -502,7 +572,9 @@
       "word": "un barrage",
       "english": "dam",
       "definition": "Constructions qui opposent un obstacle à un cours d’eau et qui ont pour objet de retenir l’eau, d’en élever le niveau, d’empêcher les inondations, d’obtenir une force motrice ou comme réserve pour l'irrigation et la consommation humaine.",
-      "example": "On a fait {un barrage} sur la rivière pour les travaux du nouveau pont qu’on va construire.",
+      "examples": [
+        "On a fait {un barrage} sur la rivière pour les travaux du nouveau pont qu’on va construire."
+      ],
       "topic": "daily",
       "lemma": "barrage",
       "rank": 2919,
@@ -516,7 +588,9 @@
       "word": "maîtriser",
       "english": "control",
       "definition": "Avoir ou prendre la maîtrise de quelqu’un, de quelque chose, le gouverner en maître, avec une autorité absolue.",
-      "example": "Il ne faut pas se laisser {maîtriser}.",
+      "examples": [
+        "Il ne faut pas se laisser {maîtriser}."
+      ],
       "topic": "daily",
       "lemma": "maîtriser",
       "rank": 2926,
@@ -530,7 +604,9 @@
       "word": "maîtriser",
       "english": "control",
       "definition": "Se rendre maître d’une personne ou d’une chose, d’un événement, en contrôler le comportement ou le déroulement.",
-      "example": "Les hommes cherchent souvent à {maîtriser} la nature.",
+      "examples": [
+        "Les hommes cherchent souvent à {maîtriser} la nature."
+      ],
       "topic": "daily",
       "lemma": "maîtriser",
       "rank": 2926,
@@ -544,7 +620,9 @@
       "word": "maîtriser",
       "english": "control",
       "definition": "Se dompter soi-même. Dompter son esprit, son imagination, son caractère, son tempérament.",
-      "example": "En toute circonstance il faut savoir se {maîtriser}.",
+      "examples": [
+        "En toute circonstance il faut savoir se {maîtriser}."
+      ],
       "topic": "daily",
       "lemma": "maîtriser",
       "rank": 2926,
@@ -558,7 +636,9 @@
       "word": "une proie",
       "english": "grip; prey",
       "definition": "Personne qui a beaucoup à souffrir des passions des autres ou de sa propre passion.",
-      "example": "Cet honnête homme a été {la proie} des aigrefins.",
+      "examples": [
+        "Cet honnête homme a été {la proie} des aigrefins."
+      ],
       "topic": "daily",
       "lemma": "proie",
       "rank": 2938,
@@ -572,7 +652,9 @@
       "word": "relier",
       "english": "retie; tie up again",
       "definition": "Lier de nouveau, refaire le nœud qui liait et qui est défait.",
-      "example": "{Relier} une gerbe de blé, une botte de foin.",
+      "examples": [
+        "{Relier} une gerbe de blé, une botte de foin."
+      ],
       "topic": "daily",
       "lemma": "relier",
       "rank": 2954,
@@ -586,7 +668,9 @@
       "word": "un troupeau",
       "english": "flock",
       "definition": "Réunion de fidèles sous la direction d’un pasteur spirituel.",
-      "example": "{Le troupeau} de l’évêque, du curé. Le bon pasteur donne sa vie pour son troupeau.",
+      "examples": [
+        "{Le troupeau} de l’évêque, du curé. Le bon pasteur donne sa vie pour son troupeau."
+      ],
       "topic": "daily",
       "lemma": "troupeau",
       "rank": 2957,
@@ -600,7 +684,9 @@
       "word": "pêcher",
       "english": "fish",
       "definition": "Prendre du poisson.",
-      "example": "On met les étangs à sec pour les {pêcher}.",
+      "examples": [
+        "On met les étangs à sec pour les {pêcher}."
+      ],
       "topic": "daily",
       "lemma": "pêcher",
       "rank": 2962,
@@ -614,7 +700,9 @@
       "word": "conscient",
       "english": "conscious; aware; lucid",
       "definition": "Qui a la conscience, la connaissance intime et, par conséquent, la responsabilité de ce qu’il fait.",
-      "example": "Il a fait cela {conscient}, délibérément, avec connaissance et vouloir. Il a la pleine responsabilité de ce qu’il a fait.",
+      "examples": [
+        "Il a fait cela {conscient}, délibérément, avec connaissance et vouloir. Il a la pleine responsabilité de ce qu’il a fait."
+      ],
       "topic": "daily",
       "lemma": "conscient",
       "rank": 2972,
@@ -628,7 +716,9 @@
       "word": "légitime",
       "english": "legitimate; legit",
       "definition": "Qui se justifie, qu’on peut admettre, excuser.",
-      "example": "L’emploi de cette expression est {légitime}.",
+      "examples": [
+        "L’emploi de cette expression est {légitime}."
+      ],
       "topic": "daily",
       "lemma": "légitime",
       "rank": 2975,
@@ -642,7 +732,9 @@
       "word": "fatal",
       "english": "fated",
       "definition": "Qu’on ne peut éviter, qui doit arriver inévitablement, qui est fixé d’une manière irrévocable.",
-      "example": "Rien ne peut reculer le terme {fatal} de notre vie.",
+      "examples": [
+        "Rien ne peut reculer le terme {fatal} de notre vie."
+      ],
       "topic": "daily",
       "lemma": "fatal",
       "rank": 2980,
@@ -656,7 +748,9 @@
       "word": "tendu",
       "english": "tense",
       "definition": "Qui subit une tension nerveuse, angoissé, anxieux, énervé, soucieux, nerveux.",
-      "example": "Il est préoccupé, {tendu}, irritable.",
+      "examples": [
+        "Il est préoccupé, {tendu}, irritable."
+      ],
       "topic": "daily",
       "lemma": "tendu",
       "rank": 2990,
@@ -670,7 +764,9 @@
       "word": "tendu",
       "english": "tense",
       "definition": "Qui marque un tempérament tourmenté, un état d’énervement.",
-      "example": "Le style de sa poésie est {tendu}, nerveux, incisif.",
+      "examples": [
+        "Le style de sa poésie est {tendu}, nerveux, incisif."
+      ],
       "topic": "daily",
       "lemma": "tendu",
       "rank": 2990,
@@ -684,7 +780,9 @@
       "word": "plastique",
       "english": "plastic",
       "definition": "Relatif au modelage.",
-      "example": "Art {plastique}, Art de modeler toutes sortes de figures et d’ornements en plâtre, en terre, en stuc, etc.",
+      "examples": [
+        "Art {plastique}, Art de modeler toutes sortes de figures et d’ornements en plâtre, en terre, en stuc, etc."
+      ],
       "topic": "daily",
       "lemma": "plastique",
       "rank": 2998,
@@ -698,7 +796,9 @@
       "word": "une marge",
       "english": "latitude",
       "definition": "Espace libre, temps disponible, aise.",
-      "example": "Avoir de {la marge}, Avoir plus de temps ou plus de moyens qu’il n’en faut pour exécuter quelque chose.",
+      "examples": [
+        "Avoir de {la marge}, Avoir plus de temps ou plus de moyens qu’il n’en faut pour exécuter quelque chose."
+      ],
       "topic": "daily",
       "lemma": "marge",
       "rank": 3009,
@@ -712,7 +812,9 @@
       "word": "volontaire",
       "english": "willful",
       "definition": "Qui veut fermement arriver à réaliser sa volonté.",
-      "example": "Ce petit garçon est très {volontaire}.",
+      "examples": [
+        "Ce petit garçon est très {volontaire}."
+      ],
       "topic": "daily",
       "lemma": "volontaire",
       "rank": 3041,
@@ -726,7 +828,9 @@
       "word": "un mélange",
       "english": "mix",
       "definition": "Personnes réunies confusément.",
-      "example": "{Un mélange} de toute sorte de gens.",
+      "examples": [
+        "{Un mélange} de toute sorte de gens."
+      ],
       "topic": "daily",
       "lemma": "mélange",
       "rank": 3051,
@@ -740,7 +844,9 @@
       "word": "un mélange",
       "english": "mix",
       "definition": "Union de qualités de conditions, d’affaires différentes.",
-      "example": "{Un mélange} de biens et de maux.",
+      "examples": [
+        "{Un mélange} de biens et de maux."
+      ],
       "topic": "daily",
       "lemma": "mélange",
       "rank": 3051,
@@ -754,7 +860,9 @@
       "word": "un département",
       "english": "department",
       "definition": "Unité dans le schéma d’organisation hiérarchique à l’intérieur d’une entreprise.",
-      "example": "{Le département} d’informatique est un des départements essentiels d’une banque d’aujourd’hui.",
+      "examples": [
+        "{Le département} d’informatique est un des départements essentiels d’une banque d’aujourd’hui."
+      ],
       "topic": "daily",
       "lemma": "département",
       "rank": 3068,
@@ -768,7 +876,9 @@
       "word": "traquer",
       "english": "stalk",
       "definition": "Fouiller un bois pour en faire sortir le gibier.",
-      "example": "{Traquer} un bois pour prendre un loup.",
+      "examples": [
+        "{Traquer} un bois pour prendre un loup."
+      ],
       "topic": "daily",
       "lemma": "traquer",
       "rank": 3070,
@@ -782,7 +892,9 @@
       "word": "un commissariat",
       "english": "commissionership; superintendentship",
       "definition": "Qualité, emploi de commissaire.",
-      "example": "Cet employé a obtenu {un commissariat}.",
+      "examples": [
+        "Cet employé a obtenu {un commissariat}."
+      ],
       "topic": "daily",
       "lemma": "commissariat",
       "rank": 3072,
@@ -796,7 +908,9 @@
       "word": "un commissariat",
       "english": "office",
       "definition": "Lieu où siège le commissaire.",
-      "example": "Dans tous les grands ports, il y a {un commissariat} de marine.",
+      "examples": [
+        "Dans tous les grands ports, il y a {un commissariat} de marine."
+      ],
       "topic": "daily",
       "lemma": "commissariat",
       "rank": 3072,
@@ -810,7 +924,9 @@
       "word": "murmurer",
       "english": "grumble; mutter",
       "definition": "Se plaindre sourdement.",
-      "example": "Il se soumit sans {murmurer}.",
+      "examples": [
+        "Il se soumit sans {murmurer}."
+      ],
       "topic": "daily",
       "lemma": "murmurer",
       "rank": 3073,
@@ -824,7 +940,9 @@
       "word": "un conflit",
       "english": "strife",
       "definition": "Violente opposition de sentiments, d’opinions, d’intérêts.",
-      "example": "Une société politique – a fortiori une démocratie – est habitée par {un conflit} permanent qui fait sa dynamique et sa réinvention.",
+      "examples": [
+        "Une société politique – a fortiori une démocratie – est habitée par {un conflit} permanent qui fait sa dynamique et sa réinvention."
+      ],
       "topic": "daily",
       "lemma": "conflit",
       "rank": 3092,
@@ -838,7 +956,9 @@
       "word": "un conte",
       "english": "story; tale; fairy tale",
       "definition": "Récit d’aventures imaginaires, soit qu’elles aient de la vraisemblance ou que s’y mêle du merveilleux, du féerique.",
-      "example": "Ce n’est pas une histoire véritable, c’est {un conte}.",
+      "examples": [
+        "Ce n’est pas une histoire véritable, c’est {un conte}."
+      ],
       "topic": "daily",
       "lemma": "conte",
       "rank": 3096,
@@ -852,7 +972,9 @@
       "word": "cingler",
       "english": "lash",
       "definition": "Frapper ou fouetter à l’aide d’un objet (cravache, bâton, fouet, corde, lanière).",
-      "example": "Elle se fit {cingler} le derrière à grands coups de cravache.",
+      "examples": [
+        "Elle se fit {cingler} le derrière à grands coups de cravache."
+      ],
       "topic": "daily",
       "lemma": "cingler",
       "rank": 3098,
@@ -866,7 +988,9 @@
       "word": "désespérer",
       "english": "push to despair",
       "definition": "Mettre, pousser au désespoir.",
-      "example": "Il ne faut pas {désespérer} un peuple.",
+      "examples": [
+        "Il ne faut pas {désespérer} un peuple."
+      ],
       "topic": "daily",
       "lemma": "désespérer",
       "rank": 3099,
@@ -880,7 +1004,9 @@
       "word": "associer",
       "english": "associate; unite",
       "definition": "L’y faire participer, unir, joindre.",
-      "example": "{Associer} quelqu’un à son crime, à ses dangers, à son triomphe, etc.",
+      "examples": [
+        "{Associer} quelqu’un à son crime, à ses dangers, à son triomphe, etc."
+      ],
       "topic": "daily",
       "lemma": "associer",
       "rank": 3101,
@@ -894,7 +1020,9 @@
       "word": "égarer",
       "english": "lead astray; mislead",
       "definition": "Jeter dans l’erreur.",
-      "example": "Défiez-vous de ce faux ami, il pourrait vous {égarer}.",
+      "examples": [
+        "Défiez-vous de ce faux ami, il pourrait vous {égarer}."
+      ],
       "topic": "daily",
       "lemma": "égarer",
       "rank": 3118,
@@ -908,7 +1036,9 @@
       "word": "évacuer",
       "english": "evacuate",
       "definition": "Faire sortir du corps des matières fécales, des humeurs qui s’y étaient amassées.",
-      "example": "Remède pour {évacuer} la bile.",
+      "examples": [
+        "Remède pour {évacuer} la bile."
+      ],
       "topic": "daily",
       "lemma": "évacuer",
       "rank": 3124,
@@ -922,7 +1052,9 @@
       "word": "un cachet",
       "english": "capsule",
       "definition": "Capsule renfermant une dose de poudre médicamenteuse, anciennement composée de deux cupules de pain azyme soudées par humidification.",
-      "example": "Il est blanc comme {un cachet}.",
+      "examples": [
+        "Il est blanc comme {un cachet}."
+      ],
       "topic": "daily",
       "lemma": "cachet",
       "rank": 3147,
@@ -936,7 +1068,9 @@
       "word": "régulier",
       "english": "consistent; steady",
       "definition": "Qui est exact, ponctuel.",
-      "example": "C’est un homme {régulier} dans les moindres choses.",
+      "examples": [
+        "C’est un homme {régulier} dans les moindres choses."
+      ],
       "topic": "daily",
       "lemma": "régulier",
       "rank": 3164,
@@ -950,7 +1084,9 @@
       "word": "alerte",
       "english": "alert",
       "definition": "Qui se tient sur ses gardes.",
-      "example": "On ne le surprendra pas aisément, il est toujours {alerte}.",
+      "examples": [
+        "On ne le surprendra pas aisément, il est toujours {alerte}."
+      ],
       "topic": "daily",
       "lemma": "alerte",
       "rank": 3178,
@@ -964,7 +1100,9 @@
       "word": "visible",
       "english": "visible; viewable; seeable",
       "definition": "Qui peut être vu ; qui est l’objet de la vue.",
-      "example": "Cette étoile est {visible} à l’œil nu.",
+      "examples": [
+        "Cette étoile est {visible} à l’œil nu."
+      ],
       "topic": "daily",
       "lemma": "visible",
       "rank": 3187,
@@ -978,7 +1116,9 @@
       "word": "revivre",
       "english": "live again",
       "definition": "Ressusciter, revenir à la vie.",
-      "example": "Vous pleurez ; hélas! vos larmes ne la feront pas {revivre}.",
+      "examples": [
+        "Vous pleurez ; hélas! vos larmes ne la feront pas {revivre}."
+      ],
       "topic": "daily",
       "lemma": "revivre",
       "rank": 3199,
@@ -992,7 +1132,9 @@
       "word": "un refus",
       "english": "refusal",
       "definition": "Action de rejeter, de ne pas accepter ce qui est offert.",
-      "example": "Il lui aurait bien fait cette offre, mais il n’a pas voulu s’exposer à {un refus}.",
+      "examples": [
+        "Il lui aurait bien fait cette offre, mais il n’a pas voulu s’exposer à {un refus}."
+      ],
       "topic": "daily",
       "lemma": "refus",
       "rank": 3232,
@@ -1006,7 +1148,9 @@
       "word": "un grenier",
       "english": "breadbasket; granary",
       "definition": "Région, pays fertile dont on tire beaucoup de blé ou d’autre céréale.",
-      "example": "La Sicile est {le grenier} de l’Italie. La Beauce est un des greniers de la France.",
+      "examples": [
+        "La Sicile est {le grenier} de l’Italie. La Beauce est un des greniers de la France."
+      ],
       "topic": "daily",
       "lemma": "grenier",
       "rank": 3241,
@@ -1020,7 +1164,9 @@
       "word": "piéger",
       "english": "trap",
       "definition": "Attraper dans un piège.",
-      "example": "Nous nous sommes fait {piéger}.",
+      "examples": [
+        "Nous nous sommes fait {piéger}."
+      ],
       "topic": "daily",
       "lemma": "piéger",
       "rank": 3247,
@@ -1034,7 +1180,9 @@
       "word": "une grandeur",
       "english": "highness",
       "definition": "Puissance unie à la majesté.",
-      "example": "Considérations sur les causes de {la grandeur} et de la décadence des romains.",
+      "examples": [
+        "Considérations sur les causes de {la grandeur} et de la décadence des romains."
+      ],
       "topic": "daily",
       "lemma": "grandeur",
       "rank": 3254,
@@ -1048,7 +1196,9 @@
       "word": "une recette",
       "english": "income; return; takings",
       "definition": "Ce qui est reçu, ce qui rentre en espèces, en valeurs.",
-      "example": "{La recette} doit à la dépense.",
+      "examples": [
+        "{La recette} doit à la dépense."
+      ],
       "topic": "daily",
       "lemma": "recette",
       "rank": 3260,
@@ -1062,7 +1212,9 @@
       "word": "retarder",
       "english": "delay; retard",
       "definition": "Empêcher d’aller, de partir ou d’avancer ; être cause qu’une chose vienne à être différée.",
-      "example": "{Retarder} une horloge, une pendule, une montre, Faire qu’elle marque une heure moins avancée ou qu’elle aille moins vite.",
+      "examples": [
+        "{Retarder} une horloge, une pendule, une montre, Faire qu’elle marque une heure moins avancée ou qu’elle aille moins vite."
+      ],
       "topic": "daily",
       "lemma": "retarder",
       "rank": 3263,
@@ -1076,7 +1228,9 @@
       "word": "original",
       "english": "creative; imaginative",
       "definition": "Qui écrivent, qui travaillent d’une manière neuve, non empruntée, non imitée, en parlant d’une personne.",
-      "example": "C’est un génie, un esprit {original}.",
+      "examples": [
+        "C’est un génie, un esprit {original}."
+      ],
       "topic": "daily",
       "lemma": "original",
       "rank": 3265,
@@ -1090,7 +1244,9 @@
       "word": "divers",
       "english": "diverse; miscellaneous; various",
       "definition": "Qui est de nature ou de qualité différente, ou qui présente plusieurs faces, plusieurs apparences.",
-      "example": "Les {divers} sens d’un mot.",
+      "examples": [
+        "Les {divers} sens d’un mot."
+      ],
       "topic": "daily",
       "lemma": "divers",
       "rank": 3284,
@@ -1104,7 +1260,9 @@
       "word": "raide",
       "english": "stiff; rigid",
       "definition": "Qui est très tendu et qui a de la peine à ployer.",
-      "example": "Il était tout {raide} de froid.",
+      "examples": [
+        "Il était tout {raide} de froid."
+      ],
       "topic": "daily",
       "lemma": "raide",
       "rank": 3285,
@@ -1118,7 +1276,9 @@
       "word": "raide",
       "english": "stiff",
       "definition": "Ce qui manque ou paraît manquer de souplesse, de grâce.",
-      "example": "Il se tient {raide} comme un piquet.",
+      "examples": [
+        "Il se tient {raide} comme un piquet."
+      ],
       "topic": "daily",
       "lemma": "raide",
       "rank": 3285,
@@ -1132,7 +1292,9 @@
       "word": "raide",
       "english": "steep",
       "definition": "Qui a une pente difficile à monter ou à descendre.",
-      "example": "La montée est très {raide}.",
+      "examples": [
+        "La montée est très {raide}."
+      ],
       "topic": "daily",
       "lemma": "raide",
       "rank": 3285,
@@ -1146,7 +1308,9 @@
       "word": "un dépôt",
       "english": "deposit",
       "definition": "Action de déposer, de placer une chose en quelque endroit, ou de remettre, de confier une chose à quelqu’un.",
-      "example": "{Le dépôt} du corps dans ce caveau n’est que provisoire.",
+      "examples": [
+        "{Le dépôt} du corps dans ce caveau n’est que provisoire."
+      ],
       "topic": "daily",
       "lemma": "dépôt",
       "rank": 3291,
@@ -1160,7 +1324,9 @@
       "word": "un dépôt",
       "english": "deposit",
       "definition": "Ce qui est déposé, placement.",
-      "example": "On a ordonné que {le dépôt} serait porté au greffe.",
+      "examples": [
+        "On a ordonné que {le dépôt} serait porté au greffe."
+      ],
       "topic": "daily",
       "lemma": "dépôt",
       "rank": 3291,
@@ -1174,7 +1340,9 @@
       "word": "un dépôt",
       "english": "deposit",
       "definition": "Convention faite en déposant quelque chose entre les mains de quelqu’un, caution.",
-      "example": "{Le dépôt} est un contrat de bonne foi.",
+      "examples": [
+        "{Le dépôt} est un contrat de bonne foi."
+      ],
       "topic": "daily",
       "lemma": "dépôt",
       "rank": 3291,
@@ -1188,7 +1356,9 @@
       "word": "un privilège",
       "english": "lien",
       "definition": "Titre à la préférence, droit que la qualité de la créance donne à un créancier d’être préféré aux autres créanciers, même hypothécaires.",
-      "example": "Le propriétaire non payé par son locataire a {un privilège} sur les meubles garnissant l’immeuble loué.",
+      "examples": [
+        "Le propriétaire non payé par son locataire a {un privilège} sur les meubles garnissant l’immeuble loué."
+      ],
       "topic": "daily",
       "lemma": "privilège",
       "rank": 3293,
@@ -1202,7 +1372,9 @@
       "word": "un change",
       "english": "(currency) exchange rate",
       "definition": "Prix demandé pour convertir la monnaie en une autre monnaie ou pour remettre une somme d’une place sur une autre place.",
-      "example": "{Le change} est désavantageux.",
+      "examples": [
+        "{Le change} est désavantageux."
+      ],
       "topic": "daily",
       "lemma": "change",
       "rank": 3347,
@@ -1216,7 +1388,9 @@
       "word": "un change",
       "english": "change of clothes",
       "definition": "Vêtement prévu pour se changer.",
-      "example": "As-tu {un change} à te mettre ?",
+      "examples": [
+        "As-tu {un change} à te mettre ?"
+      ],
       "topic": "daily",
       "lemma": "change",
       "rank": 3347,
@@ -1230,7 +1404,9 @@
       "word": "un reçu",
       "english": "receipt",
       "definition": "Écrit par lequel on reconnaît avoir reçu quelque chose.",
-      "example": "Ce commissionnaire m’a demandé {un reçu} de la lettre, du paquet qu’il m’apportait.",
+      "examples": [
+        "Ce commissionnaire m’a demandé {un reçu} de la lettre, du paquet qu’il m’apportait."
+      ],
       "topic": "daily",
       "lemma": "reçu",
       "rank": 3386,
@@ -1244,7 +1420,9 @@
       "word": "clore",
       "english": "close",
       "definition": "Déclarer terminé.",
-      "example": "{Clore} la session des Chambres.",
+      "examples": [
+        "{Clore} la session des Chambres."
+      ],
       "topic": "daily",
       "lemma": "clore",
       "rank": 3409,
@@ -1258,7 +1436,9 @@
       "word": "un portail",
       "english": "gate; main entrance; entryway",
       "definition": "Grande porte.",
-      "example": "Il faut ouvrir {le portail} pour faire entrer la voiture.",
+      "examples": [
+        "Il faut ouvrir {le portail} pour faire entrer la voiture."
+      ],
       "topic": "daily",
       "lemma": "portail",
       "rank": 3410,
@@ -1272,7 +1452,9 @@
       "word": "coudre",
       "english": "sew; stitch",
       "definition": "Assembler deux ou plusieurs objets avec un fil passé dans une aiguille ou un autre instrument semblable.",
-      "example": "{Coudre} une plaie, les bords, les lèvres d’une plaie, pour qu’elle se ferme plus promptement.",
+      "examples": [
+        "{Coudre} une plaie, les bords, les lèvres d’une plaie, pour qu’elle se ferme plus promptement."
+      ],
       "topic": "daily",
       "lemma": "coudre",
       "rank": 3422,
@@ -1286,7 +1468,9 @@
       "word": "contrarier",
       "english": "oppose (transitif); be contrary (intransitif)",
       "definition": "S’opposer à une ou plusieurs personnes par ses actions ou par ses paroles.",
-      "example": "(Absolument) Il aime {contrarier}.",
+      "examples": [
+        "(Absolument) Il aime {contrarier}."
+      ],
       "topic": "daily",
       "lemma": "contrarier",
       "rank": 3427,
@@ -1300,7 +1484,9 @@
       "word": "jusque-là",
       "english": "until then",
       "definition": "Jusqu’à ce temps-là.",
-      "example": "{Jusque-là}, tout va bien !",
+      "examples": [
+        "{Jusque-là}, tout va bien !"
+      ],
       "topic": "daily",
       "lemma": "jusque-là",
       "rank": 3430,
@@ -1314,7 +1500,9 @@
       "word": "un frisson",
       "english": "shiver",
       "definition": "Tremblement causé par le froid ou la fièvre.",
-      "example": "La fièvre est ordinairement précédée par {le frisson}, d’un frisson. — Être pris de frisson.",
+      "examples": [
+        "La fièvre est ordinairement précédée par {le frisson}, d’un frisson. — Être pris de frisson."
+      ],
       "topic": "daily",
       "lemma": "frisson",
       "rank": 3443,
@@ -1328,7 +1516,9 @@
       "word": "une quête",
       "english": "raking",
       "definition": "Action de demander et de recueillir des aumônes pour les pauvres ou pour une œuvre de charité.",
-      "example": "Faire {la quête} dans l’église, à domicile, pour les œuvres de la paroisse, pour les pauvres.",
+      "examples": [
+        "Faire {la quête} dans l’église, à domicile, pour les œuvres de la paroisse, pour les pauvres."
+      ],
       "topic": "daily",
       "lemma": "quête",
       "rank": 3477,
@@ -1342,7 +1532,9 @@
       "word": "étaler",
       "english": "put up for sale; display",
       "definition": "Exposer en vente, dans une boutique ou dans quelque autre lieu, des marchandises, des denrées, etc.",
-      "example": "{Étaler} des chaussures, des draps, des toiles, des livres.",
+      "examples": [
+        "{Étaler} des chaussures, des draps, des toiles, des livres."
+      ],
       "topic": "daily",
       "lemma": "étaler",
       "rank": 3490,
@@ -1356,7 +1548,9 @@
       "word": "une rupture",
       "english": "breakup",
       "definition": "Division qui se produit entre des personnes qui étaient unies par traité, par amitié, etc.",
-      "example": "Ils en sont venus à {une rupture}.",
+      "examples": [
+        "Ils en sont venus à {une rupture}."
+      ],
       "topic": "daily",
       "lemma": "rupture",
       "rank": 3497,
@@ -1370,7 +1564,9 @@
       "word": "une colonie",
       "english": "colony",
       "definition": "Groupement nombreux de gens d'un même pays plus ou moins lointain, installés durablement et restant entre eux dans le pays d’accueil.",
-      "example": "{Une colonie} de Polonais exploite presque seule cette mine.",
+      "examples": [
+        "{Une colonie} de Polonais exploite presque seule cette mine."
+      ],
       "topic": "daily",
       "lemma": "colonie",
       "rank": 3503,
@@ -1384,7 +1580,9 @@
       "word": "afficher",
       "english": "post; to display; to publicize",
       "definition": "Apposer une affiche.",
-      "example": "{Afficher} une loi, une ordonnance de police, une vente publique.",
+      "examples": [
+        "{Afficher} une loi, une ordonnance de police, une vente publique."
+      ],
       "topic": "daily",
       "lemma": "afficher",
       "rank": 3573,
@@ -1398,7 +1596,9 @@
       "word": "une promotion",
       "english": "promotion",
       "definition": "Action par laquelle on élève à la fois plusieurs personnes à un même grade, à une même dignité.",
-      "example": "Le pape fit {une promotion} de quatre cardinaux.",
+      "examples": [
+        "Le pape fit {une promotion} de quatre cardinaux."
+      ],
       "topic": "daily",
       "lemma": "promotion",
       "rank": 3588,
@@ -1412,7 +1612,9 @@
       "word": "dérober",
       "english": "rob",
       "definition": "Soustraire ; celer.",
-      "example": "Il pénétra le secret que l’on cherchait à lui {dérober}.",
+      "examples": [
+        "Il pénétra le secret que l’on cherchait à lui {dérober}."
+      ],
       "topic": "daily",
       "lemma": "dérober",
       "rank": 3619,
@@ -1426,7 +1628,9 @@
       "word": "glacer",
       "english": "glaze",
       "definition": "Revêtir d’une couleur brillante et transparente une autre qui est déjà sèche et à laquelle on veut donner ainsi plus d’éclat, de vigueur.",
-      "example": "{Glacer} des étoffes, Leur donner un apprêt, un lustre.",
+      "examples": [
+        "{Glacer} des étoffes, Leur donner un apprêt, un lustre."
+      ],
       "topic": "daily",
       "lemma": "glacer",
       "rank": 3637,
@@ -1440,7 +1644,9 @@
       "word": "rude",
       "english": "tough",
       "definition": "Difficile à supporter ; rigoureux.",
-      "example": "Sa vertu fut mise à une {rude} épreuve, à de rudes épreuves.",
+      "examples": [
+        "Sa vertu fut mise à une {rude} épreuve, à de rudes épreuves."
+      ],
       "topic": "daily",
       "lemma": "rude",
       "rank": 3651,
@@ -1454,7 +1660,9 @@
       "word": "rude",
       "english": "crude",
       "definition": "Choquant, grossier, désagréable.",
-      "example": "Un auteur qui a le style {rude}.",
+      "examples": [
+        "Un auteur qui a le style {rude}."
+      ],
       "topic": "daily",
       "lemma": "rude",
       "rank": 3651,
@@ -1468,7 +1676,9 @@
       "word": "rude",
       "english": "tough",
       "definition": "Fâcheux, dur, sévère.",
-      "example": "Il a reçu un traitement très {rude}.",
+      "examples": [
+        "Il a reçu un traitement très {rude}."
+      ],
       "topic": "daily",
       "lemma": "rude",
       "rank": 3651,
@@ -1482,7 +1692,9 @@
       "word": "rude",
       "english": "austere",
       "definition": "Rigide, austère.",
-      "example": "La règle de ces religieux, de cet ordre est très {rude}.",
+      "examples": [
+        "La règle de ces religieux, de cet ordre est très {rude}."
+      ],
       "topic": "daily",
       "lemma": "rude",
       "rank": 3651,
@@ -1496,7 +1708,9 @@
       "word": "interpréter",
       "english": "interpret",
       "definition": "Expliquer ce qu’il y a d’obscur et d’ambigu dans un écrit, dans une loi, dans un acte.",
-      "example": "{Interpréter} une loi, en expliquer, en déterminer le sens par une loi supplémentaire.",
+      "examples": [
+        "{Interpréter} une loi, en expliquer, en déterminer le sens par une loi supplémentaire."
+      ],
       "topic": "daily",
       "lemma": "interpréter",
       "rank": 3666,
@@ -1510,7 +1724,9 @@
       "word": "creux",
       "english": "hollow",
       "definition": "Qui présente une cavité, un trou intérieur.",
-      "example": "Ce pilier n’est pas massif, il est {creux} en dedans.",
+      "examples": [
+        "Ce pilier n’est pas massif, il est {creux} en dedans."
+      ],
       "topic": "daily",
       "lemma": "creux",
       "rank": 3670,
@@ -1524,7 +1740,9 @@
       "word": "inconscient",
       "english": "unconscious; unaware",
       "definition": "Qui n’est pas doté de conscience, qui n’est pas capable, accidentellement ou normalement, de se percevoir soi-même.",
-      "example": "L’atome des épicuriens est {inconscient}.",
+      "examples": [
+        "L’atome des épicuriens est {inconscient}."
+      ],
       "topic": "daily",
       "lemma": "inconscient",
       "rank": 3671,
@@ -1538,7 +1756,9 @@
       "word": "inconscient",
       "english": "unconscionable; unscrupulous; unaware",
       "definition": "Qui n’a pas conscience de tel ou tel de ses actes.",
-      "example": "Il est {inconscient} du danger.",
+      "examples": [
+        "Il est {inconscient} du danger."
+      ],
       "topic": "daily",
       "lemma": "inconscient",
       "rank": 3671,
@@ -1552,7 +1772,9 @@
       "word": "un gage",
       "english": "guarantee",
       "definition": "Garantie, assurance, preuve, témoignage.",
-      "example": "Il m’a laissé {un gage} de sa foi.",
+      "examples": [
+        "Il m’a laissé {un gage} de sa foi."
+      ],
       "topic": "daily",
       "lemma": "gage",
       "rank": 3673,
@@ -1566,7 +1788,9 @@
       "word": "un barreau",
       "english": "leg",
       "definition": "Un des bâtons qui servent à assembler et à maintenir les montants d’une chaise.",
-      "example": "En appuyant son pied sur {le barreau} de cette chaise, il l’a cassé.",
+      "examples": [
+        "En appuyant son pied sur {le barreau} de cette chaise, il l’a cassé."
+      ],
       "topic": "daily",
       "lemma": "barreau",
       "rank": 3683,
@@ -1580,7 +1804,9 @@
       "word": "une farce",
       "english": "farce",
       "definition": "Comique bas et grossier qui est propre aux farces.",
-      "example": "Cet auteur comique tombe souvent dans {la farce}.",
+      "examples": [
+        "Cet auteur comique tombe souvent dans {la farce}."
+      ],
       "topic": "daily",
       "lemma": "farce",
       "rank": 3702,
@@ -1594,7 +1820,9 @@
       "word": "indépendant",
       "english": "independent; self-sufficient",
       "definition": "Qui ne dépend pas de telle personne ou de telle chose, qui ne lui est pas subordonné.",
-      "example": "Son zèle fut toujours {indépendant} des circonstances, des événements.",
+      "examples": [
+        "Son zèle fut toujours {indépendant} des circonstances, des événements."
+      ],
       "topic": "daily",
       "lemma": "indépendant",
       "rank": 3716,
@@ -1608,7 +1836,9 @@
       "word": "indépendant",
       "english": "independent",
       "definition": "Qui est libre de toute dépendance.",
-      "example": "Il a son logement {indépendant}.",
+      "examples": [
+        "Il a son logement {indépendant}."
+      ],
       "topic": "daily",
       "lemma": "indépendant",
       "rank": 3716,
@@ -1622,7 +1852,9 @@
       "word": "une révélation",
       "english": "revelation",
       "definition": "Manifestation soudaine des qualités, d'un talent qu’on ignorait, chez quelqu'un.",
-      "example": "La publication de cette œuvre a été {une révélation}.",
+      "examples": [
+        "La publication de cette œuvre a été {une révélation}."
+      ],
       "topic": "daily",
       "lemma": "révélation",
       "rank": 3735,
@@ -1636,7 +1868,9 @@
       "word": "animer",
       "english": "animate",
       "definition": "Douer de vivacité, de mouvement, d’une sorte de vie.",
-      "example": "{Animer} quelqu’un de son esprit, Faire passer ses idées et ses sentiments dans l’âme d’un autre.",
+      "examples": [
+        "{Animer} quelqu’un de son esprit, Faire passer ses idées et ses sentiments dans l’âme d’un autre."
+      ],
       "topic": "daily",
       "lemma": "animer",
       "rank": 3739,
@@ -1650,7 +1884,9 @@
       "word": "animer",
       "english": "present (in an animated manner)",
       "definition": "Donner de la force et de la chaleur à un ouvrage d’esprit, à un discours, soit par les traits vifs et brillants que l’on y jette, soit par la manière vive dont on le lit, dont on le prononce.",
-      "example": "Il y a dans cet ouvrage quelques endroits qu’il faudrait {animer}.",
+      "examples": [
+        "Il y a dans cet ouvrage quelques endroits qu’il faudrait {animer}."
+      ],
       "topic": "daily",
       "lemma": "animer",
       "rank": 3739,
@@ -1664,7 +1900,9 @@
       "word": "animer",
       "english": "become antagonistic",
       "definition": "Irriter, mettre en colère.",
-      "example": "On a pris plaisir à les {animer} les uns contre les autres. On lui a fait des rapports qui l’ont fort animé contre vous.",
+      "examples": [
+        "On a pris plaisir à les {animer} les uns contre les autres. On lui a fait des rapports qui l’ont fort animé contre vous."
+      ],
       "topic": "daily",
       "lemma": "animer",
       "rank": 3739,
@@ -1678,7 +1916,9 @@
       "word": "diminuer",
       "english": "reduce; diminish; decrease",
       "definition": "Réduire quelque chose en retranchant une partie.",
-      "example": "Rien ne peut {diminuer} sa gloire.",
+      "examples": [
+        "Rien ne peut {diminuer} sa gloire."
+      ],
       "topic": "daily",
       "lemma": "diminuer",
       "rank": 3747,
@@ -1692,7 +1932,9 @@
       "word": "diminuer",
       "english": "abate; diminish",
       "definition": "Devenir moindre par la perte d’une de ses parties.",
-      "example": "Sa fièvre commence à {diminuer}.",
+      "examples": [
+        "Sa fièvre commence à {diminuer}."
+      ],
       "topic": "daily",
       "lemma": "diminuer",
       "rank": 3747,
@@ -1706,7 +1948,9 @@
       "word": "une tranchée",
       "english": "trench",
       "definition": "Ouverture, excavation longue et plus ou moins profonde pratiquée dans la terre.",
-      "example": "On n’a pas encore bâti, mais {la tranchée} pour les fondations est faite.",
+      "examples": [
+        "On n’a pas encore bâti, mais {la tranchée} pour les fondations est faite."
+      ],
       "topic": "daily",
       "lemma": "tranchée",
       "rank": 3761,
@@ -1720,7 +1964,9 @@
       "word": "un volume",
       "english": "volume",
       "definition": "Quantité approximative, notamment dans le commerce.",
-      "example": "L’entreprise, à plein régime, fournit {un volume} de quinze produits par jour.",
+      "examples": [
+        "L’entreprise, à plein régime, fournit {un volume} de quinze produits par jour."
+      ],
       "topic": "daily",
       "lemma": "volume",
       "rank": 3780,
@@ -1734,7 +1980,9 @@
       "word": "irriter",
       "english": "irritate; excite; incite",
       "definition": "Mettre en colère, provoquer l'agacement, la contrariété, l'impatience de quelqu’un.",
-      "example": "{Irriter} les esprits par des mesures imprudentes.",
+      "examples": [
+        "{Irriter} les esprits par des mesures imprudentes."
+      ],
       "topic": "daily",
       "lemma": "irriter",
       "rank": 3781,
@@ -1748,7 +1996,9 @@
       "word": "éclaircir",
       "english": "clear up; clarify",
       "definition": "Rendre net, intelligible.",
-      "example": "{Éclaircir} une matière, une affaire.",
+      "examples": [
+        "{Éclaircir} une matière, une affaire."
+      ],
       "topic": "daily",
       "lemma": "éclaircir",
       "rank": 3795,
@@ -1762,7 +2012,9 @@
       "word": "contraindre",
       "english": "force",
       "definition": "Obliger par quelque considération à s’abstenir de quelque chose, à se refuser quelque chose.",
-      "example": "Je ne prétends pas vous {contraindre}.",
+      "examples": [
+        "Je ne prétends pas vous {contraindre}."
+      ],
       "topic": "daily",
       "lemma": "contraindre",
       "rank": 3806,
@@ -1776,7 +2028,9 @@
       "word": "un mineur",
       "english": "minor",
       "definition": "Celui qui n’a point atteint l’âge prescrit par les lois pour disposer de sa personne, de son bien.",
-      "example": "En France, {le mineur} est l’individu de l’un ou de l’autre sexe qui n’a point encore l’âge de dix-huit ans accomplis.",
+      "examples": [
+        "En France, {le mineur} est l’individu de l’un ou de l’autre sexe qui n’a point encore l’âge de dix-huit ans accomplis."
+      ],
       "topic": "daily",
       "lemma": "mineur",
       "rank": 3833,
@@ -1790,7 +2044,9 @@
       "word": "un néant",
       "english": "void",
       "definition": "État d’inexistence des êtres et des choses.",
-      "example": "Dieu peut réduire les êtres au néant, les faire rentrer dans {le néant} d’où ils sont sortis.",
+      "examples": [
+        "Dieu peut réduire les êtres au néant, les faire rentrer dans {le néant} d’où ils sont sortis."
+      ],
       "topic": "daily",
       "lemma": "néant",
       "rank": 3845,
@@ -1804,7 +2060,9 @@
       "word": "un reproche",
       "english": "reproach; blame",
       "definition": "Action de reprocher.",
-      "example": "Le germe de l'ail est surnommé {le reproche} car il vous \"reproche\" de ne pas l'avoir enlevé (en raison de son caractère indigeste).",
+      "examples": [
+        "Le germe de l'ail est surnommé {le reproche} car il vous \"reproche\" de ne pas l'avoir enlevé (en raison de son caractère indigeste)."
+      ],
       "topic": "daily",
       "lemma": "reproche",
       "rank": 3865,
@@ -1818,7 +2076,9 @@
       "word": "capter",
       "english": "capture",
       "definition": "Chercher à obtenir quelque chose, ou à gagner quelqu’un par voie d’insinuation.",
-      "example": "Réussir une présentation orale suppose de {capter} et de garder l’attention de l’auditoire.",
+      "examples": [
+        "Réussir une présentation orale suppose de {capter} et de garder l’attention de l’auditoire."
+      ],
       "topic": "daily",
       "lemma": "capter",
       "rank": 3870,
@@ -1832,7 +2092,9 @@
       "word": "capter",
       "english": "capture; intercept",
       "definition": "Recevoir des ondes, de l’énergie, au moyen d’antennes, de récepteurs.",
-      "example": "C’est un téléphone capable de {capter} la télévision numérique.",
+      "examples": [
+        "C’est un téléphone capable de {capter} la télévision numérique."
+      ],
       "topic": "daily",
       "lemma": "capter",
       "rank": 3870,
@@ -1846,7 +2108,9 @@
       "word": "un mobile",
       "english": "object",
       "definition": "Corps susceptible d’être mis en mouvement. Point ou objet qui se déplace ou en a la possibilité.",
-      "example": "{Le mobile} que j'ai lancé a décrit une parabole !",
+      "examples": [
+        "{Le mobile} que j'ai lancé a décrit une parabole !"
+      ],
       "topic": "daily",
       "lemma": "mobile",
       "rank": 3936,
@@ -1860,7 +2124,9 @@
       "word": "un mobile",
       "english": "motivation; motive",
       "definition": "Ce qui pousse à agir ; ce qui excite à faire quelque chose.",
-      "example": "L’amour de la gloire est {le mobile} de grandes actions.",
+      "examples": [
+        "L’amour de la gloire est {le mobile} de grandes actions."
+      ],
       "topic": "daily",
       "lemma": "mobile",
       "rank": 3936,
@@ -1874,7 +2140,9 @@
       "word": "cirer",
       "english": "wax",
       "definition": "Enduire ou frotter de cire.",
-      "example": "{Cirer} du fil, de la toile, un parquet, un meuble.",
+      "examples": [
+        "{Cirer} du fil, de la toile, un parquet, un meuble."
+      ],
       "topic": "daily",
       "lemma": "cirer",
       "rank": 3975,
@@ -1888,7 +2156,9 @@
       "word": "cirer",
       "english": "wax; polish",
       "definition": "Enduire de cirage une chaussure pour la faire briller.",
-      "example": "{Cirer} des bottes, des souliers.",
+      "examples": [
+        "{Cirer} des bottes, des souliers."
+      ],
       "topic": "daily",
       "lemma": "cirer",
       "rank": 3975,
@@ -1902,7 +2172,9 @@
       "word": "un bouchon",
       "english": "stopper; plug; cork",
       "definition": "Objet qui sert à boucher, en particulier des bouteilles.",
-      "example": "J’ai oublié de remettre {le bouchon} du réservoir d’essence.",
+      "examples": [
+        "J’ai oublié de remettre {le bouchon} du réservoir d’essence."
+      ],
       "topic": "daily",
       "lemma": "bouchon",
       "rank": 3983,
@@ -1916,7 +2188,9 @@
       "word": "loyal",
       "english": "lawful; legal",
       "definition": "Qui est conforme à la loi ; par la loi.",
-      "example": "Un bon et {loyal} inventaire, un inventaire fait suivant les règles.",
+      "examples": [
+        "Un bon et {loyal} inventaire, un inventaire fait suivant les règles."
+      ],
       "topic": "daily",
       "lemma": "loyal",
       "rank": 3993,
@@ -1930,7 +2204,9 @@
       "word": "une manie",
       "english": "fixation",
       "definition": "Goût porté jusqu’à l’excès.",
-      "example": "Il a {la manie} de faire des vers.",
+      "examples": [
+        "Il a {la manie} de faire des vers."
+      ],
       "topic": "daily",
       "lemma": "manie",
       "rank": 3994,
@@ -1944,7 +2220,9 @@
       "word": "redire",
       "english": "blab",
       "definition": "Révéler ce qu’on a appris de quelqu’un en confidence.",
-      "example": "Il va {redire} tout ce qu’on lui dit.",
+      "examples": [
+        "Il va {redire} tout ce qu’on lui dit."
+      ],
       "topic": "daily",
       "lemma": "redire",
       "rank": 4004,
@@ -1958,7 +2236,9 @@
       "word": "gérer",
       "english": "manage",
       "definition": "Administrer ; diriger ; manager ; s’occuper de.",
-      "example": "Mal {gérer} ses affaires. — Il gère ses équipes avec une main de fer.",
+      "examples": [
+        "Mal {gérer} ses affaires. — Il gère ses équipes avec une main de fer."
+      ],
       "topic": "daily",
       "lemma": "gérer",
       "rank": 4032,
@@ -1972,7 +2252,9 @@
       "word": "un délice",
       "english": "delicacy",
       "definition": "Chose délicieuse.",
-      "example": "Ce gâteau est {un délice}. — Ces nougats sont un vrai délice. — Quel délice que cette musique !",
+      "examples": [
+        "Ce gâteau est {un délice}. — Ces nougats sont un vrai délice. — Quel délice que cette musique !"
+      ],
       "topic": "daily",
       "lemma": "délice",
       "rank": 4047,
@@ -1986,7 +2268,9 @@
       "word": "déçu",
       "english": "disappointed",
       "definition": "Qui a éprouvé une déception, qui a subi une situation inférieure à ses attentes.",
-      "example": "Il est {déçu} d'avoir manqué ses examens.",
+      "examples": [
+        "Il est {déçu} d'avoir manqué ses examens."
+      ],
       "topic": "daily",
       "lemma": "déçu",
       "rank": 4073,
@@ -2000,7 +2284,9 @@
       "word": "impuissant",
       "english": "powerless; helpless",
       "definition": "Qui n’a pas de pouvoir, de moyens pour faire quelque chose.",
-      "example": "Il se trouva {impuissant} à l’aider.",
+      "examples": [
+        "Il se trouva {impuissant} à l’aider."
+      ],
       "topic": "daily",
       "lemma": "impuissant",
       "rank": 4082,
@@ -2014,7 +2300,9 @@
       "word": "impuissant",
       "english": "impotent",
       "definition": "Atteint d’impuissance sexuelle.",
-      "example": "Cet homme est {impuissant}.",
+      "examples": [
+        "Cet homme est {impuissant}."
+      ],
       "topic": "daily",
       "lemma": "impuissant",
       "rank": 4082,
@@ -2028,7 +2316,9 @@
       "word": "une paye",
       "english": "salary; pay",
       "definition": "Salaire ou rémunération d’un travail.",
-      "example": "Donner {la paye} aux troupes.",
+      "examples": [
+        "Donner {la paye} aux troupes."
+      ],
       "topic": "daily",
       "lemma": "paye",
       "rank": 4101,
@@ -2042,7 +2332,9 @@
       "word": "une rigueur",
       "english": "rigour; rigor",
       "definition": "Sévérité inflexible, dureté, austérité.",
-      "example": "{La rigueur} d’une peine, d’une condamnation.",
+      "examples": [
+        "{La rigueur} d’une peine, d’une condamnation."
+      ],
       "topic": "daily",
       "lemma": "rigueur",
       "rank": 4114,
@@ -2056,7 +2348,9 @@
       "word": "révolutionnaire",
       "english": "revolutionary",
       "definition": "Qui révolutionne",
-      "example": "Le ski parabolique a été une innovation {révolutionnaire}. Avec sa taille de guêpe, Il a révolutionné la pratique du ski.",
+      "examples": [
+        "Le ski parabolique a été une innovation {révolutionnaire}. Avec sa taille de guêpe, Il a révolutionné la pratique du ski."
+      ],
       "topic": "daily",
       "lemma": "révolutionnaire",
       "rank": 4115,
@@ -2070,7 +2364,9 @@
       "word": "résonner",
       "english": "resonate",
       "definition": "Renvoyer le son ; le concentrer par réflexion.",
-      "example": "Cette voûte résonne bien. Cette salle ne résonne pas, résonne trop. Faire {résonner} les échos.",
+      "examples": [
+        "Cette voûte résonne bien. Cette salle ne résonne pas, résonne trop. Faire {résonner} les échos."
+      ],
       "topic": "daily",
       "lemma": "résonner",
       "rank": 4148,
@@ -2084,7 +2380,9 @@
       "word": "rayer",
       "english": "cross out; strike out",
       "definition": "Effacer, raturer, faire une raie, passer un trait de plume sur ce qui est écrit.",
-      "example": "Il faut {rayer} cette clause, ce mot, cette phrase.",
+      "examples": [
+        "Il faut {rayer} cette clause, ce mot, cette phrase."
+      ],
       "topic": "daily",
       "lemma": "rayer",
       "rank": 4152,
@@ -2098,7 +2396,9 @@
       "word": "une lessive",
       "english": "laundry",
       "definition": "Linge sale qui doit être lessivé, qui a été lavé.",
-      "example": "Il faut pendre {la lessive}.",
+      "examples": [
+        "Il faut pendre {la lessive}."
+      ],
       "topic": "daily",
       "lemma": "lessive",
       "rank": 4167,
@@ -2112,7 +2412,9 @@
       "word": "une colle",
       "english": "sticky; stumper; hard one",
       "definition": "Question difficile, question dont on connaît la réponse pour tester les connaissances de quelqu’un.",
-      "example": "Alors là, vous me posez {une colle} !",
+      "examples": [
+        "Alors là, vous me posez {une colle} !"
+      ],
       "topic": "daily",
       "lemma": "colle",
       "rank": 4174,
@@ -2126,7 +2428,9 @@
       "word": "un carré",
       "english": "square",
       "definition": "Figure géométrique plane ayant quatre côtés égaux et quatre angles droits.",
-      "example": "Autrefois, un rectangle était appelé {un carré} long.",
+      "examples": [
+        "Autrefois, un rectangle était appelé {un carré} long."
+      ],
       "topic": "daily",
       "lemma": "carré",
       "rank": 4193,
@@ -2140,7 +2444,9 @@
       "word": "carré",
       "english": "square",
       "definition": "Quadrangulaire.",
-      "example": "Voiles carrées ou Voiles à trait {carré} : Voiles dont les vergues sont hissées par le milieu et croisent le mât à angle droit.",
+      "examples": [
+        "Voiles carrées ou Voiles à trait {carré} : Voiles dont les vergues sont hissées par le milieu et croisent le mât à angle droit."
+      ],
       "topic": "daily",
       "lemma": "carré",
       "rank": 4193,
@@ -2154,7 +2460,9 @@
       "word": "un carré",
       "english": "square",
       "definition": "Nombre résultant de la multiplication d’un nombre par lui-même.",
-      "example": "Seize est {le carré} de quatre.",
+      "examples": [
+        "Seize est {le carré} de quatre."
+      ],
       "topic": "daily",
       "lemma": "carré",
       "rank": 4193,
@@ -2168,7 +2476,9 @@
       "word": "un carré",
       "english": "four of a kind; quads",
       "definition": "Association de quatre cartes de même hauteur.",
-      "example": "Il a abattu {un carré} de dames.",
+      "examples": [
+        "Il a abattu {un carré} de dames."
+      ],
       "topic": "daily",
       "lemma": "carré",
       "rank": 4193,
@@ -2182,7 +2492,9 @@
       "word": "stérile",
       "english": "sterile; fruitless",
       "definition": "Qui ne produit rien de lui-même, qui manque d’invention, d’imagination.",
-      "example": "La saison est {stérile} en nouvelles, il y a peu de nouvelles en ce moment.",
+      "examples": [
+        "La saison est {stérile} en nouvelles, il y a peu de nouvelles en ce moment."
+      ],
       "topic": "daily",
       "lemma": "stérile",
       "rank": 4196,
@@ -2196,7 +2508,9 @@
       "word": "une énigme",
       "english": "enigma; conundrum",
       "definition": "Jeu d’esprit mettant à l’épreuve la réflexion de l’interlocuteur qui doit répondre à une interrogation dont le sens est caché sous une parabole ou une métaphore.",
-      "example": "Œdipe résolut l’énigme du Sphinx, libérant Thèbes de ce monstre qui dévorait les passants. — Proposer {une énigme}. — Recueil d’énigmes.",
+      "examples": [
+        "Œdipe résolut l’énigme du Sphinx, libérant Thèbes de ce monstre qui dévorait les passants. — Proposer {une énigme}. — Recueil d’énigmes."
+      ],
       "topic": "daily",
       "lemma": "énigme",
       "rank": 4202,
@@ -2210,7 +2524,9 @@
       "word": "une croûte",
       "english": "daub",
       "definition": "Mauvais tableau.",
-      "example": "Ce portrait est {une croûte}.",
+      "examples": [
+        "Ce portrait est {une croûte}."
+      ],
       "topic": "daily",
       "lemma": "croûte",
       "rank": 4222,
@@ -2224,7 +2540,9 @@
       "word": "convenable",
       "english": "seemly",
       "definition": "Qui est conforme aux règles de la morale mondaine ou du savoir-vivre.",
-      "example": "J’ai jugé {convenable} de le faire.",
+      "examples": [
+        "J’ai jugé {convenable} de le faire."
+      ],
       "topic": "daily",
       "lemma": "convenable",
       "rank": 4235,
@@ -2238,7 +2556,9 @@
       "word": "une silhouette",
       "english": "silhouette",
       "definition": "Sorte de dessin fait par un trait tracé autour de l’ombre du visage ou du corps.",
-      "example": "Dessiner à {la silhouette}.",
+      "examples": [
+        "Dessiner à {la silhouette}."
+      ],
       "topic": "daily",
       "lemma": "silhouette",
       "rank": 4244,
@@ -2252,7 +2572,9 @@
       "word": "fiancer",
       "english": "engage; betroth",
       "definition": "Engager par une promesse de mariage.",
-      "example": "Ces deux jeunes gens viennent de se {fiancer}.",
+      "examples": [
+        "Ces deux jeunes gens viennent de se {fiancer}."
+      ],
       "topic": "daily",
       "lemma": "fiancer",
       "rank": 4254,
@@ -2266,7 +2588,9 @@
       "word": "sportif",
       "english": "athletic; sports; sportive",
       "definition": "Qui correspond à l'esprit du sport.",
-      "example": "Le public britannique est connu pour n’être pas très {sportif}.",
+      "examples": [
+        "Le public britannique est connu pour n’être pas très {sportif}."
+      ],
       "topic": "daily",
       "lemma": "sportif",
       "rank": 4255,
@@ -2280,7 +2604,9 @@
       "word": "un fourgon",
       "english": "van; baggage car",
       "definition": "Véhicule utilitaire.",
-      "example": "{Le fourgon} blindé sert pour le transport de fonds.",
+      "examples": [
+        "{Le fourgon} blindé sert pour le transport de fonds."
+      ],
       "topic": "daily",
       "lemma": "fourgon",
       "rank": 4259,
@@ -2294,7 +2620,9 @@
       "word": "copier",
       "english": "copy",
       "definition": "Reproduire par écrit.",
-      "example": "{Copier} un écrit mot à mot.",
+      "examples": [
+        "{Copier} un écrit mot à mot."
+      ],
       "topic": "daily",
       "lemma": "copier",
       "rank": 4275,
@@ -2308,7 +2636,9 @@
       "word": "copier",
       "english": "copy; imitate; emulate",
       "definition": "Reproduire par une imitation exacte.",
-      "example": "{Copier} un auteur, un artiste, Tâcher d’imiter sa manière.",
+      "examples": [
+        "{Copier} un auteur, un artiste, Tâcher d’imiter sa manière."
+      ],
       "topic": "daily",
       "lemma": "copier",
       "rank": 4275,
@@ -2322,7 +2652,9 @@
       "word": "ménager",
       "english": "handle; manage; go easy on",
       "definition": "Traiter avec ménagement, avec égard, de manière à ne pas offenser, à ne pas déplaire. (En parlant de personnes)",
-      "example": "C’est un homme à {ménager}.",
+      "examples": [
+        "C’est un homme à {ménager}."
+      ],
       "topic": "daily",
       "lemma": "ménager",
       "rank": 4276,
@@ -2336,7 +2668,9 @@
       "word": "savant",
       "english": "knowledgeable",
       "definition": "Qui est bien informé de quelque affaire, qui est très habile en quelque chose.",
-      "example": "Où avez-vous appris cela ? Vous êtes bien {savant}.",
+      "examples": [
+        "Où avez-vous appris cela ? Vous êtes bien {savant}."
+      ],
       "topic": "daily",
       "lemma": "savant",
       "rank": 4285,
@@ -2350,7 +2684,9 @@
       "word": "louche",
       "english": "sleazy; suspect",
       "definition": "Suspect, équivoque.",
-      "example": "Un individu {louche}, un individu suspect.",
+      "examples": [
+        "Un individu {louche}, un individu suspect."
+      ],
       "topic": "daily",
       "lemma": "louche",
       "rank": 4295,
@@ -2364,7 +2700,9 @@
       "word": "un do",
       "english": "do",
       "definition": "Philosophie à suivre dans les arts japonais.",
-      "example": "Le taekwon-do n’est pas qu’un sport, c’est un art martial qui est fondé sur une philosophie orientale, {le do}.",
+      "examples": [
+        "Le taekwon-do n’est pas qu’un sport, c’est un art martial qui est fondé sur une philosophie orientale, {le do}."
+      ],
       "topic": "daily",
       "lemma": "do",
       "rank": 4306,
@@ -2378,7 +2716,9 @@
       "word": "impeccable",
       "english": "sinless",
       "definition": "Qui est incapable de pécher.",
-      "example": "Il n’y a point d’homme {impeccable}.",
+      "examples": [
+        "Il n’y a point d’homme {impeccable}."
+      ],
       "topic": "daily",
       "lemma": "impeccable",
       "rank": 4360,
@@ -2392,7 +2732,9 @@
       "word": "impeccable",
       "english": "perfect; infallible",
       "definition": "Qui est incapable de faillir.",
-      "example": "J’ai pu faire une faute, faillir, je ne suis pas {impeccable}.",
+      "examples": [
+        "J’ai pu faire une faute, faillir, je ne suis pas {impeccable}."
+      ],
       "topic": "daily",
       "lemma": "impeccable",
       "rank": 4360,
@@ -2406,7 +2748,9 @@
       "word": "une priorité",
       "english": "precedence; antecedence",
       "definition": "Le fait de venir avant, dans l’ordre du temps.",
-      "example": "Ce savant revendique {la priorité} de sa découverte.",
+      "examples": [
+        "Ce savant revendique {la priorité} de sa découverte."
+      ],
       "topic": "daily",
       "lemma": "priorité",
       "rank": 4386,
@@ -2420,7 +2764,9 @@
       "word": "favorable",
       "english": "favorable; favourable",
       "definition": "Qui est avantageux et tel qu’on le désire pour la fin qu’on se propose.",
-      "example": "Il obtint une réponse {favorable}.",
+      "examples": [
+        "Il obtint une réponse {favorable}."
+      ],
       "topic": "daily",
       "lemma": "favorable",
       "rank": 4404,
@@ -2434,7 +2780,9 @@
       "word": "favorable",
       "english": "favorable; favourable",
       "definition": "Qui est à l’avantage de quelqu’un ou de quelque chose.",
-      "example": "On lui présenta la chose du côté {favorable}.",
+      "examples": [
+        "On lui présenta la chose du côté {favorable}."
+      ],
       "topic": "daily",
       "lemma": "favorable",
       "rank": 4404,
@@ -2448,7 +2796,9 @@
       "word": "quitte",
       "english": "quits; even",
       "definition": "Libéré d’une dette, d’une obligation, d’un devoir moral.",
-      "example": "Je suis {quitte} envers vous.",
+      "examples": [
+        "Je suis {quitte} envers vous."
+      ],
       "topic": "daily",
       "lemma": "quitte",
       "rank": 4421,
@@ -2462,7 +2812,9 @@
       "word": "quitte",
       "english": "rid (of something, somebody); rid of it",
       "definition": "Délivré, débarrassé de quelque chose.",
-      "example": "Vous n’avez eu qu’un rhume : vous en êtes {quitte} à bon marché.",
+      "examples": [
+        "Vous n’avez eu qu’un rhume : vous en êtes {quitte} à bon marché."
+      ],
       "topic": "daily",
       "lemma": "quitte",
       "rank": 4421,
@@ -2476,7 +2828,9 @@
       "word": "indifférent",
       "english": "regardless",
       "definition": "Qui n’est pas touché de quelque chose ; qui ne prend pas d’intérêt à quelqu’un ou à quelque chose.",
-      "example": "Il est {indifférent} pour tout, sur tout.",
+      "examples": [
+        "Il est {indifférent} pour tout, sur tout."
+      ],
       "topic": "daily",
       "lemma": "indifférent",
       "rank": 4423,
@@ -2490,7 +2844,9 @@
       "word": "méditer",
       "english": "meditate",
       "definition": "Réfléchir sur quelque chose, l’examiner mûrement, de manière à l’approfondir.",
-      "example": "Ce philosophe passe sa vie à {méditer}.",
+      "examples": [
+        "Ce philosophe passe sa vie à {méditer}."
+      ],
       "topic": "daily",
       "lemma": "méditer",
       "rank": 4447,
@@ -2504,7 +2860,9 @@
       "word": "une correction",
       "english": "proofreading",
       "definition": "Action de corriger les épreuves, d’indiquer les fautes de composition, afin que l’ouvrier les fasse disparaître.",
-      "example": "{La correction} de cette feuille exigera beaucoup de temps.",
+      "examples": [
+        "{La correction} de cette feuille exigera beaucoup de temps."
+      ],
       "topic": "daily",
       "lemma": "correction",
       "rank": 4476,
@@ -2518,7 +2876,9 @@
       "word": "une correction",
       "english": "correctness",
       "definition": "Qualité de ce qui est correct.",
-      "example": "{La correction} du langage, du style.",
+      "examples": [
+        "{La correction} du langage, du style."
+      ],
       "topic": "daily",
       "lemma": "correction",
       "rank": 4476,
@@ -2532,7 +2892,9 @@
       "word": "une clôture",
       "english": "closing",
       "definition": "Action d’arrêter, de terminer une chose, ou de déclarer qu’elle est terminée.",
-      "example": "{La clôture} d’une session.",
+      "examples": [
+        "{La clôture} d’une session."
+      ],
       "topic": "daily",
       "lemma": "clôture",
       "rank": 4527,
@@ -2546,7 +2908,9 @@
       "word": "une clôture",
       "english": "closing",
       "definition": "Suspension temporaire d’une série de représentations, de conférences, etc.",
-      "example": "On donnera telles pièces pour {la clôture}.",
+      "examples": [
+        "On donnera telles pièces pour {la clôture}."
+      ],
       "topic": "daily",
       "lemma": "clôture",
       "rank": 4527,
@@ -2560,7 +2924,9 @@
       "word": "déchiffrer",
       "english": "decipher; read",
       "definition": "Décoder ce qui est écrit en chiffres.",
-      "example": "Un chiffre malaisé à {déchiffrer}.",
+      "examples": [
+        "Un chiffre malaisé à {déchiffrer}."
+      ],
       "topic": "daily",
       "lemma": "déchiffrer",
       "rank": 4598,
@@ -2574,7 +2940,9 @@
       "word": "comique",
       "english": "comic; comical; funny",
       "definition": "Qui est propre à faire rire.",
-      "example": "Cette intrigue est tout à fait {comique}.",
+      "examples": [
+        "Cette intrigue est tout à fait {comique}."
+      ],
       "topic": "daily",
       "lemma": "comique",
       "rank": 4605,
@@ -2588,7 +2956,9 @@
       "word": "blanchir",
       "english": "whitewash",
       "definition": "Mettre hors de cause, disculper.",
-      "example": "Il est parvenu à se {blanchir}.",
+      "examples": [
+        "Il est parvenu à se {blanchir}."
+      ],
       "topic": "daily",
       "lemma": "blanchir",
       "rank": 4620,
@@ -2602,7 +2972,9 @@
       "word": "démonter",
       "english": "dismantle; take apart; demount",
       "definition": "Défaire pièce par pièce ce qui formait un tout.",
-      "example": "{Démonter} une pendule, une montre, des diamants, des pierreries.",
+      "examples": [
+        "{Démonter} une pendule, une montre, des diamants, des pierreries."
+      ],
       "topic": "daily",
       "lemma": "démonter",
       "rank": 4622,
@@ -2616,7 +2988,9 @@
       "word": "gêné",
       "english": "embarrassed",
       "definition": "Qui éprouve de la gêne, de la honte, de l'embarras.",
-      "example": "Comprenant sa méprise, il se sentit {gêné}.",
+      "examples": [
+        "Comprenant sa méprise, il se sentit {gêné}."
+      ],
       "topic": "daily",
       "lemma": "gêné",
       "rank": 4650,
@@ -2630,7 +3004,9 @@
       "word": "décidément",
       "english": "decidedly",
       "definition": "D’une manière décisive, évidente.",
-      "example": "Il est {décidément} le meilleur nageur du monde.",
+      "examples": [
+        "Il est {décidément} le meilleur nageur du monde."
+      ],
       "topic": "daily",
       "lemma": "décidément",
       "rank": 4656,
@@ -2644,7 +3020,9 @@
       "word": "une cure",
       "english": "rectory",
       "definition": "Demeure du curé.",
-      "example": "{La cure} est en général dans le voisinage de l’église.",
+      "examples": [
+        "{La cure} est en général dans le voisinage de l’église."
+      ],
       "topic": "daily",
       "lemma": "cure",
       "rank": 4658,
@@ -2658,7 +3036,9 @@
       "word": "une cote",
       "english": "height",
       "definition": "Évaluation numérale qui sert à exprimer l’élévation au-dessus d’un point altimétrique de référence d’un terrain, d’un cours d’eau, d’un point quelconque.",
-      "example": "En mathématiques et en physique, pour les problèmes dans l'espace, {la cote} correspond en général à la coordonnée z.",
+      "examples": [
+        "En mathématiques et en physique, pour les problèmes dans l'espace, {la cote} correspond en général à la coordonnée z."
+      ],
       "topic": "daily",
       "lemma": "cote",
       "rank": 4666,
@@ -2672,7 +3052,9 @@
       "word": "un foulard",
       "english": "cabbage palm; palm lily",
       "definition": "Acalypha, queue de chat.",
-      "example": "{Le foulard} est aussi appelé cancan ou queue-de-chat.",
+      "examples": [
+        "{Le foulard} est aussi appelé cancan ou queue-de-chat."
+      ],
       "topic": "daily",
       "lemma": "foulard",
       "rank": 4671,
@@ -2686,7 +3068,9 @@
       "word": "une détente",
       "english": "trigger",
       "definition": "Action de lâcher la détente et de l’effort que fait cette pièce lorsqu’elle vient à se détendre.",
-      "example": "Il est à craindre que ce ressort ne se rompe à {la détente}.",
+      "examples": [
+        "Il est à craindre que ce ressort ne se rompe à {la détente}."
+      ],
       "topic": "daily",
       "lemma": "détente",
       "rank": 4703,
@@ -2700,7 +3084,9 @@
       "word": "incertain",
       "english": "uncertain",
       "definition": "Qui est variable, mal assuré.",
-      "example": "Le temps est bien {incertain}.",
+      "examples": [
+        "Le temps est bien {incertain}."
+      ],
       "topic": "daily",
       "lemma": "incertain",
       "rank": 4708,
@@ -2714,7 +3100,9 @@
       "word": "insensible",
       "english": "unfeeling; insensitive",
       "definition": "Qui n’a pas de sentiment ou le sentiment attendu.",
-      "example": "Il a l’âme dure et {insensible}.",
+      "examples": [
+        "Il a l’âme dure et {insensible}."
+      ],
       "topic": "daily",
       "lemma": "insensible",
       "rank": 4709,
@@ -2728,7 +3116,9 @@
       "word": "insensible",
       "english": "insensitive",
       "definition": "Imperceptible ; qu’on n’aperçoit ou qui n’est connu que difficilement par les sens, ou même dont on ne peut s’apercevoir.",
-      "example": "Le mouvement de l’ombre d’un cadran solaire est {insensible} à l’œil nu.",
+      "examples": [
+        "Le mouvement de l’ombre d’un cadran solaire est {insensible} à l’œil nu."
+      ],
       "topic": "daily",
       "lemma": "insensible",
       "rank": 4709,
@@ -2742,7 +3132,9 @@
       "word": "flamber",
       "english": "buckle",
       "definition": "Se déformer dans une direction perpendiculaire à la force appliquée.",
-      "example": "Le vérin avait tendance à {flamber} sous le poids de la charge.",
+      "examples": [
+        "Le vérin avait tendance à {flamber} sous le poids de la charge."
+      ],
       "topic": "daily",
       "lemma": "flamber",
       "rank": 4730,
@@ -2756,7 +3148,9 @@
       "word": "flamber",
       "english": "flame",
       "definition": "Passer sur le feu.",
-      "example": "Pour aseptiser des instruments de chirurgie, on peut les {flamber} en les passant à la flamme de l’alcool.",
+      "examples": [
+        "Pour aseptiser des instruments de chirurgie, on peut les {flamber} en les passant à la flamme de l’alcool."
+      ],
       "topic": "daily",
       "lemma": "flamber",
       "rank": 4730,
@@ -2770,7 +3164,9 @@
       "word": "pieux",
       "english": "pious",
       "definition": "Qui tient à la piété filiale et à certains autres sentiments humains de vénération.",
-      "example": "On l’entourait avec un {pieux} respect.",
+      "examples": [
+        "On l’entourait avec un {pieux} respect."
+      ],
       "topic": "daily",
       "lemma": "pieux",
       "rank": 4743,
@@ -2784,7 +3180,9 @@
       "word": "proprement",
       "english": "literally",
       "definition": "Dans le sens propre, par opposition à : au sens figuré.",
-      "example": "Ce mot s’emploie {proprement} et figurément.",
+      "examples": [
+        "Ce mot s’emploie {proprement} et figurément."
+      ],
       "topic": "daily",
       "lemma": "proprement",
       "rank": 4751,
@@ -2798,7 +3196,9 @@
       "word": "proprement",
       "english": "cleanly",
       "definition": "Avec propreté.",
-      "example": "Cette maison est tenue {proprement}.",
+      "examples": [
+        "Cette maison est tenue {proprement}."
+      ],
       "topic": "daily",
       "lemma": "proprement",
       "rank": 4751,
@@ -2812,7 +3212,9 @@
       "word": "faufiler",
       "english": "tack; baste",
       "definition": "Coudre à longs points, en attendant qu’on fasse la couture définitive.",
-      "example": "On n’a fait que {faufiler} ce costume pour l’essayer.",
+      "examples": [
+        "On n’a fait que {faufiler} ce costume pour l’essayer."
+      ],
       "topic": "daily",
       "lemma": "faufiler",
       "rank": 4752,
@@ -2826,7 +3228,9 @@
       "word": "un bulletin",
       "english": "report card; report",
       "definition": "Bulletin de notes.",
-      "example": "{le bulletin} trimestriel est envoyé chaque trimestre aux parents de l’élève pour rendre compte de sa conduite et de son travail durant cette période.",
+      "examples": [
+        "{le bulletin} trimestriel est envoyé chaque trimestre aux parents de l’élève pour rendre compte de sa conduite et de son travail durant cette période."
+      ],
       "topic": "daily",
       "lemma": "bulletin",
       "rank": 4795,
@@ -2840,7 +3244,9 @@
       "word": "tâter",
       "english": "probe; test the waters",
       "definition": "Essayer de connaître l’état d’esprit d’une personne.",
-      "example": "{Tâter} l’ennemi, Faire des mouvements, de petites attaques pour connaître les dispositions de l’ennemi.",
+      "examples": [
+        "{Tâter} l’ennemi, Faire des mouvements, de petites attaques pour connaître les dispositions de l’ennemi."
+      ],
       "topic": "daily",
       "lemma": "tâter",
       "rank": 4822,
@@ -2854,7 +3260,9 @@
       "word": "bien-aimé",
       "english": "beloved",
       "definition": "Qui est aimé de préférence à tout autre.",
-      "example": "C’est son fils {bien-aimé}.",
+      "examples": [
+        "C’est son fils {bien-aimé}."
+      ],
       "topic": "daily",
       "lemma": "bien-aimé",
       "rank": 4860,
@@ -2868,7 +3276,9 @@
       "word": "un bilan",
       "english": "assessment; overview; outcome",
       "definition": "Récapitulatif.",
-      "example": "Et si on faisait {le bilan} de votre carrière ?",
+      "examples": [
+        "Et si on faisait {le bilan} de votre carrière ?"
+      ],
       "topic": "daily",
       "lemma": "bilan",
       "rank": 4862,
@@ -2882,7 +3292,9 @@
       "word": "un parasite",
       "english": "noise",
       "definition": "Perturbation, trouble du courant électrique tel que celui-ci a été produit.",
-      "example": "S’il s’agit d’une erreur temporaire, comme {un parasite} sur le bus, la station émettrice retransmettra aussitôt la trame, et tout rentrera dans l’ordre.",
+      "examples": [
+        "S’il s’agit d’une erreur temporaire, comme {un parasite} sur le bus, la station émettrice retransmettra aussitôt la trame, et tout rentrera dans l’ordre."
+      ],
       "topic": "daily",
       "lemma": "parasite",
       "rank": 4865,
@@ -2896,7 +3308,9 @@
       "word": "ingrat",
       "english": "unrewarding; trying",
       "definition": "Qui n’est pas favorable au développement du talent, qui fournit peu d’idées, en parlant d’un sujet.",
-      "example": "Vous travaillez sur un fond bien {ingrat}.",
+      "examples": [
+        "Vous travaillez sur un fond bien {ingrat}."
+      ],
       "topic": "daily",
       "lemma": "ingrat",
       "rank": 4899,
@@ -2910,7 +3324,9 @@
       "word": "un relevé",
       "english": "statement",
       "definition": "Extrait des articles d’un compte, d’un inventaire, d’un registre, qui sont relatifs à un même objet.",
-      "example": "Faire {le relevé} des meubles compris dans l’inventaire général d’une succession.",
+      "examples": [
+        "Faire {le relevé} des meubles compris dans l’inventaire général d’une succession."
+      ],
       "topic": "daily",
       "lemma": "relevé",
       "rank": 4907,
@@ -2924,7 +3340,9 @@
       "word": "une composition",
       "english": "composition",
       "definition": "Action de composer quelque chose.",
-      "example": "Procéder à {la composition} des lots dans un partage.",
+      "examples": [
+        "Procéder à {la composition} des lots dans un partage."
+      ],
       "topic": "daily",
       "lemma": "composition",
       "rank": 4913,
@@ -2938,7 +3356,9 @@
       "word": "une composition",
       "english": "typesetting",
       "definition": "Arrangement des caractères pour en former des mots, des lignes et des pages.",
-      "example": "Apprendre {la composition}.",
+      "examples": [
+        "Apprendre {la composition}."
+      ],
       "topic": "daily",
       "lemma": "composition",
       "rank": 4913,
@@ -2952,7 +3372,9 @@
       "word": "une composition",
       "english": "composition",
       "definition": "Préparation faite pour imiter certaines choses, principalement les pierreries, les perles, l’or ou l’argent.",
-      "example": "Le chrysocale est {une composition} qui imite l’or.",
+      "examples": [
+        "Le chrysocale est {une composition} qui imite l’or."
+      ],
       "topic": "daily",
       "lemma": "composition",
       "rank": 4913,
@@ -2966,7 +3388,9 @@
       "word": "une composition",
       "english": "composition",
       "definition": "Action de composer un ouvrage de l’esprit.",
-      "example": "Cela lui est échappé dans la chaleur de {la composition}.",
+      "examples": [
+        "Cela lui est échappé dans la chaleur de {la composition}."
+      ],
       "topic": "daily",
       "lemma": "composition",
       "rank": 4913,
@@ -2980,7 +3404,9 @@
       "word": "une composition",
       "english": "composition",
       "definition": "Ouvrage d’un écrivain ou d’un artiste.",
-      "example": "Il préfère ce genre de composition. — Achever {une composition}.",
+      "examples": [
+        "Il préfère ce genre de composition. — Achever {une composition}."
+      ],
       "topic": "daily",
       "lemma": "composition",
       "rank": 4913,
@@ -2994,7 +3420,9 @@
       "word": "une composition",
       "english": "composition",
       "definition": "Devoir que fait un écolier sur le sujet qui lui est donné par son professeur et spécialement pour un concours.",
-      "example": "{Une composition} sans faute.",
+      "examples": [
+        "{Une composition} sans faute."
+      ],
       "topic": "daily",
       "lemma": "composition",
       "rank": 4913,
@@ -3008,7 +3436,9 @@
       "word": "reconduire",
       "english": "accompany (someone) back; take (someone) back",
       "definition": "Accompagner quelqu’un sur le chemin qu’il prend pour retourner d’où il vient.",
-      "example": "Je vais vous faire {reconduire} dans ma voiture.",
+      "examples": [
+        "Je vais vous faire {reconduire} dans ma voiture."
+      ],
       "topic": "daily",
       "lemma": "reconduire",
       "rank": 4961,
@@ -3022,7 +3452,9 @@
       "word": "reconduire",
       "english": "lead (someone) out",
       "definition": "Accompagner par civilité une personne dont on a reçu visite, lorsqu’elle s’en va.",
-      "example": "{Reconduire} quelqu’un jusqu’au bas de l’escalier, jusqu’à sa voiture.",
+      "examples": [
+        "{Reconduire} quelqu’un jusqu’au bas de l’escalier, jusqu’à sa voiture."
+      ],
       "topic": "daily",
       "lemma": "reconduire",
       "rank": 4961,
@@ -3036,7 +3468,9 @@
       "word": "une tranquillité",
       "english": "tranquility; tranquillity",
       "definition": "État de ce qui est tranquille, sans agitation.",
-      "example": "Passer la vie dans une grande tranquillité. — {La tranquillité} de l’esprit.",
+      "examples": [
+        "Passer la vie dans une grande tranquillité. — {La tranquillité} de l’esprit."
+      ],
       "topic": "daily",
       "lemma": "tranquillité",
       "rank": 4970,
@@ -3050,7 +3484,9 @@
       "word": "une recommandation",
       "english": "to serve as a recommendation",
       "definition": "Titre dont on peut se prévaloir, qui vous vaut de l’estime.",
-      "example": "Avoir servi ainsi n’est pas {une recommandation}.",
+      "examples": [
+        "Avoir servi ainsi n’est pas {une recommandation}."
+      ],
       "topic": "daily",
       "lemma": "recommandation",
       "rank": 4972,
@@ -3064,7 +3500,9 @@
       "word": "un créateur",
       "english": "creator",
       "definition": "Celui qui trouve quelque chose de nouveau, dans quelque genre que ce soit.",
-      "example": "Homère est regardé comme {le créateur} de l’épopée. — Un Molière, un Balzac sont de grands créateurs. — Minerve a été honorée comme étant la créatrice des arts.",
+      "examples": [
+        "Homère est regardé comme {le créateur} de l’épopée. — Un Molière, un Balzac sont de grands créateurs. — Minerve a été honorée comme étant la créatrice des arts."
+      ],
       "topic": "daily",
       "lemma": "créateur",
       "rank": 5015,
@@ -3078,7 +3516,9 @@
       "word": "rincer",
       "english": "rinse",
       "definition": "Nettoyer, laver et en frottant, en parlant des bouteilles, des verres, des tasses et de quelques autres vases.",
-      "example": "Se {rincer} la bouche, laver sa bouche.",
+      "examples": [
+        "Se {rincer} la bouche, laver sa bouche."
+      ],
       "topic": "daily",
       "lemma": "rincer",
       "rank": 5045,
@@ -3092,7 +3532,9 @@
       "word": "salé",
       "english": "salted; salty; savory",
       "definition": "Qui contient du sel.",
-      "example": "Bœuf, hareng, beurre {salé}.",
+      "examples": [
+        "Bœuf, hareng, beurre {salé}."
+      ],
       "topic": "daily",
       "lemma": "salé",
       "rank": 5048,
@@ -3106,7 +3548,9 @@
       "word": "une proximité",
       "english": "proximity; closeness; nearness",
       "definition": "Voisinage d’une chose à l’égard d’une autre.",
-      "example": "{La proximité} des lieux où l’on a souvent affaire épargne bien du temps.",
+      "examples": [
+        "{La proximité} des lieux où l’on a souvent affaire épargne bien du temps."
+      ],
       "topic": "daily",
       "lemma": "proximité",
       "rank": 5052,
@@ -3120,7 +3564,9 @@
       "word": "reporter",
       "english": "transport; shift",
       "definition": "Transporter, placer dans un autre lieu.",
-      "example": "Ce paragraphe doit être reporté à tel chapitre. Il faut {reporter} cette note à la fin du volume.",
+      "examples": [
+        "Ce paragraphe doit être reporté à tel chapitre. Il faut {reporter} cette note à la fin du volume."
+      ],
       "topic": "daily",
       "lemma": "reporter",
       "rank": 5062,
@@ -3134,7 +3580,9 @@
       "word": "une cantine",
       "english": "canteen; mess hall",
       "definition": "Lieu de repas dans les écoles, les entreprises, etc.",
-      "example": "Ce midi je mange à {la cantine}.",
+      "examples": [
+        "Ce midi je mange à {la cantine}."
+      ],
       "topic": "daily",
       "lemma": "cantine",
       "rank": 5069,
@@ -3148,7 +3596,9 @@
       "word": "une haie",
       "english": "hurdle",
       "definition": "Obstacle qui doit être franchi par le concurrent qui participe à une course.",
-      "example": "{La haie} est un obstacle difficile à franchir pour certains chevaux.",
+      "examples": [
+        "{La haie} est un obstacle difficile à franchir pour certains chevaux."
+      ],
       "topic": "daily",
       "lemma": "haie",
       "rank": 5073,
@@ -3162,7 +3612,9 @@
       "word": "un compromis",
       "english": "compromise",
       "definition": "Acte qui scelle un échange de promesses. C'est le résultat d'une négociation entre les parties en présence où chacune aura fait des concessions pour arriver à une solution commune qu'elles devront conjointement exécuter.",
-      "example": "Dresser, signer {un compromis}.",
+      "examples": [
+        "Dresser, signer {un compromis}."
+      ],
       "topic": "daily",
       "lemma": "compromis",
       "rank": 5083,
@@ -3176,7 +3628,9 @@
       "word": "dériver",
       "english": "divert",
       "definition": "Détourner un cours d’eau.",
-      "example": "On a dû plusieurs fois {dériver} la Bièvre.",
+      "examples": [
+        "On a dû plusieurs fois {dériver} la Bièvre."
+      ],
       "topic": "daily",
       "lemma": "dériver",
       "rank": 5099,
@@ -3190,7 +3644,9 @@
       "word": "dériver",
       "english": "divert",
       "definition": "Quitter un cours d’eau naturel ou un chenal.",
-      "example": "On a pratiqué des rigoles qui font {dériver} en partie les eaux du fleuve dans ce canal.",
+      "examples": [
+        "On a pratiqué des rigoles qui font {dériver} en partie les eaux du fleuve dans ce canal."
+      ],
       "topic": "daily",
       "lemma": "dériver",
       "rank": 5099,
@@ -3204,7 +3660,9 @@
       "word": "contester",
       "english": "contest; challenge; impugn",
       "definition": "Mettre en discussion ce que quelqu’un revendique.",
-      "example": "Je ne veux pas {contester} avec vous.",
+      "examples": [
+        "Je ne veux pas {contester} avec vous."
+      ],
       "topic": "daily",
       "lemma": "contester",
       "rank": 5132,
@@ -3218,7 +3676,9 @@
       "word": "effleurer",
       "english": "scratch the surface (of); brush the surface (of); touch on",
       "definition": "Enlever seulement la partie superficielle d’une chose.",
-      "example": "Le coup n’a fait que lui {effleurer} la peau.",
+      "examples": [
+        "Le coup n’a fait que lui {effleurer} la peau."
+      ],
       "topic": "daily",
       "lemma": "effleurer",
       "rank": 5168,
@@ -3232,7 +3692,9 @@
       "word": "un escadron",
       "english": "squadron",
       "definition": "Unité d’avions de combat.",
-      "example": "{Un escadron} se subdivise en escadrilles ; plusieurs escadrons forment une escadre.",
+      "examples": [
+        "{Un escadron} se subdivise en escadrilles ; plusieurs escadrons forment une escadre."
+      ],
       "topic": "daily",
       "lemma": "escadron",
       "rank": 5184,
@@ -3246,7 +3708,9 @@
       "word": "un escadron",
       "english": "squad",
       "definition": "Bande armée organisée sur le modèle militaire et agissant en-dehors de la loi.",
-      "example": "Pinochet parrainait {un escadron} de la mort qui traquait ses opposants même à l’étranger.",
+      "examples": [
+        "Pinochet parrainait {un escadron} de la mort qui traquait ses opposants même à l’étranger."
+      ],
       "topic": "daily",
       "lemma": "escadron",
       "rank": 5184,
@@ -3260,7 +3724,9 @@
       "word": "fatigant",
       "english": "tiring",
       "definition": "Qui cause de la fatigue.",
-      "example": "Ce travail est trop {fatigant}.",
+      "examples": [
+        "Ce travail est trop {fatigant}."
+      ],
       "topic": "daily",
       "lemma": "fatigant",
       "rank": 5229,
@@ -3274,7 +3740,9 @@
       "word": "une coulisse",
       "english": "hem",
       "definition": "Rempli fait à un vêtement, à un rideau, à une pièce d’étoffe pour faire passer un cordon ou une tringle le long desquels l’étoffe doit glisser.",
-      "example": "Passer un lacet dans {une coulisse}.",
+      "examples": [
+        "Passer un lacet dans {une coulisse}."
+      ],
       "topic": "daily",
       "lemma": "coulisse",
       "rank": 5230,
@@ -3288,7 +3756,9 @@
       "word": "réviser",
       "english": "review",
       "definition": "Examiner de nouveau, revoir en vue de modifier.",
-      "example": "{Réviser} un compte, un procès, un règlement.",
+      "examples": [
+        "{Réviser} un compte, un procès, un règlement."
+      ],
       "topic": "daily",
       "lemma": "réviser",
       "rank": 5234,
@@ -3302,7 +3772,9 @@
       "word": "un vaccin",
       "english": "vaccine; jab; shot",
       "definition": "L’inoculation elle-même, la vaccination.",
-      "example": "On vous a fait {le vaccin} anti-grippe ?",
+      "examples": [
+        "On vous a fait {le vaccin} anti-grippe ?"
+      ],
       "topic": "daily",
       "lemma": "vaccin",
       "rank": 5243,
@@ -3316,7 +3788,9 @@
       "word": "un protecteur",
       "english": "protector",
       "definition": "Personne qui protège.",
-      "example": "Il est {le protecteur} des pauvres, des affligés, des opprimés, de la veuve et de l’orphelin.",
+      "examples": [
+        "Il est {le protecteur} des pauvres, des affligés, des opprimés, de la veuve et de l’orphelin."
+      ],
       "topic": "daily",
       "lemma": "protecteur",
       "rank": 5307,
@@ -3330,7 +3804,9 @@
       "word": "allier",
       "english": "create an alliance with",
       "definition": "Unir par les liens du mariage.",
-      "example": "{Allier} une maison, une famille à une autre.",
+      "examples": [
+        "{Allier} une maison, une famille à une autre."
+      ],
       "topic": "daily",
       "lemma": "allier",
       "rank": 5316,
@@ -3344,7 +3820,9 @@
       "word": "un van",
       "english": "winnowing basket; winnowing fan",
       "definition": "Instrument d’osier, en forme de coquille, qui a deux anses, et dont on se sert pour secouer le grain, les impuretés, afin de séparer la paille d’avec le bon grain.",
-      "example": "Nettoyer du grain avec {le van}.",
+      "examples": [
+        "Nettoyer du grain avec {le van}."
+      ],
       "topic": "daily",
       "lemma": "van",
       "rank": 5339,
@@ -3358,7 +3836,9 @@
       "word": "démasquer",
       "english": "unmask",
       "definition": "Faire reconnaître quelqu’un en ôtant le masque qu’il a sur le visage.",
-      "example": "Pas un des masques ne voulut se {démasquer}.",
+      "examples": [
+        "Pas un des masques ne voulut se {démasquer}."
+      ],
       "topic": "daily",
       "lemma": "démasquer",
       "rank": 5349,
@@ -3372,7 +3852,9 @@
       "word": "resserrer",
       "english": "retighten; tighten; draw in",
       "definition": "Serrer davantage.",
-      "example": "Cette robe est trop large, il faut la {resserrer} à la taille.",
+      "examples": [
+        "Cette robe est trop large, il faut la {resserrer} à la taille."
+      ],
       "topic": "daily",
       "lemma": "resserrer",
       "rank": 5422,
@@ -3386,7 +3868,9 @@
       "word": "antérieur",
       "english": "front",
       "definition": "Prononcé avec la langue avancée dans la bouche.",
-      "example": "Le a {antérieur} se prononce \\a\\ comme dans « rate » \\ʁat\\.",
+      "examples": [
+        "Le a {antérieur} se prononce \\a\\ comme dans « rate » \\ʁat\\."
+      ],
       "topic": "daily",
       "lemma": "antérieur",
       "rank": 5440,
@@ -3400,7 +3884,9 @@
       "word": "tout-puissant",
       "english": "almighty; all-powerful",
       "definition": "Qui a une puissance absolue et illimitée.",
-      "example": "Les croyants l’écrivent généralement avec une respectueuse majuscule : {Tout-puissant}.",
+      "examples": [
+        "Les croyants l’écrivent généralement avec une respectueuse majuscule : {Tout-puissant}."
+      ],
       "topic": "daily",
       "lemma": "tout-puissant",
       "rank": 5443,
@@ -3414,7 +3900,9 @@
       "word": "un admirateur",
       "english": "admirer",
       "definition": "Celui qui admire, ou qui a coutume d’admirer.",
-      "example": "C’est {un admirateur} convaincu.",
+      "examples": [
+        "C’est {un admirateur} convaincu."
+      ],
       "topic": "daily",
       "lemma": "admirateur",
       "rank": 5445,
@@ -3428,7 +3916,9 @@
       "word": "broyer",
       "english": "crush; pound; pulverize",
       "definition": "Réduire en parcelles, en poudre ou en pâte.",
-      "example": "Les dents servent à {broyer} les aliments.",
+      "examples": [
+        "Les dents servent à {broyer} les aliments."
+      ],
       "topic": "daily",
       "lemma": "broyer",
       "rank": 5456,
@@ -3442,7 +3932,9 @@
       "word": "dû",
       "english": "due",
       "definition": "Indique la cause, l’agent déclencheur, responsable ou déterminant.",
-      "example": "Cela ne peut être {dû} qu’à une erreur humaine.",
+      "examples": [
+        "Cela ne peut être {dû} qu’à une erreur humaine."
+      ],
       "topic": "daily",
       "lemma": "dû",
       "rank": 5479,
@@ -3456,7 +3948,9 @@
       "word": "une brèche",
       "english": "gap; breach",
       "definition": "Ouverture dans une clôture, un mur, une haie…",
-      "example": "Ouvrir {une brèche} dans une artère de calibre important afin de réaliser un cathétérisme.",
+      "examples": [
+        "Ouvrir {une brèche} dans une artère de calibre important afin de réaliser un cathétérisme."
+      ],
       "topic": "daily",
       "lemma": "brèche",
       "rank": 5518,
@@ -3470,7 +3964,9 @@
       "word": "une brèche",
       "english": "breach; gap",
       "definition": "Partie entamée d'un ensemble.",
-      "example": "Il y a {une brèche} à ce pâté, quelqu’un en a mangé une partie. — On a abattu cent arpents de bois dans cette forêt, cela fait une grande brèche.",
+      "examples": [
+        "Il y a {une brèche} à ce pâté, quelqu’un en a mangé une partie. — On a abattu cent arpents de bois dans cette forêt, cela fait une grande brèche."
+      ],
       "topic": "daily",
       "lemma": "brèche",
       "rank": 5518,
@@ -3484,7 +3980,9 @@
       "word": "une brèche",
       "english": "take a toll on",
       "definition": "Tort, dommage que l’on fait à quelque chose, la diminution d’un bien qui devrait être conservé entier, intact.",
-      "example": "Il a fait {une brèche} à sa réputation.",
+      "examples": [
+        "Il a fait {une brèche} à sa réputation."
+      ],
       "topic": "daily",
       "lemma": "brèche",
       "rank": 5518,
@@ -3498,7 +3996,9 @@
       "word": "différer",
       "english": "defer; delay",
       "definition": "Remettre à un autre temps, à plus tard.",
-      "example": "Cela ne peut se {différer}, ne peut être différé plus longtemps.",
+      "examples": [
+        "Cela ne peut se {différer}, ne peut être différé plus longtemps."
+      ],
       "topic": "daily",
       "lemma": "différer",
       "rank": 5539,
@@ -3512,7 +4012,9 @@
       "word": "une pancarte",
       "english": "placard",
       "definition": "Toute affiche portant un message, qu'elle soit placardée ou tenue dans les mains.",
-      "example": "Julie a tenu {une pancarte} tout le long de la manifestation.",
+      "examples": [
+        "Julie a tenu {une pancarte} tout le long de la manifestation."
+      ],
       "topic": "daily",
       "lemma": "pancarte",
       "rank": 5546,
@@ -3526,7 +4028,9 @@
       "word": "un rempart",
       "english": "rampart; bulwark",
       "definition": "Ce qui sert de défense.",
-      "example": "Ce soldat, combattant auprès de son capitaine, lui fit {un rempart} de son corps.",
+      "examples": [
+        "Ce soldat, combattant auprès de son capitaine, lui fit {un rempart} de son corps."
+      ],
       "topic": "daily",
       "lemma": "rempart",
       "rank": 5565,
@@ -3540,7 +4044,9 @@
       "word": "une fabrication",
       "english": "manufacture; fabrication",
       "definition": "Action de fabriquer ou résultat de cette action.",
-      "example": "{La fabrication} de la monnaie.",
+      "examples": [
+        "{La fabrication} de la monnaie."
+      ],
       "topic": "daily",
       "lemma": "fabrication",
       "rank": 5572,
@@ -3554,7 +4060,9 @@
       "word": "un cortège",
       "english": "procession; cortege",
       "definition": "Suite de personnes qui en accompagnent une autre avec cérémonie et pour lui faire honneur.",
-      "example": "{Le cortège} se mit en marche.",
+      "examples": [
+        "{Le cortège} se mit en marche."
+      ],
       "topic": "daily",
       "lemma": "cortège",
       "rank": 5586,
@@ -3568,7 +4076,9 @@
       "word": "une piaule",
       "english": "pad; crib",
       "definition": "Maison, bicoque, endroit où une personne réside.",
-      "example": "Je me suis acheté {une piaule} pour y rester avec ma femme et mes enfants.",
+      "examples": [
+        "Je me suis acheté {une piaule} pour y rester avec ma femme et mes enfants."
+      ],
       "topic": "daily",
       "lemma": "piaule",
       "rank": 5615,
@@ -3582,7 +4092,9 @@
       "word": "fâcheux",
       "english": "aggravating",
       "definition": "Qui donne du déplaisir ou de la peine.",
-      "example": "Vous voulez partir, c’est {fâcheux}.",
+      "examples": [
+        "Vous voulez partir, c’est {fâcheux}."
+      ],
       "topic": "daily",
       "lemma": "fâcheux",
       "rank": 5616,
@@ -3596,7 +4108,9 @@
       "word": "conter",
       "english": "tell",
       "definition": "Exposer par un récit. Il se dit principalement de récits que l’on fait dans la conversation.",
-      "example": "Les vieillards aiment à {conter}.",
+      "examples": [
+        "Les vieillards aiment à {conter}."
+      ],
       "topic": "daily",
       "lemma": "conter",
       "rank": 5618,
@@ -3610,7 +4124,9 @@
       "word": "une offense",
       "english": "offense; offence",
       "definition": "Injure de fait ou de parole.",
-      "example": "Il m’a fait {une offense} irréparable.",
+      "examples": [
+        "Il m’a fait {une offense} irréparable."
+      ],
       "topic": "daily",
       "lemma": "offense",
       "rank": 5620,
@@ -3624,7 +4140,9 @@
       "word": "un raccourci",
       "english": "shortcut",
       "definition": "Chemin plus court.",
-      "example": "Je vais prendre {un raccourci}, ce sera plus rapide.",
+      "examples": [
+        "Je vais prendre {un raccourci}, ce sera plus rapide."
+      ],
       "topic": "daily",
       "lemma": "raccourci",
       "rank": 5638,
@@ -3638,7 +4156,9 @@
       "word": "apparent",
       "english": "apparent; evident; obvious",
       "definition": "Qui est visible, évident, manifeste.",
-      "example": "Se placer à l’endroit le plus {apparent}.",
+      "examples": [
+        "Se placer à l’endroit le plus {apparent}."
+      ],
       "topic": "daily",
       "lemma": "apparent",
       "rank": 5639,
@@ -3652,7 +4172,9 @@
       "word": "apparent",
       "english": "apparent; ostensible",
       "definition": "Qui n’est pas tel qu’il paraît être.",
-      "example": "Le mouvement {apparent} du soleil autour de la terre.",
+      "examples": [
+        "Le mouvement {apparent} du soleil autour de la terre."
+      ],
       "topic": "daily",
       "lemma": "apparent",
       "rank": 5639,
@@ -3666,7 +4188,9 @@
       "word": "compréhensif",
       "english": "understanding",
       "definition": "Capable de comprendre les sentiments d’autrui.",
-      "example": "C’est quelqu’un de très {compréhensif}, tu verras.",
+      "examples": [
+        "C’est quelqu’un de très {compréhensif}, tu verras."
+      ],
       "topic": "daily",
       "lemma": "compréhensif",
       "rank": 5641,
@@ -3680,7 +4204,9 @@
       "word": "relatif",
       "english": "relative",
       "definition": "Qui rattache un mot à une proposition, ou deux propositions l’une à l’autre.",
-      "example": "Lequel, joint à un nom, est déterminant ou adjectif {relatif}.",
+      "examples": [
+        "Lequel, joint à un nom, est déterminant ou adjectif {relatif}."
+      ],
       "topic": "daily",
       "lemma": "relatif",
       "rank": 5668,
@@ -3694,7 +4220,9 @@
       "word": "courber",
       "english": "bend",
       "definition": "Devenir courbe.",
-      "example": "Il devient vieux, il commence à se {courber}.",
+      "examples": [
+        "Il devient vieux, il commence à se {courber}."
+      ],
       "topic": "daily",
       "lemma": "courber",
       "rank": 5674,
@@ -3708,7 +4236,9 @@
       "word": "compétent",
       "english": "competent",
       "definition": "Qui a la compétence pour traiter une affaire.",
-      "example": "Il a été déclaré {compétent}.",
+      "examples": [
+        "Il a été déclaré {compétent}."
+      ],
       "topic": "daily",
       "lemma": "compétent",
       "rank": 5692,
@@ -3722,7 +4252,9 @@
       "word": "compétent",
       "english": "competent",
       "definition": "Qui peut donner son avis sur une chose, sur une matière, qui est capable d’en bien juger.",
-      "example": "Il n’est pas juge {compétent} de cela.",
+      "examples": [
+        "Il n’est pas juge {compétent} de cela."
+      ],
       "topic": "daily",
       "lemma": "compétent",
       "rank": 5692,
@@ -3736,7 +4268,9 @@
       "word": "annuel",
       "english": "annual",
       "definition": "Qui dure un an.",
-      "example": "Le consulat à Rome était {annuel}.",
+      "examples": [
+        "Le consulat à Rome était {annuel}."
+      ],
       "topic": "daily",
       "lemma": "annuel",
       "rank": 5706,
@@ -3750,7 +4284,9 @@
       "word": "un déguisement",
       "english": "disguise",
       "definition": "Action de déguiser, de se déguiser.",
-      "example": "{Le déguisement} est une coutume du carnaval.",
+      "examples": [
+        "{Le déguisement} est une coutume du carnaval."
+      ],
       "topic": "daily",
       "lemma": "déguisement",
       "rank": 5707,
@@ -3764,7 +4300,9 @@
       "word": "grouper",
       "english": "group (together)",
       "definition": "Mettre en groupe.",
-      "example": "Ce peintre sait bien {grouper} les figures.",
+      "examples": [
+        "Ce peintre sait bien {grouper} les figures."
+      ],
       "topic": "daily",
       "lemma": "grouper",
       "rank": 5737,
@@ -3778,7 +4316,9 @@
       "word": "adoucir",
       "english": "sweeten; smooth; soften",
       "definition": "Rendre doux, tempérer.",
-      "example": "{Adoucir} l’acide du citron avec le sucre.",
+      "examples": [
+        "{Adoucir} l’acide du citron avec le sucre."
+      ],
       "topic": "daily",
       "lemma": "adoucir",
       "rank": 5763,
@@ -3792,7 +4332,9 @@
       "word": "adoucir",
       "english": "alleviate; mitigate",
       "definition": "Rendre plus supportable.",
-      "example": "Si quelque chose pouvait {adoucir} ma peine.",
+      "examples": [
+        "Si quelque chose pouvait {adoucir} ma peine."
+      ],
       "topic": "daily",
       "lemma": "adoucir",
       "rank": 5763,
@@ -3806,7 +4348,9 @@
       "word": "une retenue",
       "english": "deposit; (legal) retainer; deduction",
       "definition": "Ce qu’on retient, ce qui est retenu, prélèvement sur une somme, un montant à payer.",
-      "example": "{La retenue} est de tant pour cent.",
+      "examples": [
+        "{La retenue} est de tant pour cent."
+      ],
       "topic": "daily",
       "lemma": "retenue",
       "rank": 5771,
@@ -3820,7 +4364,9 @@
       "word": "une retenue",
       "english": "restraint",
       "definition": "Action de se retenir.",
-      "example": "Il faut avoir de {la retenue}.",
+      "examples": [
+        "Il faut avoir de {la retenue}."
+      ],
       "topic": "daily",
       "lemma": "retenue",
       "rank": 5771,
@@ -3834,7 +4380,9 @@
       "word": "une raclée",
       "english": "drubbing",
       "definition": "Sévère défaite dans un jeu, un sport…",
-      "example": "L’équipe de Géorgie a pris {une raclée} mémorable.",
+      "examples": [
+        "L’équipe de Géorgie a pris {une raclée} mémorable."
+      ],
       "topic": "daily",
       "lemma": "raclée",
       "rank": 5780,
@@ -3848,7 +4396,9 @@
       "word": "tenu",
       "english": "bound (by a promise)",
       "definition": "Qui est obligé à faire quelque chose.",
-      "example": "Je ne suis pas {tenu} à cela.",
+      "examples": [
+        "Je ne suis pas {tenu} à cela."
+      ],
       "topic": "daily",
       "lemma": "tenu",
       "rank": 5798,
@@ -3862,7 +4412,9 @@
       "word": "commenter",
       "english": "comment",
       "definition": "Interpréter par un commentaire, par des commentaires.",
-      "example": "— Il sait très bien {commenter}.",
+      "examples": [
+        "— Il sait très bien {commenter}."
+      ],
       "topic": "daily",
       "lemma": "commenter",
       "rank": 5807,
@@ -3876,7 +4428,9 @@
       "word": "trempé",
       "english": "soaked; drenched",
       "definition": "Fortement mouillé.",
-      "example": "Il est tout {trempé} de sueur se dit d’un homme qui a beaucoup transpiré, qui est couvert de sueur.",
+      "examples": [
+        "Il est tout {trempé} de sueur se dit d’un homme qui a beaucoup transpiré, qui est couvert de sueur."
+      ],
       "topic": "daily",
       "lemma": "trempé",
       "rank": 5817,
@@ -3890,7 +4444,9 @@
       "word": "une corbeille",
       "english": "trash; recycle bin",
       "definition": "Dossier informatique permettant d’offrir une seconde chance aux fichiers dont l’utilisateur ne veut plus, tout en préparant leur élimination.",
-      "example": "{La corbeille} est un élément de la métaphore informatique du bureau.",
+      "examples": [
+        "{La corbeille} est un élément de la métaphore informatique du bureau."
+      ],
       "topic": "daily",
       "lemma": "corbeille",
       "rank": 5831,
@@ -3904,7 +4460,9 @@
       "word": "fausser",
       "english": "falsify; fake; forge",
       "definition": "Rendre faux, déformer la réalité, la vérité ou l'exactitude de quelque chose.",
-      "example": "{Fausser} une cuirasse, La déformer par un choc sans la traverser.",
+      "examples": [
+        "{Fausser} une cuirasse, La déformer par un choc sans la traverser."
+      ],
       "topic": "daily",
       "lemma": "fausser",
       "rank": 5869,
@@ -3918,7 +4476,9 @@
       "word": "encadrer",
       "english": "supervise; manage",
       "definition": "Surveiller et animer un groupe dont on a la responsabilité.",
-      "example": "{Encadrer} un groupe d’enfants.",
+      "examples": [
+        "{Encadrer} un groupe d’enfants."
+      ],
       "topic": "daily",
       "lemma": "encadrer",
       "rank": 5879,
@@ -3932,7 +4492,9 @@
       "word": "un artisan",
       "english": "author",
       "definition": "Celui qui est l’auteur, l’origine de quelque chose.",
-      "example": "C’est {un artisan} d’impostures, de calomnies.",
+      "examples": [
+        "C’est {un artisan} d’impostures, de calomnies."
+      ],
       "topic": "daily",
       "lemma": "artisan",
       "rank": 5930,
@@ -3946,7 +4508,9 @@
       "word": "égaler",
       "english": "equal",
       "definition": "Atteindre en degré, en mérite.",
-      "example": "Il n’y a personne qu’on puisse lui {égaler}.",
+      "examples": [
+        "Il n’y a personne qu’on puisse lui {égaler}."
+      ],
       "topic": "daily",
       "lemma": "égaler",
       "rank": 5931,
@@ -3960,7 +4524,9 @@
       "word": "une détention",
       "english": "detention",
       "definition": "Action de détenir une chose sans en être ni s’en prétendre le possesseur.",
-      "example": "{La détention} d’une somme, d’un bien.",
+      "examples": [
+        "{La détention} d’une somme, d’un bien."
+      ],
       "topic": "daily",
       "lemma": "détention",
       "rank": 5970,
@@ -3974,7 +4540,9 @@
       "word": "rétrécir",
       "english": "narrow; shrink",
       "definition": "Rendre plus étroit, moins large.",
-      "example": "{Rétrécir} un chemin, une rue.",
+      "examples": [
+        "{Rétrécir} un chemin, une rue."
+      ],
       "topic": "daily",
       "lemma": "rétrécir",
       "rank": 5995,
@@ -3988,7 +4556,9 @@
       "word": "défoncé",
       "english": "high; stoned; loaded",
       "definition": "Puissamment drogué.",
-      "example": "Avec ce qu’il s’envoie d’héroïne, il est complètement {défoncé}.",
+      "examples": [
+        "Avec ce qu’il s’envoie d’héroïne, il est complètement {défoncé}."
+      ],
       "topic": "daily",
       "lemma": "défoncé",
       "rank": 6020,
@@ -4002,7 +4572,9 @@
       "word": "une secousse",
       "english": "shock",
       "definition": "Atteinte portée à la santé, à la fortune, au crédit, à l’ordre établi dans un état, etc.",
-      "example": "Il ne s’est pas remis de {la secousse} que lui a causée cette nouvelle.",
+      "examples": [
+        "Il ne s’est pas remis de {la secousse} que lui a causée cette nouvelle."
+      ],
       "topic": "daily",
       "lemma": "secousse",
       "rank": 6047,
@@ -4016,7 +4588,9 @@
       "word": "imprudent",
       "english": "imprudent; incautious",
       "definition": "Qui manque de prudence.",
-      "example": "C’est un enfant fort {imprudent}. — Elle a été bien imprudente de se confier à lui.",
+      "examples": [
+        "C’est un enfant fort {imprudent}. — Elle a été bien imprudente de se confier à lui."
+      ],
       "topic": "daily",
       "lemma": "imprudent",
       "rank": 6050,
@@ -4030,7 +4604,9 @@
       "word": "promouvoir",
       "english": "promote",
       "definition": "Inciter par la promotion à l’achat de quelque chose.",
-      "example": "{Promouvoir} un nouveau produit.",
+      "examples": [
+        "{Promouvoir} un nouveau produit."
+      ],
       "topic": "daily",
       "lemma": "promouvoir",
       "rank": 6058,
@@ -4044,7 +4620,9 @@
       "word": "un bouffon",
       "english": "buffoon",
       "definition": "Personne qui prend à tâche de faire rire.",
-      "example": "Il se plaît à faire {le bouffon}.",
+      "examples": [
+        "Il se plaît à faire {le bouffon}."
+      ],
       "topic": "daily",
       "lemma": "bouffon",
       "rank": 6074,
@@ -4058,7 +4636,9 @@
       "word": "un roulement",
       "english": "roll; rolling",
       "definition": "Mouvement de ce qui roule.",
-      "example": "{Le roulement} de cette voiture fait grand bruit sur le pavé.",
+      "examples": [
+        "{Le roulement} de cette voiture fait grand bruit sur le pavé."
+      ],
       "topic": "daily",
       "lemma": "roulement",
       "rank": 6075,
@@ -4072,7 +4652,9 @@
       "word": "régir",
       "english": "govern",
       "definition": "Gouverner, diriger, conduire.",
-      "example": "{Régir} un État. — Ce monarque a sagement régi son royaume. — Les lois qui régissent l’univers.",
+      "examples": [
+        "{Régir} un État. — Ce monarque a sagement régi son royaume. — Les lois qui régissent l’univers."
+      ],
       "topic": "daily",
       "lemma": "régir",
       "rank": 6154,
@@ -4086,7 +4668,9 @@
       "word": "régir",
       "english": "manage",
       "definition": "Administrer, gérer.",
-      "example": "Il fait {régir} ses biens, sa terre par un homme de confiance.",
+      "examples": [
+        "Il fait {régir} ses biens, sa terre par un homme de confiance."
+      ],
       "topic": "daily",
       "lemma": "régir",
       "rank": 6154,
@@ -4100,7 +4684,9 @@
       "word": "une sève",
       "english": "sap; ooze",
       "definition": "Liquide nutritif formé des sucs que les racines puisent dans le sol et répandent dans toutes les parties d’un végétal.",
-      "example": "{La sève} circule dans les plantes comme le sang dans les animaux.",
+      "examples": [
+        "{La sève} circule dans les plantes comme le sang dans les animaux."
+      ],
       "topic": "daily",
       "lemma": "sève",
       "rank": 6155,
@@ -4114,7 +4700,9 @@
       "word": "une distinction",
       "english": "distinction",
       "definition": "Indication, séparation des divers sens qu’une proposition peut recevoir.",
-      "example": "Il se tira d’affaire par {une distinction} subtile.",
+      "examples": [
+        "Il se tira d’affaire par {une distinction} subtile."
+      ],
       "topic": "daily",
       "lemma": "distinction",
       "rank": 6164,
@@ -4128,7 +4716,9 @@
       "word": "purger",
       "english": "purge",
       "definition": "Ôter, faire sortir ce qu’il y a dans le corps d’impur, de superflu, de malfaisant, avec des remèdes pris ordinairement par la bouche.",
-      "example": "Cet homme a besoin de se {purger}.",
+      "examples": [
+        "Cet homme a besoin de se {purger}."
+      ],
       "topic": "daily",
       "lemma": "purger",
       "rank": 6191,
@@ -4142,7 +4732,9 @@
       "word": "purger",
       "english": "purify",
       "definition": "Débarrasser de ce qui altère, de ce qui est mauvais.",
-      "example": "{Purger} les métaux, en les dégageant de tout ce qu’ils ont d’impur et d’étranger.",
+      "examples": [
+        "{Purger} les métaux, en les dégageant de tout ce qu’ils ont d’impur et d’étranger."
+      ],
       "topic": "daily",
       "lemma": "purger",
       "rank": 6191,
@@ -4156,7 +4748,9 @@
       "word": "purger",
       "english": "purify; purge",
       "definition": "Éliminer les éléments indésirables d'un lieu.",
-      "example": "{Purger} la mer des pirates qui l’infestent.",
+      "examples": [
+        "{Purger} la mer des pirates qui l’infestent."
+      ],
       "topic": "daily",
       "lemma": "purger",
       "rank": 6191,
@@ -4170,7 +4764,9 @@
       "word": "purger",
       "english": "purge",
       "definition": "Se défaire de ce qui pèse sur l'âme ; se confesser.",
-      "example": "{Purger} sa conscience, en ne laissant rien souffrir sur elle qu’on puisse se reprocher.",
+      "examples": [
+        "{Purger} sa conscience, en ne laissant rien souffrir sur elle qu’on puisse se reprocher."
+      ],
       "topic": "daily",
       "lemma": "purger",
       "rank": 6191,
@@ -4184,7 +4780,9 @@
       "word": "purger",
       "english": "purge",
       "definition": "Faire disparaître, effacer.",
-      "example": "{Purger} sa peine, Accomplir la peine à laquelle on a été condamné.",
+      "examples": [
+        "{Purger} sa peine, Accomplir la peine à laquelle on a été condamné."
+      ],
       "topic": "daily",
       "lemma": "purger",
       "rank": 6191,
@@ -4198,7 +4796,9 @@
       "word": "réprimer",
       "english": "control; stifle; suppress",
       "definition": "Contenir, dépasser un sentiment.",
-      "example": "Il faut {réprimer} ses passions.",
+      "examples": [
+        "Il faut {réprimer} ses passions."
+      ],
       "topic": "daily",
       "lemma": "réprimer",
       "rank": 6224,
@@ -4212,7 +4812,9 @@
       "word": "une recrue",
       "english": "recruit",
       "definition": "Nouveau membre d'une société, d'un corps savant ou politique, etc.",
-      "example": "C’est {une recrue} dont on se serait bien passé.",
+      "examples": [
+        "C’est {une recrue} dont on se serait bien passé."
+      ],
       "topic": "daily",
       "lemma": "recrue",
       "rank": 6245,
@@ -4226,7 +4828,9 @@
       "word": "gourmand",
       "english": "gluttonous; voracious; greedy",
       "definition": "Qui mange avec avidité et parfois avec excès.",
-      "example": "Il est {gourmand} de gibier, de fruits, de confitures.",
+      "examples": [
+        "Il est {gourmand} de gibier, de fruits, de confitures."
+      ],
       "topic": "daily",
       "lemma": "gourmand",
       "rank": 6262,
@@ -4240,7 +4844,9 @@
       "word": "qualifié",
       "english": "qualified; skilled",
       "definition": "Aujourd’hui une personne qualifiée désigne plutôt une personne qui a qualité pour agir en telle circonstance.",
-      "example": "Confiez vos intérêts à un mandataire bien {qualifié}.",
+      "examples": [
+        "Confiez vos intérêts à un mandataire bien {qualifié}."
+      ],
       "topic": "daily",
       "lemma": "qualifié",
       "rank": 6273,
@@ -4254,7 +4860,9 @@
       "word": "aisé",
       "english": "easy; effortless; fluent",
       "definition": "Facile à faire, simple, sans problème.",
-      "example": "Il est {aisé} de participer.",
+      "examples": [
+        "Il est {aisé} de participer."
+      ],
       "topic": "daily",
       "lemma": "aisé",
       "rank": 6287,
@@ -4268,7 +4876,9 @@
       "word": "programmer",
       "english": "program; programme",
       "definition": "Écrire, développer un programme informatique.",
-      "example": "Tu sais {programmer} en cobol ?",
+      "examples": [
+        "Tu sais {programmer} en cobol ?"
+      ],
       "topic": "daily",
       "lemma": "programmer",
       "rank": 6291,
@@ -4282,7 +4892,9 @@
       "word": "un lambeau",
       "english": "shreds; tatters; rag",
       "definition": "Morceau d’une étoffe déchirée.",
-      "example": "Elle a laissé {un lambeau} de sa robe à ces épines.",
+      "examples": [
+        "Elle a laissé {un lambeau} de sa robe à ces épines."
+      ],
       "topic": "daily",
       "lemma": "lambeau",
       "rank": 6316,
@@ -4296,7 +4908,9 @@
       "word": "visser",
       "english": "screw",
       "definition": "Attacher, fixer avec des vis.",
-      "example": "Il ne faut pas clouer cette ferrure, vous feriez éclater le bois ; il vaut mieux la {visser}.",
+      "examples": [
+        "Il ne faut pas clouer cette ferrure, vous feriez éclater le bois ; il vaut mieux la {visser}."
+      ],
       "topic": "daily",
       "lemma": "visser",
       "rank": 6347,
@@ -4310,7 +4924,9 @@
       "word": "éveillé",
       "english": "lively",
       "definition": "Qui est gai, vif.",
-      "example": "Vous êtes bien {éveillé} aujourd’hui.",
+      "examples": [
+        "Vous êtes bien {éveillé} aujourd’hui."
+      ],
       "topic": "daily",
       "lemma": "éveillé",
       "rank": 6380,
@@ -4324,7 +4940,9 @@
       "word": "un drogué",
       "english": "addict",
       "definition": "Personne souffrant d’une dépendance à quelque chose.",
-      "example": "C’est {un drogué} de jeux vidéo.",
+      "examples": [
+        "C’est {un drogué} de jeux vidéo."
+      ],
       "topic": "daily",
       "lemma": "drogué",
       "rank": 6382,
@@ -4338,7 +4956,9 @@
       "word": "hausser",
       "english": "raise; amplify; boost",
       "definition": "Augmenter le volume sonore en parlant de la voix, du son des instruments.",
-      "example": "Cette guitare est montée trop bas, il faut la {hausser}.",
+      "examples": [
+        "Cette guitare est montée trop bas, il faut la {hausser}."
+      ],
       "topic": "daily",
       "lemma": "hausser",
       "rank": 6394,
@@ -4352,7 +4972,9 @@
       "word": "percher",
       "english": "perch",
       "definition": "Se poser sur une perche, sur une branche d’arbre, sur une baguette, etc.",
-      "example": "Un rossignol est venu se {percher} sur cette branche.",
+      "examples": [
+        "Un rossignol est venu se {percher} sur cette branche."
+      ],
       "topic": "daily",
       "lemma": "percher",
       "rank": 6417,
@@ -4366,7 +4988,9 @@
       "word": "attendu",
       "english": "expected",
       "definition": "Que l’on a prévu, auquel on s’attend.",
-      "example": "L’expérience a fourni le résultat {attendu}.",
+      "examples": [
+        "L’expérience a fourni le résultat {attendu}."
+      ],
       "topic": "daily",
       "lemma": "attendu",
       "rank": 6419,
@@ -4380,7 +5004,9 @@
       "word": "une raie",
       "english": "stripe",
       "definition": "Ligne tracée sur une surface.",
-      "example": "Tracer {une raie} au crayon, à la plume.",
+      "examples": [
+        "Tracer {une raie} au crayon, à la plume."
+      ],
       "topic": "daily",
       "lemma": "raie",
       "rank": 6437,
@@ -4394,7 +5020,9 @@
       "word": "une raie",
       "english": "stripe",
       "definition": "Ligne plus longue que large, soit naturelle, comme sur la peau des animaux, sur les marbres, etc., soit artificielle, comme sur les étoffes.",
-      "example": "Ce cheval a {une raie} noire sur le dos.",
+      "examples": [
+        "Ce cheval a {une raie} noire sur le dos."
+      ],
       "topic": "daily",
       "lemma": "raie",
       "rank": 6437,
@@ -4408,7 +5036,9 @@
       "word": "démentir",
       "english": "deny; strongly deny",
       "definition": "Contredire quelqu’un en niant la véracité de ce qu’il a affirmé.",
-      "example": "S’il dit cela, comptez sur moi pour le {démentir}.",
+      "examples": [
+        "S’il dit cela, comptez sur moi pour le {démentir}."
+      ],
       "topic": "daily",
       "lemma": "démentir",
       "rank": 6485,
@@ -4422,7 +5052,9 @@
       "word": "démentir",
       "english": "deny; contradict; give the lie",
       "definition": "Contredire un fait comme étant faux, supposé, controuvé.",
-      "example": "Voilà des faits qu’on ne peut {démentir}.",
+      "examples": [
+        "Voilà des faits qu’on ne peut {démentir}."
+      ],
       "topic": "daily",
       "lemma": "démentir",
       "rank": 6485,
@@ -4436,7 +5068,9 @@
       "word": "une moralité",
       "english": "moral",
       "definition": "Sens moral que renferme un discours fabuleux ou allégorique.",
-      "example": "Chez la plupart des fabulistes, {la moralité} est indifféremment placée avant ou après le récit.",
+      "examples": [
+        "Chez la plupart des fabulistes, {la moralité} est indifféremment placée avant ou après le récit."
+      ],
       "topic": "daily",
       "lemma": "moralité",
       "rank": 6504,
@@ -4450,7 +5084,9 @@
       "word": "une moralité",
       "english": "morality",
       "definition": "Discernement moral.",
-      "example": "{La moralité} des actions humaines, le rapport de ces actions avec les principes de la morale.",
+      "examples": [
+        "{La moralité} des actions humaines, le rapport de ces actions avec les principes de la morale."
+      ],
       "topic": "daily",
       "lemma": "moralité",
       "rank": 6504,
@@ -4464,7 +5100,9 @@
       "word": "un renvoi",
       "english": "temporary call forwarding",
       "definition": "Renvoi téléphonique.",
-      "example": "Il a défini {le renvoi} du poste.",
+      "examples": [
+        "Il a défini {le renvoi} du poste."
+      ],
       "topic": "daily",
       "lemma": "renvoi",
       "rank": 6524,
@@ -4478,7 +5116,9 @@
       "word": "un renvoi",
       "english": "postponement",
       "definition": "Ajournement, remise.",
-      "example": "{Le renvoi} de la cause à huitaine, aux prochaines assises.",
+      "examples": [
+        "{Le renvoi} de la cause à huitaine, aux prochaines assises."
+      ],
       "topic": "daily",
       "lemma": "renvoi",
       "rank": 6524,
@@ -4492,7 +5132,9 @@
       "word": "une crosse",
       "english": "crook; crosier; crozier",
       "definition": "Bâton pastoral d’évêque ou d’abbé, dont l’extrémité supérieure se recourbe en volute.",
-      "example": "La mitre et {la crosse} sont les symboles du pouvoir épiscopal.",
+      "examples": [
+        "La mitre et {la crosse} sont les symboles du pouvoir épiscopal."
+      ],
       "topic": "daily",
       "lemma": "crosse",
       "rank": 6592,
@@ -4506,7 +5148,9 @@
       "word": "un résumé",
       "english": "abstract; summary; synopsis",
       "definition": "Ce qui résume un texte, un discours, un propos, etc.",
-      "example": "{Le résumé} des débats d’un procès criminel.",
+      "examples": [
+        "{Le résumé} des débats d’un procès criminel."
+      ],
       "topic": "daily",
       "lemma": "résumé",
       "rank": 6598,
@@ -4520,7 +5164,9 @@
       "word": "une dérive",
       "english": "wrong way; diversion; deviation",
       "definition": "Mauvaise direction, mauvaise pente.",
-      "example": "Cet homme va à {la dérive}.",
+      "examples": [
+        "Cet homme va à {la dérive}."
+      ],
       "topic": "daily",
       "lemma": "dérive",
       "rank": 6601,
@@ -4534,7 +5180,9 @@
       "word": "ingénieux",
       "english": "ingenious",
       "definition": "Qui marque de l’invention ou de l’adresse.",
-      "example": "Cet ouvrage est tout à fait {ingénieux}.",
+      "examples": [
+        "Cet ouvrage est tout à fait {ingénieux}."
+      ],
       "topic": "daily",
       "lemma": "ingénieux",
       "rank": 6617,
@@ -4548,7 +5196,9 @@
       "word": "compréhensible",
       "english": "understandable",
       "definition": "Qui suscite de l’empathie.",
-      "example": "Voilà qui est {compréhensible}.",
+      "examples": [
+        "Voilà qui est {compréhensible}."
+      ],
       "topic": "daily",
       "lemma": "compréhensible",
       "rank": 6651,
@@ -4562,7 +5212,9 @@
       "word": "avare",
       "english": "stingy",
       "definition": "Qui n’accorde pas, qui ne prodigue pas.",
-      "example": "Il est {avare} de son temps.",
+      "examples": [
+        "Il est {avare} de son temps."
+      ],
       "topic": "daily",
       "lemma": "avare",
       "rank": 6678,
@@ -4576,7 +5228,9 @@
       "word": "une prune",
       "english": "ticket",
       "definition": "Procès-verbal.",
-      "example": "On m’a encore collé {une prune} pour stationnement dangereux.",
+      "examples": [
+        "On m’a encore collé {une prune} pour stationnement dangereux."
+      ],
       "topic": "daily",
       "lemma": "prune",
       "rank": 6718,
@@ -4590,7 +5244,9 @@
       "word": "un conservateur",
       "english": "preserver",
       "definition": "Celui qui conserve.",
-      "example": "Dieu est le créateur et {le conservateur} de toutes choses.",
+      "examples": [
+        "Dieu est le créateur et {le conservateur} de toutes choses."
+      ],
       "topic": "daily",
       "lemma": "conservateur",
       "rank": 6804,
@@ -4604,7 +5260,9 @@
       "word": "ruser",
       "english": "trick",
       "definition": "Se servir de ruses.",
-      "example": "Ce chicaneur vous donne bien de la peine, il ruse, il ne fait que {ruser}.",
+      "examples": [
+        "Ce chicaneur vous donne bien de la peine, il ruse, il ne fait que {ruser}."
+      ],
       "topic": "daily",
       "lemma": "ruser",
       "rank": 6834,
@@ -4618,7 +5276,9 @@
       "word": "rabaisser",
       "english": "lower",
       "definition": "Mettre plus bas, redescendre une chose au-dessous du lieu où elle était.",
-      "example": "Il faudrait {rabaisser} cette corniche.",
+      "examples": [
+        "Il faudrait {rabaisser} cette corniche."
+      ],
       "topic": "daily",
       "lemma": "rabaisser",
       "rank": 6848,
@@ -4632,7 +5292,9 @@
       "word": "une grossièreté",
       "english": "crudeness",
       "definition": "Caractère de ce qui manque de finesse, de délicatesse.",
-      "example": "{La grossièreté} de cette architecture.",
+      "examples": [
+        "{La grossièreté} de cette architecture."
+      ],
       "topic": "daily",
       "lemma": "grossièreté",
       "rank": 6852,
@@ -4646,7 +5308,9 @@
       "word": "abattu",
       "english": "down; dejected; downcast",
       "definition": "Affaibli moralement.",
-      "example": "Il est très {abattu} depuis la mort de sa soeur.",
+      "examples": [
+        "Il est très {abattu} depuis la mort de sa soeur."
+      ],
       "topic": "daily",
       "lemma": "abattu",
       "rank": 6856,
@@ -4660,7 +5324,9 @@
       "word": "rôtir",
       "english": "toast",
       "definition": "Faire griller, saisir et dorer à la chaleur du feu.",
-      "example": "{Rôtir} du pain, des marrons.",
+      "examples": [
+        "{Rôtir} du pain, des marrons."
+      ],
       "topic": "daily",
       "lemma": "rôtir",
       "rank": 6858,
@@ -4674,7 +5340,9 @@
       "word": "revendiquer",
       "english": "claim",
       "definition": "Demander à être reconnu comme l'auteur d'une action, d'une parole, d'un écrit.",
-      "example": "{Revendiquer} la paternité d’un ouvrage.",
+      "examples": [
+        "{Revendiquer} la paternité d’un ouvrage."
+      ],
       "topic": "daily",
       "lemma": "revendiquer",
       "rank": 6923,
@@ -4688,7 +5356,9 @@
       "word": "une défaillance",
       "english": "fainting spell; faint; dizziness",
       "definition": "Perte momentanée des forces physiques accompagnée souvent d’une perte de connaissance.",
-      "example": "Il lui a pris {une défaillance}.",
+      "examples": [
+        "Il lui a pris {une défaillance}."
+      ],
       "topic": "daily",
       "lemma": "défaillance",
       "rank": 6935,
@@ -4702,7 +5372,9 @@
       "word": "privilégié",
       "english": "special",
       "definition": "Qui a reçu de la nature quelque don particulier.",
-      "example": "C’est un être {privilégié}.",
+      "examples": [
+        "C’est un être {privilégié}."
+      ],
       "topic": "daily",
       "lemma": "privilégié",
       "rank": 6978,
@@ -4716,7 +5388,9 @@
       "word": "conforme",
       "english": "similar; identical",
       "definition": "Qui a la même forme ; qui est semblable.",
-      "example": "La copie est {conforme} à l’original.",
+      "examples": [
+        "La copie est {conforme} à l’original."
+      ],
       "topic": "daily",
       "lemma": "conforme",
       "rank": 6998,
@@ -4730,7 +5404,9 @@
       "word": "conforme",
       "english": "fitting; suitable",
       "definition": "Convenable, qui s’accorde.",
-      "example": "Mener une vie {conforme} à sa profession.",
+      "examples": [
+        "Mener une vie {conforme} à sa profession."
+      ],
       "topic": "daily",
       "lemma": "conforme",
       "rank": 6998,
@@ -4744,7 +5420,9 @@
       "word": "conforme",
       "english": "compliant",
       "definition": "Qui correspond à un standard, à une norme.",
-      "example": "Un bouton d’arrêt d’urgence {conforme} aux standards de sécurité.",
+      "examples": [
+        "Un bouton d’arrêt d’urgence {conforme} aux standards de sécurité."
+      ],
       "topic": "daily",
       "lemma": "conforme",
       "rank": 6998,

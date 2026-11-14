@@ -8,7 +8,7 @@ import org.junit.Test
 
 class GenderTest {
     private fun noun(id: String, word: String, gender: Gender? = Gender.ofArticle(word)) =
-        Entry(id, word, "meaning $id", "Définition.", "Voici {$word}.", "daily", gender = gender)
+        Entry(id, word, "meaning $id", "Définition.", listOf(Example("Voici {$word}.")), "daily", gender = gender)
 
     @Test fun `the article states the gender and the noun is the word without it`() {
         assertEquals(Gender.Feminine, Gender.ofArticle("une intrigue"))
@@ -21,7 +21,7 @@ class GenderTest {
 
     @Test fun `content written before gender existed takes the article gender`() {
         val legacy = JSONObject().put("id", "personal-1").put("word", "une intrigue").put("english", "a plot")
-            .put("definition", "Récit.").put("example", "Voici {une intrigue}.").put("topic", "daily")
+            .put("definition", "Récit.").put("examples", JSONArray().put("Voici {une intrigue}.")).put("topic", "daily")
         assertEquals(Gender.Feminine, ContentFiles.readEntries(JSONArray().put(legacy)).single().gender)
         assertNull(ContentFiles.readEntries(JSONArray().put(JSONObject(legacy.toString()).put("gender", JSONObject.NULL))).single().gender)
     }

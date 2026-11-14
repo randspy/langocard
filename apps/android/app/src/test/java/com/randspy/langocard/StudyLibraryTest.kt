@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StudyLibraryTest {
-    private val base = Entry("b1", "pourtant", "however", "Malgré cela.", "Il pleut, {pourtant} elle sort.", "daily")
+    private val base = Entry("b1", "pourtant", "however", "Malgré cela.", listOf(Example("Il pleut, {pourtant} elle sort.")), "daily")
     private fun row(id: String, origin: String, word: String = "mot", editedAt: Long? = null, deletedAt: Long? = null, retired: Boolean = false) =
         JSONObject(SyncData.entryRow(base.copy(id = id, word = word)).toString())
             .put("origin", origin).put("retired", retired)

@@ -1,7 +1,7 @@
 # Langocard backend
 
 Cloud sync for one learner, built on [Convex](https://convex.dev). The Android app
-stays offline-first: its local `learning-v1.json` remains what it studies from, and
+stays offline-first: its local `learning-v2.json` remains what it studies from, and
 sync pushes local changes and merges changes from other devices and the web app.
 Convex also holds the whole vocabulary library, so it can be managed from the web.
 
@@ -48,6 +48,11 @@ frequent pack bundled in the APK (origin `bundled`), and the catalogue packs
 
 `npm run seed -- --dry-run` validates and counts without writing (CI runs it), and
 `-- --prod` targets production.
+
+Entries carry `examples`: 1 to 5 different sentences, each with one `{answer}`. The
+old single `example` field isn't read anywhere, so a deployment that holds entries
+from before it must be wiped, deployed and seeded again; see
+`../../docs/design/several-examples.md`.
 
 Shipped content files may omit `gender`; the seed then takes it from the word's
 article ("une intrigue" → feminine). Deployments with entries stored before gender

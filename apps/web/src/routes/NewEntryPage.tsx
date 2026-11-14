@@ -5,7 +5,7 @@ import { EntryForm } from "@/components/EntryForm";
 import { useTokenMutation } from "@/lib/convex";
 
 const EMPTY: EntryContent = {
-  word: "", english: "", definition: "", example: "", topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null,
+  word: "", english: "", definition: "", examples: [""], topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null,
 };
 
 export function NewEntryPage() {

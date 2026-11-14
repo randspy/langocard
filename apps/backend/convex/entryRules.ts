@@ -18,8 +18,11 @@ export type EntryContent = {
   word: string;
   english: string;
   definition: string;
-  /** Example sentence with exactly one `{answer}`. */
-  example: string;
+  /**
+   * 1 to `MAX_EXAMPLES` sentences, each with exactly one `{answer}`. The first is the
+   * introductory example; practice rotates through the rest (see `exampleAt`).
+   */
+  examples: string[];
   topic: string;
   lemma: string;
   rank: number | null;
@@ -30,15 +33,22 @@ export type EntryContent = {
 };
 
 export const CONTENT_FIELDS = [
-  "word", "english", "definition", "example", "topic", "lemma", "rank", "sourceUrl", "license", "gender",
+  "word", "english", "definition", "examples", "topic", "lemma", "rank", "sourceUrl", "license", "gender",
 ] as const satisfies readonly (keyof EntryContent)[];
 
-export type RuleCode = "id" | "fields" | "answer" | "metadata" | "sourceUrl" | "topic" | "gender";
-export type RuleError = { rule: RuleCode; field: keyof EntryContent | "entryId"; message: string };
+export type RuleCode = "id" | "fields" | "answer" | "examples" | "metadata" | "sourceUrl" | "topic" | "gender";
+/** `index` is set for an error in one example: its position in `examples`. */
+export type RuleError = { rule: RuleCode; field: keyof EntryContent | "entryId"; message: string; index?: number };
+
+/** A meaning has at most this many examples. */
+export const MAX_EXAMPLES = 5;
 
 const ID = /^[a-zA-Z0-9_-]{1,100}$/;
 const MAX_TEXT = 2000;
 const blank = (s: string) => s.trim().length === 0;
+const validText = (s: string) => !blank(s) && s.length <= MAX_TEXT;
+const fieldsError = (field: keyof EntryContent): RuleError =>
+  ({ rule: "fields", field, message: "Fill every field (maximum 2,000 characters each)" });
 const count = (s: string, c: string) => s.split(c).length - 1;
 
 const ARTICLES: Record<string, Gender> = { un: "masculine", le: "masculine", une: "feminine", la: "feminine" };
@@ -72,18 +82,40 @@ export function clozeOf(example: string): string {
   return example.replace(`{${answerOf(example)}}`, "________");
 }
 
+/** The example without its answer marks, as read or spoken. */
+export function textOf(example: string): string {
+  return example.replace("{", "").replace("}", "");
+}
+
+/**
+ * The example a meaning shows after `exposures` reviews: they rotate in order, starting
+ * from the introductory example. Android mirrors this in `Entry.exampleAt`.
+ */
+export function exampleAt(examples: readonly string[], exposures: number): string {
+  return examples[exposures % examples.length];
+}
+
+const markedOnce = (example: string) =>
+  count(example, "{") === 1 && count(example, "}") === 1 && example.indexOf("{") < example.indexOf("}") && !blank(answerOf(example));
+
 /** Every rule the entry breaks, in Android's checking order. Empty means valid. */
 export function entryErrors(entryId: string, e: EntryContent): RuleError[] {
   const errors: RuleError[] = [];
   if (!ID.test(entryId)) errors.push({ rule: "id", field: "entryId", message: "Invalid entry ID" });
-  for (const field of ["word", "english", "definition", "example"] as const) {
-    if (blank(e[field]) || e[field].length > MAX_TEXT) {
-      errors.push({ rule: "fields", field, message: "Fill every field (maximum 2,000 characters each)" });
-    }
+  for (const field of ["word", "english", "definition"] as const) {
+    if (!validText(e[field])) errors.push(fieldsError(field));
   }
-  const open = e.example.indexOf("{");
-  if (count(e.example, "{") !== 1 || count(e.example, "}") !== 1 || open > e.example.indexOf("}") || blank(answerOf(e.example))) {
-    errors.push({ rule: "answer", field: "example", message: "Mark exactly one answer with {braces} in the example" });
+  e.examples.forEach((example, index) => {
+    if (!validText(example)) errors.push({ ...fieldsError("examples"), index });
+    else if (!markedOnce(example)) {
+      errors.push({ rule: "answer", field: "examples", index, message: "Mark exactly one answer with {braces} in the example" });
+    }
+  });
+  const distinct = new Set(e.examples.map((example) => example.trim()));
+  if (e.examples.length < 1 || e.examples.length > MAX_EXAMPLES) {
+    errors.push({ rule: "examples", field: "examples", message: `Give 1 to ${MAX_EXAMPLES} examples` });
+  } else if (distinct.size !== e.examples.length) {
+    errors.push({ rule: "examples", field: "examples", message: "Each example must be different" });
   }
   if (e.rank !== null && !(Number.isInteger(e.rank) && e.rank > 0)) {
     errors.push({ rule: "metadata", field: "rank", message: "Invalid vocabulary metadata" });
@@ -114,7 +146,7 @@ export function fromAndroidJson(o: Record<string, unknown>): { entryId: string }
     word: str("word"),
     english: str("english"),
     definition: str("definition"),
-    example: str("example"),
+    examples: Array.isArray(o.examples) ? o.examples.map((x) => (typeof x === "string" ? x : "")) : [],
     topic: str("topic"),
     lemma: str("lemma"),
     rank: typeof o.rank === "number" ? o.rank : null,
@@ -127,9 +159,15 @@ export function fromAndroidJson(o: Record<string, unknown>): { entryId: string }
 /** Content as stored: rows written before gender existed have none. */
 export type StoredContent = Omit<EntryContent, "gender"> & { gender?: Gender | null };
 
+/** Whether two contents agree on one field. Examples compare in order, so reordering them is an edit. */
+export function sameField(field: keyof EntryContent, x: EntryContent, y: EntryContent): boolean {
+  if (field !== "examples") return x[field] === y[field];
+  return x.examples.length === y.examples.length && x.examples.every((example, i) => example === y.examples[i]);
+}
+
 export function sameContent(a: StoredContent, b: StoredContent): boolean {
   const [x, y] = [contentOf(a), contentOf(b)];
-  return CONTENT_FIELDS.every((field) => x[field] === y[field]);
+  return CONTENT_FIELDS.every((field) => sameField(field, x, y));
 }
 
 /**

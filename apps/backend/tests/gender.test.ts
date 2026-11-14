@@ -9,15 +9,15 @@ afterEach(() => { delete process.env.SYNC_TOKEN; });
 
 const intrigue = (o: Record<string, unknown> = {}) => shipped({
   entryId: "frw-2", word: "une intrigue", english: "a plot", definition: "Ensemble des événements d'une fiction.",
-  example: "Ce roman développe {une intrigue} complexe.", lemma: "intrigue", gender: "feminine", ...o,
+  examples: ["Ce roman développe {une intrigue} complexe."], lemma: "intrigue", gender: "feminine", ...o,
 });
 
 /** Stores an entry as rows written before gender existed look: no gender anywhere. */
 async function insertLegacy(t: T, word: string, editedWord = word) {
   await t.run(async (ctx) => {
-    const { entryId, origin, gender: _, ...content } = intrigue({ word, example: `Voici {${word}}.` });
+    const { entryId, origin, gender: _, ...content } = intrigue({ word, examples: [`Voici {${word}}.`] });
     await ctx.db.insert("entries", {
-      entryId, origin, ...content, word: editedWord, example: `Voici {${editedWord}}.`,
+      entryId, origin, ...content, word: editedWord, examples: [`Voici {${editedWord}}.`],
       shipped: { ...content }, editedAt: editedWord === word ? null : 10, deletedAt: null,
       upstreamChanged: false, retired: false, updatedAt: 1,
     });
@@ -71,7 +71,7 @@ describe("gender on stored entries", () => {
     expect(row.gender).toBe("feminine");
     expect(row.shipped?.gender).toBe("feminine");
 
-    const { gender: _, ...unchanged } = intrigue({ word: "une intrigue", example: "Voici {une intrigue}." });
+    const { gender: _, ...unchanged } = intrigue({ word: "une intrigue", examples: ["Voici {une intrigue}."] });
     await t.mutation(internal.seed.apply, { entries: [{ ...unchanged, gender: "feminine" }] });
     expect(await withToken(t).query(api.entries.upstreamChanges, {})).toEqual([]);
   });

@@ -1,7 +1,7 @@
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@backend/_generated/api";
 import type { SkillSummary } from "@backend/library";
-import type { Gender } from "@backend/entryRules";
+import { textOf, type Gender } from "@backend/entryRules";
 import { SKILLS, skillsOf, type Skill } from "@backend/skills";
 import { SUSPENDED_INDEFINITELY } from "@backend/merge";
 
@@ -119,7 +119,7 @@ export function filterLibrary(entries: LibraryEntry[], search: LibrarySearch, no
   const q = search.q ? normalize(search.q.trim()) : "";
   return entries
     .filter((e) =>
-      (!q || [e.word, e.lemma, e.english].some((field) => normalize(field).includes(q))) &&
+      (!q || [e.word, e.lemma, e.english, ...e.examples.map(textOf)].some((field) => normalize(field).includes(q))) &&
       (!search.origin || originGroup(e.origin) === search.origin) &&
       (!search.pack || (search.pack === "installed") === e.installed) &&
       (!search.topic || e.topic === search.topic) &&

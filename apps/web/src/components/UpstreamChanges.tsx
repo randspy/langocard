@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { FunctionReturnType } from "convex/server";
 import type { api } from "@backend/_generated/api";
-import { CONTENT_FIELDS, type EntryContent } from "@backend/entryRules";
+import { CONTENT_FIELDS, sameField, type EntryContent } from "@backend/entryRules";
 import { Button } from "@/components/ui/button";
 import { originLabel } from "@/lib/library";
 import { useAsyncAction } from "@/lib/useAsyncAction";
@@ -10,7 +10,7 @@ export type UpstreamChange = FunctionReturnType<typeof api.entries.upstreamChang
 export type Choice = "keepMine" | "takeTheirs";
 
 const FIELD_LABELS: Record<keyof EntryContent, string> = {
-  word: "Word", english: "English", definition: "Definition", example: "Example", topic: "Topic",
+  word: "Word", english: "English", definition: "Definition", examples: "Examples", topic: "Topic",
   lemma: "Lemma", rank: "Rank", sourceUrl: "Source", license: "License", gender: "Gender",
 };
 
@@ -31,7 +31,7 @@ export function UpstreamChanges({ changes, onResolve }: { changes: UpstreamChang
 
 function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (entryId: string, choice: Choice) => Promise<void> }) {
   const { run, pending: busy, error } = useAsyncAction();
-  const fields = CONTENT_FIELDS.filter((field) => change.mine[field] !== change.theirs[field]);
+  const fields = CONTENT_FIELDS.filter((field) => !sameField(field, change.mine, change.theirs));
   const resolve = (choice: Choice) => run(() => onResolve(change.entryId, choice));
 
   return (
@@ -56,8 +56,8 @@ function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (ent
           {fields.map((field) => (
             <tr key={field} className="border-t border-line/60 align-top">
               <th scope="row" className="px-4 py-2 text-left font-medium">{FIELD_LABELS[field]}</th>
-              <td className="px-4 py-2 bg-amber-50/60">{String(change.mine[field] ?? "—")}</td>
-              <td className="px-4 py-2 bg-emerald-50/60">{String(change.theirs[field] ?? "—")}</td>
+              <td className="px-4 py-2 bg-amber-50/60"><Value content={change.mine} field={field} /></td>
+              <td className="px-4 py-2 bg-emerald-50/60"><Value content={change.theirs} field={field} /></td>
             </tr>
           ))}
         </tbody>
@@ -65,4 +65,12 @@ function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (ent
       {error && <p role="alert" className="px-4 pb-3 text-sm text-danger">Couldn't save the choice: {error}</p>}
     </article>
   );
+}
+
+/** One field of one version; examples as a numbered list, in practice order. */
+function Value({ content, field }: { content: EntryContent; field: keyof EntryContent }) {
+  if (field === "examples") {
+    return <ol className="list-decimal space-y-1 pl-5">{content.examples.map((example, i) => <li key={i}>{example}</li>)}</ol>;
+  }
+  return <>{String(content[field] ?? "—")}</>;
 }

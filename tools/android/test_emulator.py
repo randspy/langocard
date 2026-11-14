@@ -16,7 +16,7 @@ def valid_snapshot(payload, exit_code):
     if exit_code == 0:
         try:
             state = json.loads(payload)
-            if isinstance(state, dict) and state.get('version') == 1 and isinstance(state.get('cards'), dict):
+            if isinstance(state, dict) and state.get('version') == 2 and isinstance(state.get('cards'), dict):
                 return payload
         except (ValueError, UnicodeDecodeError):
             pass  # adb can put a shell error on stdout with exit code zero
@@ -34,7 +34,7 @@ def main():
     adb = shutil.which('adb') or str(sdk/'platform-tools/adb')
     device = [adb, '-s', args.serial]
     subprocess.run(device+['get-state'], check=True)
-    original = subprocess.run(device+['exec-out', 'run-as', 'com.randspy.langocard', 'cat', 'files/learning-v1.json'], capture_output=True)
+    original = subprocess.run(device+['exec-out', 'run-as', 'com.randspy.langocard', 'cat', 'files/learning-v2.json'], capture_output=True)
     backup = valid_snapshot(original.stdout, original.returncode)
     if backup:
         directory = ROOT/'apps/android/build/test-recovery'
@@ -55,7 +55,7 @@ def main():
             if backup:
                 subprocess.run(device+['shell', 'am', 'force-stop', 'com.randspy.langocard'], check=True)
                 subprocess.run(device+['shell', 'run-as', 'com.randspy.langocard', 'mkdir', '-p', 'files'], check=True)
-                subprocess.run(device+['shell', 'run-as', 'com.randspy.langocard', 'tee', 'files/learning-v1.json'],
+                subprocess.run(device+['shell', 'run-as', 'com.randspy.langocard', 'tee', 'files/learning-v2.json'],
                                input=backup, stdout=subprocess.DEVNULL, check=True)
     return result
 

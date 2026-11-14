@@ -13,6 +13,7 @@ class SharedFixturesTest {
         "id" to setOf("Invalid entry ID"),
         "fields" to setOf("Fill every field (maximum 2,000 characters each)"),
         "answer" to setOf("Mark exactly one answer with {braces} in the example"),
+        "examples" to setOf("Give 1 to 5 examples", "Each example must be different"),
         "metadata" to setOf("Invalid vocabulary metadata"),
         "sourceUrl" to setOf("Invalid source URL"),
         "topic" to setOf("Unknown topic"),

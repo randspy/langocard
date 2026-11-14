@@ -19,11 +19,11 @@ const run = (fn, args) => JSON.parse(execFileSync("npx",
   ["convex", "run", `seed:${fn}`, JSON.stringify(args), ...(prod ? ["--prod"] : [])],
   { cwd: backend, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }));
 
-// The 200-entry pilot list: id|word|english|definition|example|topic
+// The 200-entry pilot list: id|word|english|definition|topic|example|example…
 const pilot = read("apps/android/app/src/main/assets/pilot.tsv").split("\n").filter((line) => line.trim())
   .map((line) => {
-    const [id, word, english, definition, example, topic] = line.split("|");
-    return { ...fromAndroidJson({ id, word, english, definition, example, topic }), origin: "bundled" };
+    const [id, word, english, definition, topic, ...examples] = line.split("|");
+    return { ...fromAndroidJson({ id, word, english, definition, topic, examples }), origin: "bundled" };
   });
 
 const bundledPack = "apps/android/app/src/main/assets/frequent-pack.json";
