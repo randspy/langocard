@@ -15,7 +15,9 @@ import kotlinx.coroutines.launch
  * just the English meaning and let the model draft the rest, then review it before saving.
  *
  * Drafted fields stay "drafted" until the learner edits them; regenerating replaces only
- * drafted fields, so the learner's own writing is never lost.
+ * drafted fields, so the learner's own writing is never lost. The same goes for each
+ * example: the AI adds examples next to the learner's, up to three, and regenerating
+ * replaces only the drafted ones.
  */
 @Composable
 fun AddEntry(model: LearningModel) {
@@ -28,7 +30,8 @@ fun AddEntry(model: LearningModel) {
     val availability by onDevice.availability.collectAsState()
 
     var english by remember { mutableStateOf("") }
-    val fields = remember { mutableStateMapOf(DraftField.Word to "", DraftField.Gender to "", DraftField.Definition to "", DraftField.Example to "") }
+    val fields = remember { mutableStateMapOf(DraftField.Word to "", DraftField.Gender to "", DraftField.Definition to "") }
+    val examples = remember { mutableStateListOf(ExampleField()) }
     var drafted by remember { mutableStateOf(emptySet<DraftField>()) }
     var message by remember { mutableStateOf("") }
     var drafting by remember { mutableStateOf<Job?>(null) }
@@ -36,15 +39,19 @@ fun AddEntry(model: LearningModel) {
 
     fun draft() {
         val kept = fields.filterKeys { it !in drafted }
+        val ownExamples = examples.filter { !it.drafted && it.text.isNotBlank() }
         drafting = scope.launch {
             try {
-                val draft = drafter.draft(english, kept)
+                val draft = drafter.draft(english, kept, ownExamples.map { it.text })
                 draft.filled.forEach { (field, value) -> fields[field] = value }
+                // Drafted examples are replaced; a stale one that couldn't be redrafted goes too.
+                val next = ownExamples + draft.examples.map { ExampleField(it, drafted = true) }
+                examples.clear(); examples.addAll(next.ifEmpty { listOf(ExampleField()) })
                 // A stale drafted value that couldn't be redrafted no longer matches; the learner writes it.
                 draft.unfilled.forEach { if (it in drafted) fields[it] = "" }
                 drafted = drafted - draft.unfilled + draft.filled.keys
                 message = if (draft.unfilled.isEmpty()) "Check the draft before saving"
-                else "Couldn't draft ${draft.unfilled.joinToString(" or ") { "the " + it.name.lowercase() }}. Write it yourself."
+                else "Couldn't draft ${draft.unfilled.joinToString(" or ") { "the " + it.name.lowercase() }}. Write ${if (draft.unfilled.size == 1 && DraftField.Examples !in draft.unfilled) "it" else "them"} yourself."
             } catch (e: CancellationException) {
                 message = "Drafting cancelled"; throw e
             } catch (e: Exception) {
@@ -74,7 +81,7 @@ fun AddEntry(model: LearningModel) {
     }
     GenderChoice(fields, drafted, !busy) { drafted = drafted - DraftField.Gender }
     DraftedField(DraftField.Definition, fields, drafted, !busy) { drafted = drafted - DraftField.Definition }
-    DraftedField(DraftField.Example, fields, drafted, !busy) { drafted = drafted - DraftField.Example }
+    Examples(examples, !busy)
 
     when (val state = availability) {
         OnDeviceModel.Availability.Unavailable -> Unit
@@ -89,7 +96,8 @@ fun AddEntry(model: LearningModel) {
             Text("You can keep using the app; keep it open until the download finishes.", style = MaterialTheme.typography.bodySmall)
         }
         OnDeviceModel.Availability.Available -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val anythingToDraft = fields.any { (field, value) -> value.isBlank() || field in drafted }
+            val anythingToDraft = fields.any { (field, value) -> value.isBlank() || field in drafted } ||
+                examples.any { it.drafted } || examples.count { it.text.isNotBlank() } < 3
             OutlinedButton(onClick = ::draft, enabled = !busy && english.isNotBlank() && anythingToDraft) {
                 Text(if (drafted.isEmpty()) "Fill with AI" else "Regenerate")
             }
@@ -99,8 +107,10 @@ fun AddEntry(model: LearningModel) {
     Button(onClick = {
         message = try {
             model.addEntry(fields.getValue(DraftField.Word), english, fields.getValue(DraftField.Definition),
-                listOf(fields.getValue(DraftField.Example)), effectiveGender(fields)?.let(::genderOf))
+                // An example row left empty is unused, not an error.
+                examples.map { it.text }.filter { it.isNotBlank() }, effectiveGender(fields)?.let(::genderOf))
             english = ""; fields.keys.forEach { fields[it] = "" }; drafted = emptySet()
+            examples.clear(); examples.add(ExampleField())
             "Entry added to your library"
         } catch (e: Exception) { e.message ?: "Could not save this entry" }
     }, enabled = !busy) { Text("Save entry") }
@@ -152,5 +162,35 @@ private fun label(field: DraftField) = when (field) {
     DraftField.Word -> "French, including noun article"
     DraftField.Gender -> "Gender"
     DraftField.Definition -> "Simple French definition"
-    DraftField.Example -> "Example: Elle {se rend compte} du problème."
+    DraftField.Examples -> "Examples"
+}
+
+/** One example being written. [drafted] until the learner edits it, like a drafted field. */
+private data class ExampleField(val text: String = "", val drafted: Boolean = false)
+
+/**
+ * The entry's examples, in practice order: one text field each, with Remove (keeping one)
+ * and Add example (up to [ContentFiles.MAX_EXAMPLES]).
+ */
+@Composable
+private fun Examples(examples: MutableList<ExampleField>, enabled: Boolean) {
+    Text("Examples", style = MaterialTheme.typography.labelLarge)
+    Text("Mark the word in each with {braces}: Elle {se rend compte} du problème. Practice shows them in turn.",
+        style = MaterialTheme.typography.bodySmall)
+    examples.forEachIndexed { index, example ->
+        OutlinedTextField(
+            value = example.text,
+            onValueChange = { examples[index] = ExampleField(it) },
+            label = { Text("Example ${index + 1}") },
+            supportingText = if (example.drafted) ({ Text("Drafted by on-device AI") }) else null,
+            trailingIcon = if (examples.size > 1) ({
+                TextButton(onClick = { examples.removeAt(index) }, enabled = enabled) { Text("Remove") }
+            }) else null,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    if (examples.size < ContentFiles.MAX_EXAMPLES) {
+        TextButton(onClick = { examples.add(ExampleField()) }, enabled = enabled) { Text("Add example") }
+    }
 }

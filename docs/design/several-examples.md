@@ -33,7 +33,7 @@ backups are rejected rather than converted.
 | 11 | Avoiding the last sentence | This follows from #10: each exposure moves the meaning on to its next example, whatever the skill. When Listening or Production follow a Reading review, they show a different sentence from the one Reading just showed, whenever `n ≥ 2`. Siblings are already buried for the rest of the day, so "next" means the next study day. |
 | 12 | Gender card | Gender reviews aren't exposures, because the prompt shows no sentence. The feedback screen shows the example at the meaning's current position. |
 | 13 | Anki export | Notes stay one per skill per meaning, so imports don't multiply. The Reading and Production fronts use the introductory example. Every back lists all the examples. |
-| 14 | Editing | Web EntryForm: an ordered list editor (add, remove, move up, at most 5), with a live cloze preview and inline errors for each example. Upstream changes shows the lists side by side. Android Add Entry keeps one drafted example. The on-device AI can draft *another example* later (follow-up slice). |
+| 14 | Editing | Web EntryForm: an ordered list editor (add, remove, move up, at most 5), with a live cloze preview and inline errors for each example. Upstream changes shows the lists side by side. Android Add Entry has the same list (add up to 5, remove). On-device AI fill drafts examples next to the learner's own, up to 3, each different from the rest; regenerating replaces only the drafted ones. |
 | 15 | Library | The Android library lists every example, each with **Listen**. The web Library search also matches example text. |
 
 ## Ubiquitous language
@@ -80,7 +80,7 @@ EntryContent: example: string  →  examples: string[]   // 1..5, each with one 
 
 ## Slices
 
-Slices 1 to 5 are implemented. Slices 6 and 7 are follow-ups.
+Slices 1 to 6 are implemented. Slice 7 is a follow-up.
 
 1. **Shared rules and backend**: `entryRules.ts`, fixtures, validators, schema, `sync`,
    `entries`, `seed`, and Vitest.
