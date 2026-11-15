@@ -59,7 +59,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         }
     }
     var destination by rememberSaveable { mutableStateOf("study") }
-    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "sync" to "Cloud sync", "export" to "Export to Anki", "sources" to "Content sources")
+    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "placement" to "Vocabulary starting check", "backup" to "Backup & restore", "sync" to "Cloud sync", "export" to "Export to Anki", "sources" to "Content sources")
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val revision = model.revision
@@ -95,7 +95,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 selectedBadgeColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                            onClick = { destination = id; scope.launch { drawer.close() } },
+                            onClick = { if (id == "placement") model.openVocabularyPlacement() else destination = id; scope.launch { drawer.close() } },
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
                             badge = if (id == "library") ({ Text(model.entries.size.toString()) }) else null,
                         )
@@ -133,6 +133,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
+                "vocabularyPlacement" -> VocabularyPlacementScreen(model)
                 "review" -> Review(model, speech, revealed || chosen != null, played, chosen) { played = speech.say(current!!.example.text) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
@@ -152,14 +153,14 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                             Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
                             LinearProgressIndicator(progress = { (model.spent / 900f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                             Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.entries.size} meanings started")
-                            Button(onClick = { model.start(!model.placementDone, speech.available) },
+                            Button(onClick = { if (!model.placementDone) model.openVocabularyPlacement() else model.start(false, speech.available) },
                                 enabled = model.spent < 900 || !model.placementDone, modifier = Modifier.fillMaxWidth()) {
                                 Text(if (!model.placementDone) "Find my starting point" else "Start a session")
                             }
                         }
                     }
                     if (!model.placementDone) {
-                        Text("An optional B2 starting check: six entries across three skills. This is a sample, not a CEFR test.")
+                        Text("An optional vocabulary starting check, about five minutes. Pause and resume any time. This is an estimate, not a CEFR test.")
                         TextButton(onClick = { model.skipPlacement() }) { Text("Skip placement and start fresh") }
                     }
                     Text("Your interests", style = MaterialTheme.typography.titleMedium)
@@ -341,4 +342,28 @@ private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
     }
     val modifier = if (onClick != null) Modifier.clickable(onClickLabel = "Open cloud sync", onClick = onClick) else Modifier
     Text("$label · FR", modifier = modifier.padding(4.dp), color = color, style = MaterialTheme.typography.labelLarge)
+}
+
+@Composable
+private fun VocabularyPlacementScreen(model: LearningModel) {
+    val answers = model.vocabularyAnswers
+    val test = model.vocabularyPlacement
+    Text("Vocabulary starting check", style = MaterialTheme.typography.headlineMedium)
+    if (answers.size < test.items.size) {
+        Text("${answers.size} / ${test.items.size} · about 5 minutes total")
+        Text("Do you know a meaning of this French word? Some words are invented. Choose No if unsure.")
+        Text(test.items[answers.size].word, style = MaterialTheme.typography.headlineLarge)
+        Button(onClick = { model.answerVocabularyPlacement(true) }) { Text("Yes, I know it") }
+        OutlinedButton(onClick = { model.answerVocabularyPlacement(false) }) { Text("No / unsure") }
+        TextButton(onClick = { model.home() }) { Text("Pause and save") }
+    } else {
+        Text("Suggested starting rank: ${test.startingRank(answers)}")
+        Text("Adjusted recognition by band: ${test.adjustedHits(answers).joinToString { "%.1f / 20".format(it) }}")
+        Text("This unvalidated estimate changes only which new words appear first. No cards are marked known. Choose a rank to save; you can change it in Vocabulary packs.")
+        listOf(1, 2501, 7001).forEach { rank ->
+            Button(onClick = { model.acceptVocabularyPlacement(rank) }) { Text("Start at rank $rank") }
+        }
+        TextButton(onClick = { model.retakeVocabularyPlacement() }) { Text("Retake check") }
+        TextButton(onClick = { model.home() }) { Text("Keep current rank and close") }
+    }
 }
