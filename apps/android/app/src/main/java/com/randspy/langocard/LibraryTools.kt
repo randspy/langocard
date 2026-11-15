@@ -77,7 +77,8 @@ fun LibraryTools(model: LearningModel, section: String) {
     } }, enabled = !busy && url.isNotBlank()) { Text("Download pack") }
     }
     if (section == "backup") {
-        Text(model.schedulingDescription)
+        val schedulingDescription = remember(model.revision) { model.schedulingDescription }
+        Text(schedulingDescription)
         OutlinedButton(onClick = { fitted.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Load fitted FSRS settings") }
         OutlinedButton(onClick = { model.resetFittedSettings() }, enabled = !busy) { Text("Reset FSRS to defaults") }
         Text("Save your vocabulary and learning progress, or restore a previous backup.")
