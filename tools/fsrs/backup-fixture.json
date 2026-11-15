@@ -1,0 +1,23 @@
+{
+  "format": "langocard-backup",
+  "version": 2,
+  "data": {
+    "reviews": [
+      {
+        "key": "word:Reading",
+        "placement": true,
+        "log": "{\"cardId\": 1, \"rating\": \"GOOD\", \"review_datetime\": \"2026-01-01T00:00:00Z\", \"reviewDuration\": null}"
+      },
+      {
+        "key": "word:Reading",
+        "placement": false,
+        "log": "{\"cardId\": 1, \"rating\": \"AGAIN\", \"review_datetime\": \"2026-01-03T00:00:00Z\", \"reviewDuration\": 12000}"
+      },
+      {
+        "key": "word:Reading",
+        "placement": true,
+        "log": "{\"cardId\": 1, \"rating\": \"GOOD\", \"review_datetime\": \"2026-01-01T00:00:00Z\", \"reviewDuration\": null}"
+      }
+    ]
+  }
+}
