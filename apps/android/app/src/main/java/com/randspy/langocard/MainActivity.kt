@@ -74,6 +74,8 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
     var played by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
     /** The article chosen on a Gender card; choosing reveals the answer. */
     var chosen by remember(current?.key, model.sessionReviews) { mutableStateOf<Gender?>(null) }
+    var typed by remember(current?.key, model.sessionReviews) { mutableStateOf("") }
+    val comparison = if (current?.skill == Skill.Production) TypedAnswer.of(typed, current.example, current.entry.gender != null) else null
     ModalNavigationDrawer(
         drawerState = drawer,
         gesturesEnabled = model.screen == "home",
@@ -109,7 +111,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
             if (current.skill == Skill.Gender) GenderControls(model, speech, chosen) { chosen = it }
             else ReviewControls(model, speech, revealed,
                 canReveal = current.skill != Skill.Listening || (played && !speech.speaking && speech.available),
-                reveal = { revealed = true })
+                reveal = { revealed = true }, comparison = comparison)
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll).padding(24.dp),
@@ -134,7 +136,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     else key(destination) { LibraryTools(model, destination) }
                 }
                 "reading" -> ReadingPassagePage(model, speech, drawer.currentValue == DrawerValue.Closed && drawer.targetValue == DrawerValue.Closed)
-                "review" -> Review(model, speech, revealed || chosen != null, played, chosen) { played = speech.say(current!!.example.text) || played }
+                "review" -> Review(model, speech, revealed || chosen != null, played, chosen, typed, { typed = it }, comparison) { played = speech.say(current!!.example.text) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
                     Text("${model.sessionReviews} assessments · ${model.sessionRecalled} recalled")
@@ -185,7 +187,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
 }
 
 @Composable
-private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, chosen: Gender?, play: () -> Unit) {
+private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, chosen: Gender?, typed: String, type: (String) -> Unit, comparison: TypedAnswer?, play: () -> Unit) {
     val p = model.prompt ?: return
     DisposableEffect(p.key) { onDispose { speech.stop() } }
     Text(if (model.isPlacement) "STARTING CHECK · ${model.placementProgress}" else "DAILY PRACTICE · ${model.spent / 60} / 15 min",
@@ -202,6 +204,11 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                 Skill.Production -> {
                     Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
                     Text(p.example.cloze, style = MaterialTheme.typography.titleLarge)
+                    if (!revealed) OutlinedTextField(value = typed, onValueChange = { type(it.take(200)) },
+                        label = { Text("Your answer (optional)") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            autoCorrectEnabled = false, capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None))
                     Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
                 }
                 Skill.Gender -> {
@@ -228,6 +235,7 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                         color = if (right) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.titleMedium)
                 }
+                if (comparison != null) TypedAnswerFeedback(comparison)
                 Text(p.entry.labelledWord, style = MaterialTheme.typography.headlineMedium)
                 if (!p.example.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.example.answer}")
                 Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
@@ -261,8 +269,9 @@ private fun GenderControls(model: LearningModel, speech: FrenchSpeech, chosen: G
 /** Kept outside the scrolling card so every rating remains reachable without scrolling. */
 @Composable
 private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed: Boolean,
-                           canReveal: Boolean, reveal: () -> Unit) {
+                           canReveal: Boolean, reveal: () -> Unit, comparison: TypedAnswer?) {
     val p = model.prompt ?: return
+    var selected by remember(p.key, model.sessionReviews, revealed) { mutableStateOf(comparison?.match?.suggested) }
     Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -276,15 +285,21 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed:
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { (rating, label) ->
                         val interval = if (revealed) remember(p.key, model.sessionReviews, rating) { model.interval(rating) } else ""
-                        OutlinedButton(onClick = { speech.stop(); model.rate(rating, speech.available) },
+                        OutlinedButton(onClick = { if (comparison != null) selected = rating else { speech.stop(); model.rate(rating, speech.available) } },
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = if (comparison != null && revealed && selected == rating) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface),
                             enabled = revealed, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
                             Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                                Text(label, fontWeight = FontWeight.Bold)
+                                Text(if (comparison != null && revealed && selected == rating) "✓ $label" else label, fontWeight = FontWeight.Bold)
                                 if (revealed) Text("~$interval", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
                 }
+            }
+            if (revealed && comparison != null) {
+                Text("Suggested ${comparison.match.suggested.name.lowercase()}. Change it if needed.", style = MaterialTheme.typography.bodySmall)
+                Button(onClick = { selected?.let { speech.stop(); model.rate(it, speech.available) } },
+                    modifier = Modifier.fillMaxWidth()) { Text("Confirm rating") }
             }
         }
     }
