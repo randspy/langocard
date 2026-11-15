@@ -6,10 +6,11 @@ import org.junit.Test
 
 class SessionLearningTest {
     @Test fun `new meanings and siblings stop at the wind down boundary`() {
-        val boundary = StudyPolicy.DAILY_SECONDS - StudyPolicy.WIND_DOWN_SECONDS
-        assertTrue(StudyPolicy.introductionsOpen(boundary - 1))
-        assertFalse(StudyPolicy.introductionsOpen(boundary))
-        assertFalse(StudyPolicy.canIntroduce(0, boundary, 0))
+        val limit = StudyPolicy.DAILY_SECONDS
+        val boundary = limit - StudyPolicy.WIND_DOWN_SECONDS
+        assertTrue(StudyPolicy.introductionsOpen(boundary - 1, limit))
+        assertFalse(StudyPolicy.introductionsOpen(boundary, limit))
+        assertFalse(StudyPolicy.canIntroduce(0, boundary, 0, limit))
     }
 
     @Test fun `introduced cards need another recall and failures rotate until recalled`() {
@@ -26,10 +27,11 @@ class SessionLearningTest {
     }
 
     @Test fun `cleanup is bounded and placement has no cap`() {
-        val cap = StudyPolicy.DAILY_SECONDS + StudyPolicy.CLEANUP_SECONDS
-        assertTrue(StudyPolicy.sessionOpen(false, cap - 1, cleanup = true))
-        assertFalse(StudyPolicy.sessionOpen(false, cap, cleanup = true))
-        assertTrue(StudyPolicy.sessionOpen(true, cap, cleanup = true))
+        val limit = StudyPolicy.DAILY_SECONDS
+        val cap = limit + StudyPolicy.CLEANUP_SECONDS
+        assertTrue(StudyPolicy.sessionOpen(false, cap - 1, limit, cleanup = true))
+        assertFalse(StudyPolicy.sessionOpen(false, cap, limit, cleanup = true))
+        assertTrue(StudyPolicy.sessionOpen(true, cap, limit, cleanup = true))
     }
 
     @Test fun `graduated unavailable and previous session cards do not return`() {

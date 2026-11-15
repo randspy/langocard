@@ -32,17 +32,19 @@ class PilotTest {
     }
 
     @Test fun `backlog and daily budget block new vocabulary`() {
-        assertTrue(StudyPolicy.canIntroduce(0, 779, 4))
-        assertFalse(StudyPolicy.canIntroduce(1, 0, 0))
-        assertFalse(StudyPolicy.canIntroduce(0, 900, 0))
-        assertFalse(StudyPolicy.canIntroduce(0, 0, 5))
+        val limit = StudyPolicy.DAILY_SECONDS
+        assertTrue(StudyPolicy.canIntroduce(0, 779, 4, limit))
+        assertFalse(StudyPolicy.canIntroduce(1, 0, 0, limit))
+        assertFalse(StudyPolicy.canIntroduce(0, 900, 0, limit))
+        assertFalse(StudyPolicy.canIntroduce(0, 0, 5, limit))
     }
 
     @Test fun `reaching the daily target mid-card ends the session at the next card, not before`() {
-        assertTrue(StudyPolicy.sessionOpen(placement = false, seconds = 899))
-        assertFalse(StudyPolicy.sessionOpen(placement = false, seconds = 900))
-        assertFalse(StudyPolicy.sessionOpen(placement = false, seconds = 1200))
-        assertTrue(StudyPolicy.sessionOpen(placement = true, seconds = 1200))
+        val limit = StudyPolicy.DAILY_SECONDS
+        assertTrue(StudyPolicy.sessionOpen(placement = false, seconds = 899, limit = limit))
+        assertFalse(StudyPolicy.sessionOpen(placement = false, seconds = 900, limit = limit))
+        assertFalse(StudyPolicy.sessionOpen(placement = false, seconds = 1200, limit = limit))
+        assertTrue(StudyPolicy.sessionOpen(placement = true, seconds = 1200, limit = limit))
     }
 
     @Test fun `FSRS survives serialization and skills remain independent`() {

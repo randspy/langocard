@@ -72,12 +72,12 @@ object StudyPolicy {
     const val NEW_SENSES = 5
     /** New Gender cards a day, counted apart from new meanings; they take seconds each. */
     const val NEW_GENDER_CARDS = 10
-    fun canIntroduce(overdue: Int, seconds: Int, introduced: Int) =
-        overdue == 0 && introductionsOpen(seconds) && introduced < NEW_SENSES
-    fun introductionsOpen(seconds: Int) = seconds < DAILY_SECONDS - WIND_DOWN_SECONDS
+    fun canIntroduce(overdue: Int, seconds: Int, introduced: Int, limit: Int) =
+        overdue == 0 && introductionsOpen(seconds, limit) && introduced < NEW_SENSES
+    fun introductionsOpen(seconds: Int, limit: Int) = seconds < limit - WIND_DOWN_SECONDS
     /** Whether a session may show another card; checked between cards, so the card on screen is always finished. */
-    fun sessionOpen(placement: Boolean, seconds: Int, cleanup: Boolean = false) =
-        placement || seconds < DAILY_SECONDS + (if (cleanup) CLEANUP_SECONDS else 0)
+    fun sessionOpen(placement: Boolean, seconds: Int, limit: Int, cleanup: Boolean = false) =
+        placement || seconds < limit + (if (cleanup) CLEANUP_SECONDS else 0)
     fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
 }
 
@@ -358,7 +358,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
     }
     private fun next(audio: Boolean) {
-        if (!StudyPolicy.sessionOpen(placing, spent, cleanup = true)) return finish()
+        if (!StudyPolicy.sessionOpen(placing, spent, StudyPolicy.DAILY_SECONDS, cleanup = true)) return finish()
         val chosen = choose(audio)
         if (chosen != null) prompt = shown(chosen)
         else { if (placing) data.put("placementDone", true); finish() }
@@ -381,14 +381,14 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val due = available.filter { state(it)?.due?.let { date -> !date.isAfter(Instant.now()) } == true }
             .minByOrNull { state(it)!!.due }
         if (due != null) return due
-        if (!StudyPolicy.introductionsOpen(spent)) return cleanup
+        if (!StudyPolicy.introductionsOpen(spent, StudyPolicy.DAILY_SECONDS)) return cleanup
         // Existing senses gain additional skills on later days, before new senses.
         // Gender comes last, a few a day: it needs the meaning to be familiar first.
         val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
         val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
         if (dueCount(audio) == 0 && sibling != null) return sibling
-        if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
+        if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"), StudyPolicy.DAILY_SECONDS)) {
             return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
         }
         return cleanup
