@@ -7,6 +7,8 @@ from pathlib import Path
 import random
 
 MIN_REVIEWS = 1000
+MIN_TRAINING_REVIEWS = 512
+MAX_CARD_HISTORY = 64
 RATINGS = {"AGAIN": 1, "HARD": 2, "GOOD": 3, "EASY": 4}
 
 
@@ -42,10 +44,30 @@ def extract(backup):
     return sorted(reviews.values(), key=lambda r: (r.time, r.key))
 
 
+def training_review_count(reviews):
+    """Count loss-bearing reviews under the pinned optimizer's history limits."""
+    previous = {}
+    counts = {}
+    usable = 0
+    for review in sorted(reviews, key=lambda r: (r.time, r.key)):
+        count = counts.get(review.key, 0)
+        if count >= MAX_CARD_HISTORY:
+            continue
+        last = previous.get(review.key)
+        if last is not None and (review.time - last).days > 0:
+            usable += 1
+        previous[review.key] = review.time
+        counts[review.key] = count + 1
+    return usable
+
+
 def fit(reviews):
     """Fit memory weights and estimate retention using the pinned simulator."""
     if len(reviews) < MIN_REVIEWS:
         raise ValueError(f"Need at least {MIN_REVIEWS} unique reviews; found {len(reviews)}. Keep studying before fitting.")
+    usable = training_review_count(reviews)
+    if usable < MIN_TRAINING_REVIEWS:
+        raise ValueError(f"Need at least {MIN_TRAINING_REVIEWS} day-spaced training reviews within each card\'s first {MAX_CARD_HISTORY} reviews; found {usable}. Keep studying before fitting.")
     from fsrs import Optimizer, Rating, ReviewLog
     import numpy as np
     import torch
