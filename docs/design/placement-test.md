@@ -41,7 +41,7 @@ are max(0, hits - 20 * F / 30). A band passes at 16 adjusted hits (80%).
 Start at rank 1 unless the first band passes; then 2501. Advance to 7001 only
 when both the first and second bands pass. The third band provides diagnostic
 feedback but never skips beyond the existing pack preference choices.
-All-yes, all-no and random guessing therefore cannot advance the start rank.
+All-yes and all-no answers cannot advance the start rank. The thresholds strongly suppress random guessing, but do not make advancement impossible.
 This is a conservative product heuristic, not a vocabulary-size measurement.
 
 Persist each answer locally, resume after pause or restart, and expose retake
