@@ -56,8 +56,8 @@ Use an `x86_64` system image on Intel hosts. The welcome screen also has an Andr
 ## Offline learning library
 
 The app bundles **2,330 meanings**, the Frequent French pack (frequency ranks
-103 to 2,500). The in-app catalogue offers two more packs (4,415 and 13,164
-meanings), bringing the installed total to **19,909 meanings**, one per lemma.
+103 to 2,500). The in-app catalogue offers two more packs (4,414 and 13,160
+meanings), bringing the installed total to **19,904 meanings**, one per lemma.
 The first pack is already installed; learners do not need to author core cards.
 French definitions are adapted from French Wiktionary and keep dictionary wording.
 English glosses and example sentences are machine-generated. None of it is

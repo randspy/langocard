@@ -59866,19 +59866,6 @@
     "gender": "m"
   },
   {
-    "id": "fr-core-4bbb1d6cc2137c291d8e",
-    "word": "mamie",
-    "english": "Grandma.",
-    "definition": "Grand-mère.",
-    "example": "Ma petite {mamie} prépare toujours les meilleurs biscuits au chocolat.",
-    "topic": "daily",
-    "lemma": "mamie",
-    "rank": 4986,
-    "sourceSense": 1,
-    "sourcePos": "noun",
-    "gender": "f"
-  },
-  {
     "id": "fr-core-43506757577db518dbb7",
     "word": "épatant",
     "english": "amazing",
@@ -123312,19 +123299,6 @@
     "sourcePos": "verb"
   },
   {
-    "id": "fr-core-e74f112f275d464bbc06",
-    "word": "mémère",
-    "english": "Grandma.",
-    "definition": "Grand-mère.",
-    "example": "Ma petite {mémère} prépare toujours les meilleurs biscuits au chocolat.",
-    "topic": "daily",
-    "lemma": "mémère",
-    "rank": 10143,
-    "sourceSense": 1,
-    "sourcePos": "noun",
-    "gender": "f"
-  },
-  {
     "id": "fr-core-9a17d6169920350e3029",
     "word": "éperdument",
     "english": "madly",
@@ -150696,19 +150670,6 @@
     "gender": "m"
   },
   {
-    "id": "fr-core-7c6439851516a46ed672",
-    "word": "gaîté",
-    "english": "cheerfulness",
-    "definition": "Belle humeur.",
-    "example": "Sa {gaîté} naturelle illumine toujours l'atmosphère de la pièce.",
-    "topic": "daily",
-    "lemma": "gaîté",
-    "rank": 12396,
-    "sourceSense": 1,
-    "sourcePos": "noun",
-    "gender": "f"
-  },
-  {
     "id": "fr-core-f8c540dbe336ba375bab",
     "word": "narcissisme",
     "english": "Self-admiration or exclusive attention focused on oneself.",
@@ -167543,7 +167504,7 @@
     "word": "crevant",
     "english": "exhausting",
     "definition": "Qui crève (quelqu’un) de fatigue, épuisant, fatigant.",
-    "example": "Cette longue randonnée en montagne était vraiment {crevant} pour nous.",
+    "example": "Cette longue randonnée en montagne était vraiment {crevante} pour nous.",
     "topic": "daily",
     "lemma": "crevant",
     "rank": 13786,
@@ -216349,18 +216310,6 @@
     "sourcePos": "adj"
   },
   {
-    "id": "fr-core-1e2024d8919708faf205",
-    "word": "libidineux",
-    "english": "lecherous",
-    "definition": "Qui est dissolu, lascif.",
-    "example": "Il a lancé un regard {libidineux} à la jeune femme dans la rue.",
-    "topic": "daily",
-    "lemma": "libidineux",
-    "rank": 17890,
-    "sourceSense": 1,
-    "sourcePos": "adj"
-  },
-  {
     "id": "fr-core-bc0f04c272679ca547e2",
     "word": "rétention",
     "english": "The act of holding back or retaining something.",
@@ -244210,18 +244159,6 @@
     "sourceSense": 1,
     "sourcePos": "noun",
     "gender": "m"
-  },
-  {
-    "id": "fr-core-243152bef7e57e1e34b6",
-    "word": "éreintant",
-    "english": "exhausting",
-    "definition": "Qui éreinte, qui fatigue extrêmement.",
-    "example": "Cette longue randonnée en montagne était vraiment {éreintante} pour nous.",
-    "topic": "daily",
-    "lemma": "éreintant",
-    "rank": 20241,
-    "sourceSense": 1,
-    "sourcePos": "adj"
   },
   {
     "id": "fr-core-c2b351634ba33dbe431b",

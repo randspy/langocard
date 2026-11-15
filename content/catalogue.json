@@ -15,19 +15,19 @@
       "id": "fr-core-everyday-2026-11-v1",
       "title": "Everyday expansion",
       "description": "Selected meanings from frequency ranks 2,501–7,000.",
-      "meanings": 4415,
-      "lemmas": 4415,
+      "meanings": 4414,
+      "lemmas": 4414,
       "url": "https://raw.githubusercontent.com/randspy/langocard/content-v3/content/fr-core-everyday-2026-11-v1.json",
-      "sha256": "d93e126e11cf02fde82d657da5f119e841dbce91dcd4e18bdcf753376e10f87f"
+      "sha256": "ded372a55aa8665a6da2b4622e2e96b4b5d3fdb4c9b72dd8eb640ac6d130d5b2"
     },
     {
       "id": "fr-core-extended-2026-11-v1",
       "title": "Beyond the everyday",
       "description": "Selected meanings from frequency ranks 7,001–20,765.",
-      "meanings": 13164,
-      "lemmas": 13164,
+      "meanings": 13160,
+      "lemmas": 13160,
       "url": "https://raw.githubusercontent.com/randspy/langocard/content-v3/content/fr-core-extended-2026-11-v1.json",
-      "sha256": "d77f8194ae97a4d41236be6d7916887657e336ac12de3b9907a09a12d7e24fa3"
+      "sha256": "29c19b376bd2164396f650bdeeedcbeb6fb0231700c948a6f8a54874d15c6cfc"
     }
   ]
 }

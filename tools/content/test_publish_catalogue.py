@@ -65,4 +65,4 @@ class PublishTests(unittest.TestCase):
         for path, data in files.items():
             self.assertEqual(data, (ROOT/path).read_bytes(), path)
         catalogue = json.loads(files['content/catalogue.json'])
-        self.assertEqual([2330, 4415, 13164], [p['meanings'] for p in catalogue['packs']])
+        self.assertEqual([2330, 4414, 13160], [p['meanings'] for p in catalogue['packs']])

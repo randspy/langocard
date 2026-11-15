@@ -41437,23 +41437,6 @@
       "gender": "masculine"
     },
     {
-      "id": "fr-core-4bbb1d6cc2137c291d8e",
-      "word": "une mamie",
-      "english": "Grandma.",
-      "definition": "Grand-mère.",
-      "examples": [
-        "Ma petite {mamie} prépare toujours les meilleurs biscuits au chocolat."
-      ],
-      "topic": "daily",
-      "lemma": "mamie",
-      "rank": 4986,
-      "sourceUrl": "https://fr.wiktionary.org/wiki/mamie#fr",
-      "license": "CC BY-SA 4.0",
-      "sourceSense": 1,
-      "sourcePos": "noun",
-      "gender": "feminine"
-    },
-    {
       "id": "fr-core-43506757577db518dbb7",
       "word": "épatant",
       "english": "amazing",

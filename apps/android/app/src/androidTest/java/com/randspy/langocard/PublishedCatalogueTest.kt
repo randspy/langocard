@@ -35,7 +35,7 @@ class PublishedCatalogueTest {
                 packs.forEachIndexed { index, pack ->
                     if (!model.installedPack(pack.id)) assertEquals(pack.meanings, model.importPack(downloaded[index]))
                 }
-                assertEquals(19909, model.entries.size)
+                assertEquals(19904, model.entries.size)
                 model.skipPlacement()
                 model.start(false, false)
                 assertTrue(model.prompt!!.entry.rank >= 2501)
@@ -51,7 +51,7 @@ class PublishedCatalogueTest {
                 val backup = model.backup()
                 model.restore(backup)
                 assertTrue(packs.all { model.installedPack(it.id) })
-                assertEquals(19909, LearningModel(app).entries.size)
+                assertEquals(19904, LearningModel(app).entries.size)
                 val restoredSource = model.entries.first { it.sourceUrl.isNotBlank() }
                 assertTrue(restoredSource.rank > 0)
                 assertTrue(restoredSource.license.isNotBlank())

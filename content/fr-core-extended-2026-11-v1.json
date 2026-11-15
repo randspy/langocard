@@ -52181,23 +52181,6 @@
       "gender": null
     },
     {
-      "id": "fr-core-e74f112f275d464bbc06",
-      "word": "une mémère",
-      "english": "Grandma.",
-      "definition": "Grand-mère.",
-      "examples": [
-        "Ma petite {mémère} prépare toujours les meilleurs biscuits au chocolat."
-      ],
-      "topic": "daily",
-      "lemma": "mémère",
-      "rank": 10143,
-      "sourceUrl": "https://fr.wiktionary.org/wiki/m%C3%A9m%C3%A8re#fr",
-      "license": "CC BY-SA 4.0",
-      "sourceSense": 1,
-      "sourcePos": "noun",
-      "gender": "feminine"
-    },
-    {
       "id": "fr-core-9a17d6169920350e3029",
       "word": "éperdument",
       "english": "madly",
@@ -89190,23 +89173,6 @@
       "gender": "masculine"
     },
     {
-      "id": "fr-core-7c6439851516a46ed672",
-      "word": "une gaîté",
-      "english": "cheerfulness",
-      "definition": "Belle humeur.",
-      "examples": [
-        "Sa {gaîté} naturelle illumine toujours l'atmosphère de la pièce."
-      ],
-      "topic": "daily",
-      "lemma": "gaîté",
-      "rank": 12396,
-      "sourceUrl": "https://fr.wiktionary.org/wiki/ga%C3%AEt%C3%A9#fr",
-      "license": "CC BY-SA 4.0",
-      "sourceSense": 1,
-      "sourcePos": "noun",
-      "gender": "feminine"
-    },
-    {
       "id": "fr-core-f8c540dbe336ba375bab",
       "word": "un narcissisme",
       "english": "Self-admiration or exclusive attention focused on oneself.",
@@ -111958,7 +111924,7 @@
       "english": "exhausting",
       "definition": "Qui crève (quelqu’un) de fatigue, épuisant, fatigant.",
       "examples": [
-        "Cette longue randonnée en montagne était vraiment {crevant} pour nous."
+        "Cette longue randonnée en montagne était vraiment {crevante} pour nous."
       ],
       "topic": "daily",
       "lemma": "crevant",
@@ -177896,23 +177862,6 @@
       "gender": null
     },
     {
-      "id": "fr-core-1e2024d8919708faf205",
-      "word": "libidineux",
-      "english": "lecherous",
-      "definition": "Qui est dissolu, lascif.",
-      "examples": [
-        "Il a lancé un regard {libidineux} à la jeune femme dans la rue."
-      ],
-      "topic": "daily",
-      "lemma": "libidineux",
-      "rank": 17890,
-      "sourceUrl": "https://fr.wiktionary.org/wiki/libidineux#fr",
-      "license": "CC BY-SA 4.0",
-      "sourceSense": 1,
-      "sourcePos": "adj",
-      "gender": null
-    },
-    {
       "id": "fr-core-bc0f04c272679ca547e2",
       "word": "une rétention",
       "english": "The act of holding back or retaining something.",
@@ -215481,23 +215430,6 @@
       "sourceSense": 1,
       "sourcePos": "noun",
       "gender": "masculine"
-    },
-    {
-      "id": "fr-core-243152bef7e57e1e34b6",
-      "word": "éreintant",
-      "english": "exhausting",
-      "definition": "Qui éreinte, qui fatigue extrêmement.",
-      "examples": [
-        "Cette longue randonnée en montagne était vraiment {éreintante} pour nous."
-      ],
-      "topic": "daily",
-      "lemma": "éreintant",
-      "rank": 20241,
-      "sourceUrl": "https://fr.wiktionary.org/wiki/%C3%A9reintant#fr",
-      "license": "CC BY-SA 4.0",
-      "sourceSense": 1,
-      "sourcePos": "adj",
-      "gender": null
     },
     {
       "id": "fr-core-c2b351634ba33dbe431b",

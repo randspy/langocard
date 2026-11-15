@@ -10,7 +10,7 @@ class PackManifestTest {
     @Test fun `bundled catalogue and dictionaries have matching identities and valid entries`() {
         val packs = PackManifest.parse(File("src/main/assets/catalogue.json").readText())
         assertEquals(3, packs.size)
-        assertEquals(19909, packs.sumOf { it.meanings })
+        assertEquals(19904, packs.sumOf { it.meanings })
         val frequent = File("src/main/assets/frequent-pack.json").readText()
         PackManifest.verifyPayload(frequent, packs.first())
         val entries = ContentFiles.readEntries(JSONObject(frequent).getJSONArray("entries"))
