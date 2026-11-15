@@ -91,7 +91,12 @@ The measured coverage and preparation pipeline are documented in
   buried until the next local calendar day. Failed cards retain their FSRS due
   times; four consecutive failures pause that skill for three days.
 - The daily target is 15 foreground minutes, accumulated across sessions. The
-  session ends at the target; it may end earlier if eligible material is exhausted.
+  final two minutes introduce no new meanings or sibling skills. Cards introduced
+  or failed this session return while still in FSRS learning or relearning, even
+  before their due time, until recalled once. Cleanup can start cards for up to
+  two minutes past the target. The card on screen can always be finished, so the
+  summary reports the full elapsed time even beyond that cap. A session may end
+  earlier if eligible material is exhausted. Suspensions and sibling burying still apply.
   Background time is excluded. The clock is checkpointed every ten seconds and
   on leaving the activity (an abrupt process termination can lose up to ten seconds).
 - Card states, placement, interests, history and daily counters are written using
