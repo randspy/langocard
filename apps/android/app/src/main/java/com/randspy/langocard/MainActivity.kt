@@ -154,6 +154,11 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     Text("${model.dueCount(speech.available)} reviews remain due. Related skills wait until another day; progress is saved.")
                     if (model.pausedCount > 0) Text("Repeatedly missed cards get a three-day pause. Review their examples in the library.")
                     if (model.suspendedCount > 0) Text("${model.suspendedCount} cards are suspended in the web app.")
+                    if (!model.isPlacement) when (model.nextPractice(speech.available)) {
+                        NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
+                        NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
+                        NextPractice.Session -> {}
+                    }
                     Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
                 }
                 else -> {
@@ -163,11 +168,17 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("TODAY", style = MaterialTheme.typography.labelLarge)
                             Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
-                            LinearProgressIndicator(progress = { (model.spent / 900f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(progress = { (model.spent / StudyPolicy.DAILY_SECONDS.toFloat()).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+                            if (model.spent >= StudyPolicy.DAILY_SECONDS) Text("Goal met", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.entries.size} meanings started")
-                            Button(onClick = { if (!model.placementDone) model.openVocabularyPlacement() else model.start(false, speech.available) },
-                                enabled = model.spent < 900 || !model.placementDone, modifier = Modifier.fillMaxWidth()) {
-                                Text(if (!model.placementDone) "Find my starting point" else "Start a session")
+                            if (!model.placementDone) Button(onClick = model::openVocabularyPlacement, modifier = Modifier.fillMaxWidth()) {
+                                Text("Find my starting point")
+                            } else when (model.nextPractice(speech.available)) {
+                                NextPractice.Session -> Button(onClick = { model.start(false, speech.available) }, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Start a session")
+                                }
+                                NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
+                                NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
                             }
                         }
                     }
@@ -200,8 +211,12 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
 private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, chosen: Gender?, typed: String, type: (String) -> Unit, comparison: TypedAnswer?, play: () -> Unit) {
     val p = model.prompt ?: return
     DisposableEffect(p.key) { onDispose { speech.stop() } }
-    Text(if (model.isPlacement) "STARTING CHECK · ${model.placementProgress}" else "DAILY PRACTICE · ${model.spent / 60} / 15 min",
-        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+    val block = model.block
+    Text(when {
+        model.isPlacement -> "STARTING CHECK · ${model.placementProgress}"
+        block.isExtra -> "EXTRA PRACTICE · ${block.minutesIn(model.spent)} / ${block.minutes} min"
+        else -> "DAILY PRACTICE · ${model.spent / 60} / 15 min"
+    }, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     Text(p.skill.label, style = MaterialTheme.typography.headlineLarge)
     ElevatedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -262,6 +277,18 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
         }
     }
     TextButton(onClick = { speech.stop(); model.finish() }) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+}
+
+@Composable
+private fun ExtraBlockChoice(model: LearningModel, audio: Boolean) {
+    Text("Keep practising?", style = MaterialTheme.typography.titleMedium)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ExtraMinutes.entries.forEach { length ->
+            OutlinedButton(onClick = { model.startExtraBlock(length, audio) }, modifier = Modifier.weight(1f)) {
+                Text("+${length.minutes} min")
+            }
+        }
+    }
 }
 
 /** A Gender card grades itself: choose un or une, see the answer, then go on. */

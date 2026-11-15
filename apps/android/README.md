@@ -55,6 +55,12 @@ Use an `x86_64` system image on Intel hosts. The welcome screen also has an Andr
 
 ## Offline learning library
 
+After the daily 15-minute goal, the home and summary screens offer +5, +10 or +15
+minutes when eligible cards remain. Extra blocks keep due reviews first, the daily
+introduction caps, and the usual two-minute wind-down and cleanup. A partly used
+block can be resumed. The allowance stays on this device and expires with the day;
+actual practice time still syncs, and the daily goal stays at 15 minutes.
+
 The app bundles **701 meanings**: the original 200 draft entries plus 501
 source-aligned dictionary meanings. The in-app catalogue offers two additional
 packs (339 and 276 meanings), bringing the installed total to **1,316 meanings**.

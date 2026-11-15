@@ -81,6 +81,9 @@ object StudyPolicy {
     fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
 }
 
+/** What today's practice offers outside a session, once placement is done. */
+enum class NextPractice { Session, ExtraBlock, NothingLeft }
+
 class LearningModel(application: Application) : AndroidViewModel(application) {
     private val pilot = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
         lines.filter { it.isNotBlank() }.map { line ->
@@ -199,6 +202,25 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         }
     }
     val spent: Int get() { rollover(); return data.optInt("seconds") }
+    /** Today's block: the daily target, or the extra block picked after it. */
+    val block: PracticeBlock get() = PracticeBlock.read(data, today(), spent)
+    /**
+     * [NextPractice.Session] while today's block has time left. Once it is used up,
+     * [NextPractice.ExtraBlock] if a new block would show a card, else [NextPractice.NothingLeft].
+     */
+    fun nextPractice(audio: Boolean): NextPractice {
+        val seconds = spent
+        if (seconds < block.end) return NextPractice.Session
+        // Every length opens the same gates at its first card, so the shortest answers for all.
+        val shortest = PracticeBlock.extra(seconds, ExtraMinutes.entries.first())
+        return if (choose(audio, shortest.end, SessionLearning()) != null) NextPractice.ExtraBlock else NextPractice.NothingLeft
+    }
+    /** Starts an extra block of [length]; does nothing unless one is on offer, so a second tap is harmless. */
+    fun startExtraBlock(length: ExtraMinutes, audio: Boolean) {
+        if (nextPractice(audio) != NextPractice.ExtraBlock) return
+        PracticeBlock.extra(spent, length).write(data, today()); save()
+        start(placement = false, audio)
+    }
     val studied get() = entries.count { e -> e.skills.any { cards.has("${e.id}:${it.name}") } }
     val pausedCount get() = paused.keys().asSequence().count { paused.optLong(it) > System.currentTimeMillis() }
     val suspendedCount get() = suspended.let { s -> s.keys().asSequence().count { s.optLong(it) > System.currentTimeMillis() } }
@@ -358,37 +380,43 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
     }
     private fun next(audio: Boolean) {
-        if (!StudyPolicy.sessionOpen(placing, spent, StudyPolicy.DAILY_SECONDS, cleanup = true)) return finish()
-        val chosen = choose(audio)
+        val limit = block.end
+        if (!StudyPolicy.sessionOpen(placing, spent, limit, cleanup = true)) return finish()
+        val chosen = if (placing) placementPrompt(audio) else choose(audio, limit, sessionLearning)
         if (chosen != null) prompt = shown(chosen)
         else { if (placing) data.put("placementDone", true); finish() }
     }
-    /** The card to study next, or null when the session (or placement) is over. */
-    private fun choose(audio: Boolean): Prompt? {
-        if (placing) {
-            while (placementIndex < 18) {
-                val p = Prompt(placementEntries[placementIndex % 6], Skill.placement[placementIndex / 6])
-                if (p.skill != Skill.Listening || audio) return p
-                placementIndex++ // unavailable audio remains unassessed, not marked known
-            }
-            return null
+    /** The placement card to assess next, or null when placement is over. */
+    private fun placementPrompt(audio: Boolean): Prompt? {
+        while (placementIndex < 18) {
+            val p = Prompt(placementEntries[placementIndex % 6], Skill.placement[placementIndex / 6])
+            if (p.skill != Skill.Listening || audio) return p
+            placementIndex++ // unavailable audio remains unassessed, not marked known
         }
+        return null
+    }
+    /**
+     * The card a study session shows next when today's practice ends at [limit] and [session]
+     * holds its learning cards, or null. Reads only, so [nextPractice] can ask what a new block
+     * would show by passing the empty queue that [start] leaves.
+     */
+    private fun choose(audio: Boolean, limit: Int, session: SessionLearning): Prompt? {
         val available = prompts(audio).filter { buried.optString(it.key) != today() }
-        val cleanup = sessionLearning.next(available.map { it.key }) { key ->
+        val cleanup = session.next(available.map { it.key }) { key ->
             memory[key]?.state != io.github.openspacedrepetition.State.REVIEW
         }?.let { key -> available.first { it.key == key } }
-        if (spent >= StudyPolicy.DAILY_SECONDS) return cleanup
+        if (spent >= limit) return cleanup
         val due = available.filter { state(it)?.due?.let { date -> !date.isAfter(Instant.now()) } == true }
             .minByOrNull { state(it)!!.due }
         if (due != null) return due
-        if (!StudyPolicy.introductionsOpen(spent, StudyPolicy.DAILY_SECONDS)) return cleanup
+        if (!StudyPolicy.introductionsOpen(spent, limit)) return cleanup
         // Existing senses gain additional skills on later days, before new senses.
         // Gender comes last, a few a day: it needs the meaning to be familiar first.
         val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
         val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
         if (dueCount(audio) == 0 && sibling != null) return sibling
-        if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"), StudyPolicy.DAILY_SECONDS)) {
+        if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"), limit)) {
             return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
         }
         return cleanup
