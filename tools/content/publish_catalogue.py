@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Publish content/core-entries.json as rank-band packs and a digest-pinned catalogue.
 
-Same input, byte-identical output: rerun after editing the draft or NOTICE.md.
+Rerun after editing the draft or NOTICE.md. The same input gives byte-identical output.
 """
 import hashlib
 import json
@@ -63,7 +63,7 @@ class ContentError(ValueError):
 
 
 def pack_entry(row):
-    """A draft row as the app reads it. `gender` is always written: an absent key makes the app guess from the article."""
+    """A draft row as the app reads it. `gender` is always written, because the app takes an absent one from the article."""
     article, gender = NOUN_FORMS[row['gender']] if row['sourcePos'] == 'noun' else ('', None)
     return {
         'id': row['id'],
