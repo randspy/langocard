@@ -3,6 +3,10 @@
 12 November 2026. This implements the earlier source-selection proposal and records
 measured coverage instead of treating dictionary row counts as a finished library.
 
+Superseded on 15 November 2026: the packs described here, `build_corpus.py` and
+`prepare_pack.py` are removed. Shipped content now comes from
+`content/core-entries.json`; see `../design/core-entries.md`.
+
 | Stage | Measured coverage |
 | --- | ---: |
 | Lexique lemma ranking, weighted 70% subtitle / 30% book ranks | 20,000 lemmas |

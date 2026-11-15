@@ -55,16 +55,16 @@ Use an `x86_64` system image on Intel hosts. The welcome screen also has an Andr
 
 ## Offline learning library
 
-The app bundles **701 meanings**: the original 200 draft entries plus 501
-source-aligned dictionary meanings. The in-app catalogue offers two additional
-packs (339 and 276 meanings), bringing the installed total to **1,316 meanings**.
+The app bundles **2,330 meanings**, the Frequent French pack (frequency ranks
+103 to 2,500). The in-app catalogue offers two more packs (4,415 and 13,164
+meanings), bringing the installed total to **19,909 meanings**, one per lemma.
 The first pack is already installed; learners do not need to author core cards.
-Source content is structurally checked, not independently language-reviewed.
-Definitions retain dictionary wording. Source attribution is available in the
-Content sources page, per-entry links, backups and Anki exports. No third-party
+French definitions are adapted from French Wiktionary and keep dictionary wording.
+English glosses and example sentences are machine-generated. None of it is
+independently language-reviewed. Source attribution is available in the Content
+sources page, per-entry links, backups and Anki exports. No third-party
 recordings are bundled; installed offline French TTS supplies pronunciation.
-The measured coverage and preparation pipeline are documented in
-`../../docs/research/content-audit-2026-11-12.md`.
+See `../../docs/design/core-entries.md`.
 
 - The optional vocabulary starting check samples 60 words and 30 invented words.
   It saves each answer locally and resumes from the menu after a pause or restart.
@@ -144,28 +144,26 @@ scheduling or engine-generated audio; listening stays in Langocard.
 Packs contain `format: "langocard-pack"`, `version: 2`, `source`, `license`, and
 an `entries` array. Entry fields are `id`, `word`, `english`, `definition`, `examples`
 (1 to 5 different sentences, each with one answer in `{braces}`; the first is shown
-first), and `topic` (`daily`, `culture`, or `news`). Version 1 packs are rejected. IDs must be
+first), and `topic` (`daily`, `culture`, or `news`). Optional `gender` is `masculine`,
+`feminine`, or `null` for a non-noun; without it the app takes the gender of a leading
+`un`, `une`, `le` or `la`. Version 1 packs are rejected. IDs must be
 unique, stable, and not collide with installed entries. Import is additive; duplicate
 IDs reject the whole pack. Packs and backups have a 20 MB size limit. Downloads
 accept direct HTTPS URLs; redirects are rejected. Imported material works offline.
 
-Prepare reviewed content on a computer:
+All shipped content comes from `content/core-entries.json`. After editing it or
+`content/NOTICE.md`, republish from the repository root:
 
 ```sh
-python3 tools/content/prepare_pack.py approved.tsv french-pack.json \
-  --source 'Source URL, revision and contributor credits' \
-  --license 'License identifier and URL; modification notices'
+python3 tools/content/publish_catalogue.py
 ```
 
-Rows are `id|word|english|definition|topic|example`, with up to four more examples
-as extra columns, the same format as the bundled `pilot.tsv`.
-The command runs from the repository root. Split large libraries into smaller packs.
-The catalogue is hosted on the `content-v2` Git branch with direct HTTPS raw URLs.
-Catalogue downloads verify pack SHA256 digests before validation/import.
-`build_corpus.py` provides conservative source alignment; `publish_catalogue.py`
-produces versioned packs and the bundled catalogue. The simpler preparation tool
-does not align arbitrary dictionary senses or verify linguistic accuracy. An
-independently reviewed 20,000-word study library is not yet complete.
+It writes the three `fr-core` packs and `catalogue.json` to `content/`, and the
+bundled `frequent-pack.json`, `catalogue.json` and `CONTENT-NOTICE.md` to
+`app/src/main/assets/`. It refuses any entry the importer would reject, and reruns
+produce identical bytes. The catalogue is hosted on the `content-v3` Git branch with
+direct HTTPS raw URLs. Catalogue downloads verify pack SHA256 digests before
+validation/import.
 
 
 ## On-device AI drafting

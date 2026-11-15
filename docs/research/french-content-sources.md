@@ -2,6 +2,8 @@
 
 Researched 11 November 2026 against primary sources. Scope: personal-use, offline Android app; a B2 learner; an expandable library initially targeting 20,000 lemmas plus expressions. This is a source-selection proposal, not an implemented importer or a measured coverage audit. The repository had no existing research-note convention, so this note establishes `docs/research/`.
 
+Status (15 November 2026): the shipped library now uses French Wiktionary definitions and Lexique ranks, with machine-generated English glosses and examples instead of Tatoeba sentences, and no 200-entry pilot. See `../design/core-entries.md`.
+
 ## Recommendation
 
 Use **Lexique 3.83 for the initial frequency backbone**, **English and French Wiktionary extracts through Kaikki/Wiktextract for dictionary candidates**, **Tatoeba for short example candidates**, and **licensed Wikimedia pronunciation recordings where available, backed by an installed offline Android French TTS voice**. Prepare packs on a development computer; the phone receives compact, reviewed data and media rather than processing raw corpora.
