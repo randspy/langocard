@@ -36,9 +36,10 @@ devices, the daily study time keeps the larger value rather than the sum.
 
 ## Library seed
 
-`npm run seed` loads the shipped library into `entries`: the pilot list and the
-frequent pack bundled in the APK (origin `bundled`), and the catalogue packs
-(origin `pack:<packId>`). It is idempotent.
+`npm run seed` loads the shipped library into `entries`: the frequent pack bundled
+in the APK (origin `bundled`) and the catalogue packs (origin `pack:<packId>`). It is
+idempotent. The packs come from `content/core-entries.json`; see
+`../../docs/design/core-entries.md`.
 
 - Entries you haven't edited take new shipped content.
 - Edited entries keep your wording. If the shipped content changed, they're flagged
