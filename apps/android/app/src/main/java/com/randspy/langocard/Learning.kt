@@ -345,7 +345,18 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         return (0 until logs.length()).count { logs.getJSONObject(it).optString("key") in shown }
     }
     /** [p] showing the meaning's next example, so each exposure meets the word in another sentence. */
-    private fun shown(p: Prompt) = p.copy(example = p.entry.exampleAt(exposures(p.entry.id)))
+    private fun shown(p: Prompt): Prompt {
+        val count = exposures(p.entry.id)
+        val until = paused.optLong(p.key)
+        val returning = until > 0 && until <= System.currentTimeMillis() &&
+            (state(p)?.lastReview?.toEpochMilli() ?: 0L) < until
+        val recent = if (returning) (0 until logs.length()).map { logs.getJSONObject(it) }
+            .filter { it.optString("key") == p.key }
+            .map { JSONObject(it.get("log").toString()) }
+            .sortedBy { it.optString("review_datetime") }.takeLast(4)
+            .mapNotNull { it.optString("example").takeIf(String::isNotBlank) } else emptyList()
+        return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
+    }
     private fun next(audio: Boolean) {
         if (!StudyPolicy.sessionOpen(placing, spent, cleanup = true)) return finish()
         val chosen = choose(audio)
@@ -393,7 +404,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         cards.put(p.key, result.card().toJson())
         SyncData.markCard(data, p.key, result.card().lastReview?.toEpochMilli() ?: 0L)
         memory[p.key] = result.card()
-        logs.put(JSONObject().put("key", p.key).put("placement", placing).put("log", result.reviewLog().toJson()))
+        logs.put(JSONObject().put("key", p.key).put("placement", placing).put("log", JSONObject(result.reviewLog().toJson()).put("example", p.example.marked).toString()))
         val missed = if (rating == Rating.AGAIN) failures.optInt(p.key) + 1 else 0
         failures.put(p.key, missed)
         if (StuckWords.needsHook(missed)) { hookOffer = p.entry; paused.put(p.key, System.currentTimeMillis() + 3 * 86400000L); failures.put(p.key, 0) }
