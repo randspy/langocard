@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ReadingPassagePage(model: LearningModel, speech: FrenchSpeech) {
+fun ReadingPassagePage(model: LearningModel, speech: FrenchSpeech, visible: Boolean) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val engine = remember { OnDeviceModel.get(context) }
     val availability by engine.availability.collectAsState()
@@ -23,9 +23,12 @@ fun ReadingPassagePage(model: LearningModel, speech: FrenchSpeech) {
     var problem by remember { mutableStateOf<String?>(null) }
     var lookup by remember { mutableStateOf<String?>(null) }
     val vocabulary = remember { model.passageVocabulary() }
-    DisposableEffect(passage) {
+    DisposableEffect(engine) {
+        onDispose { engine.release() }
+    }
+    DisposableEffect(passage, visible, lookup) {
         model.resumeClock()
-        model.readingPassageActive = passage != null
+        model.readingPassageActive = passage != null && visible && lookup == null
         onDispose {
             model.tick()
             model.readingPassageActive = false

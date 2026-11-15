@@ -133,7 +133,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
-                "reading" -> ReadingPassagePage(model, speech)
+                "reading" -> ReadingPassagePage(model, speech, drawer.currentValue == DrawerValue.Closed && drawer.targetValue == DrawerValue.Closed)
                 "review" -> Review(model, speech, revealed || chosen != null, played, chosen) { played = speech.say(current!!.example.text) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
