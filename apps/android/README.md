@@ -56,9 +56,16 @@ Use an `x86_64` system image on Intel hosts. The welcome screen also has an Andr
 ## Offline learning library
 
 After the daily 15-minute goal, the home and summary screens offer +5, +10 or +15
-minutes when eligible cards remain. Extra blocks keep due reviews first, the daily
-introduction caps, and the usual two-minute wind-down and cleanup. A partly used
-block can be resumed. The allowance stays on this device and expires with the day;
+minutes when eligible cards remain, including when a previous block exhausts its
+allowance before its timer ends. Each block grants 2, 3 or 5 new meanings and,
+separately, 2, 3 or 5 new Gender cards. Repeated blocks are available while work
+exists; unused allowance never carries forward. Daily practice keeps its 5-meaning
+and 10-Gender limits. Due reviews, sibling skills, rank preferences, burial and the
+two-minute wind-down and cleanup still apply. Home and summary offer resume when
+both time and work remain, or Vocabulary packs when suitable unstarted words run out.
+Block usage survives sessions, process restarts and backup restore. Old or malformed
+saved usage preserves a valid duration as review-only; it never grants new allowance.
+The allowance stays on this device and expires with the day;
 actual practice time still syncs, and the daily goal stays at 15 minutes.
 
 The app bundles **2,330 meanings**, the Frequent French pack (frequency ranks
@@ -81,7 +88,7 @@ See `../../docs/design/core-entries.md`.
 - Reading, listening and sentence-gap production use distinct FSRS cards.
   Nouns also get a Gender card (choose *un* or *une*, graded by the app: right is
   Good, wrong is Again), for one meaning per noun. Gender cards arrive as a sibling
-  skill on a later day, at most ten new ones a day. In production, the right word
+  skill on a later day, at most ten during standard daily practice. In production, the right word
   with the wrong article is rated Hard. See `../../docs/design/noun-gender.md`.
   A meaning can have up to five example sentences. Reading, listening and
   production take turns through them, one per review of the meaning, starting with
@@ -95,7 +102,7 @@ See `../../docs/design/core-entries.md`.
   preference, not a CEFR mapping or a claim that lower-ranked words are known.
   Existing reviews, started senses, unranked starter cards and personal entries
   are preserved.
-- Due reviews take priority. At most five new meanings are introduced daily;
+- Due reviews take priority. Standard daily practice introduces at most five new meanings;
   existing meanings gain additional skills on later days. Related skills are
   buried until the next local calendar day. Failed cards retain their FSRS due
   times; four consecutive failures pause that skill for three days.

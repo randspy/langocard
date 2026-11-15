@@ -10,7 +10,6 @@ class SessionLearningTest {
         val boundary = limit - StudyPolicy.WIND_DOWN_SECONDS
         assertTrue(StudyPolicy.introductionsOpen(boundary - 1, limit))
         assertFalse(StudyPolicy.introductionsOpen(boundary, limit))
-        assertFalse(StudyPolicy.canIntroduce(0, boundary, 0, limit))
     }
 
     @Test fun `introduced cards need another recall and failures rotate until recalled`() {

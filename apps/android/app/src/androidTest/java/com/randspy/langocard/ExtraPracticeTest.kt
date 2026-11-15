@@ -54,6 +54,13 @@ class ExtraPracticeTest {
         tick()
     }
 
+    private fun LearningModel.drain() {
+        var remaining = 100
+        while (prompt != null && remaining-- > 0) rate(Rating.GOOD, false)
+        assertTrue("session eventually exhausts eligible work", remaining > 0)
+        assertEquals("summary", screen)
+    }
+
     private fun reviewed(id: Int, due: Instant) = Card.builder().cardId(id).state(State.REVIEW).stability(10.0).difficulty(5.0)
         .due(due).lastReview(Instant.now().minusSeconds(86400)).build()
 
@@ -77,20 +84,143 @@ class ExtraPracticeTest {
         assertEquals("summary", model.screen)
     }
 
-    @Test fun nothingLeftOnceTodaysNewMeaningsAreUsedAndNothingIsDue() = withModel { model ->
-        model.restoreToday(seconds = StudyPolicy.DAILY_SECONDS, introduced = StudyPolicy.NEW_SENSES)
-        assertEquals(NextPractice.NothingLeft, model.nextPractice(false))
-        model.startExtraBlock(ExtraMinutes.Ten, false)
-        assertEquals("home", model.screen)
-        assertEquals(PracticeBlock.DAILY, model.block)
-
-        model.restoreToday(seconds = StudyPolicy.DAILY_SECONDS, introduced = StudyPolicy.NEW_SENSES - 1)
+    @Test fun dailyCapsDoNotConsumeAFreshExtension() = withModel { model ->
+        model.restoreToday(StudyPolicy.DAILY_SECONDS, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS)
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        assertNotNull(model.prompt)
+        model.drain()
+        assertEquals("summary", model.screen)
+        assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
+    }
+
+    @Test fun everyLengthGrantsExactSeparateMeaningAndGenderQuotas() = withModel { model ->
+        val nouns = model.entries.filter { it.gender != null }.take(8)
+        val learned = nouns.flatMapIndexed { index, noun -> Skill.placement.mapIndexed { skillIndex, skill ->
+            "${noun.id}:${skill.name}" to reviewed(index * 3 + skillIndex, Instant.now().plusSeconds(864000))
+        } }.toMap()
+        listOf(ExtraMinutes.Five to 2, ExtraMinutes.Ten to 3, ExtraMinutes.Fifteen to 5).forEach { (length, quota) ->
+            model.restoreToday(900, 5, 10, learned)
+            model.startExtraBlock(length, false)
+            assertEquals(Skill.Gender, model.prompt!!.skill)
+            model.drain()
+            val saved = JSONObject(model.backup()).getJSONObject("data")
+            assertEquals(5 + quota, saved.getInt("introduced"))
+            assertEquals(10 + quota, saved.getInt("genderIntroduced"))
+            assertEquals(quota, saved.getJSONObject("extraBlock").getInt("meaningsUsed"))
+            assertEquals(quota, saved.getJSONObject("extraBlock").getInt("gendersUsed"))
+            assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
+        }
+    }
+
+    @Test fun failedIntroductionCountsOnceAndResumeRestoreAndRestartKeepUsage() = withModel { model ->
+        model.restoreToday(900, 5, 10)
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        val key = model.prompt!!.key
+        model.rate(Rating.AGAIN, false)
+        assertEquals(1, JSONObject(model.backup()).getJSONObject("data").getJSONObject("extraBlock").getInt("meaningsUsed"))
+        model.finish(); model.home()
+        val backup = model.backup()
+        model.restore(backup)
+        model.start(false, false)
+        model.drain()
+        val saved = JSONObject(model.backup()).getJSONObject("data")
+        assertEquals(7, saved.getInt("introduced"))
+        assertTrue(saved.getJSONObject("cards").has(key))
+        assertEquals(2, saved.getJSONObject("extraBlock").getInt("meaningsUsed"))
+        val restarted = LearningModel(model.getApplication())
+        assertFalse(restarted.block.meaningRoom(0))
+        assertEquals(NextPractice.ExtraBlock, restarted.nextPractice(false))
+    }
+
+    @Test fun freshGrantDiscardsUnusedQuotaAndDuplicateTapCannotReplaceReview() = withModel { model ->
+        model.restoreToday(900, 5, 10)
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        model.rate(Rating.GOOD, false)
+        val partial = model.block
+        model.startExtraBlock(ExtraMinutes.Fifteen, false)
+        assertEquals(partial, model.block)
+        model.practise(300)
+        model.finish()
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        assertEquals(1200, model.block.start)
+        model.drain()
+        assertEquals(8, JSONObject(model.backup()).getJSONObject("data").getInt("introduced"))
+    }
+
+    @Test fun syncedDailyCountsDoNotConsumeLocalUsage() = withModel { model ->
+        model.restoreToday(900, 5)
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        model.rate(Rating.GOOD, false)
+        val backup = JSONObject(model.backup())
+        val data = backup.getJSONObject("data")
+        val local = SyncData.settings(data)
+        val remote = JSONObject(local.toString()).put("introduced", 99).put("seconds", 901)
+        val merged = SyncData.mergeSettings(local, remote)
+        merged.keys().forEach { data.put(it, merged.get(it)) }
+        model.restore(backup.toString())
+        model.start(false, false)
+        model.drain()
+        assertEquals(100, JSONObject(model.backup()).getJSONObject("data").getInt("introduced"))
+    }
+
+    @Test fun dailyCapsRemainAndEarlyDailyExhaustionDoesNotOfferExtensions() = withModel { model ->
+        model.restoreToday(0, 5, 10)
+        assertEquals(NextPractice.NothingLeft, model.nextPractice(false))
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        assertEquals(PracticeBlock.DAILY, model.block)
+        model.restoreToday(0)
+        model.start(false, false)
+        model.drain()
+        assertEquals(5, JSONObject(model.backup()).getJSONObject("data").getInt("introduced"))
+    }
+
+    @Test fun catalogueAbsenceIsDistinctFromTemporaryExhaustionAndHonoursRank() = withModel { model ->
+        model.restoreToday(900) { it.put("minimumRank", 7001) }
+        assertEquals(NextPractice.MoreVocabulary, model.nextPractice(false))
+        model.restoreToday(900) { data ->
+            data.put("buried", JSONObject().apply { model.entries.forEach { entry -> entry.skills.forEach { put("${entry.id}:${it.name}", today) } } })
+        }
+        assertEquals(NextPractice.NothingLeft, model.nextPractice(false))
+        model.restoreToday(900) { data ->
+            data.put("suspended", JSONObject().apply { model.entries.forEach { entry -> entry.skills.forEach { put("${entry.id}:${it.name}", System.currentTimeMillis() + 86400000) } } })
+        }
+        assertEquals(NextPractice.NothingLeft, model.nextPractice(false))
+    }
+
+    @Test fun retiredMeaningsDoNotMakeAnExtensionAvailable() = withModel { model ->
+        val entry = model.entries.first().copy(rank = 8000)
+        model.restoreToday(900) { data ->
+            data.put("minimumRank", 7001)
+            data.put("remoteEntries", JSONObject().put(entry.id, SyncData.entryRow(entry).put("origin", "bundled").put("retired", true)))
+        }
+        assertEquals(NextPractice.MoreVocabulary, model.nextPractice(false))
+    }
+
+    @Test fun blockedSiblingsAreTemporaryEvenWhenNoSuitableNewMeaningsRemain() = withModel { model ->
+        val noun = model.entries.first { it.gender != null }
+        val learned = mapOf("${noun.id}:Reading" to reviewed(1, Instant.now().plusSeconds(864000)))
+        model.restoreToday(900, cards = learned) { data ->
+            data.put("minimumRank", 7001)
+            data.put("paused", JSONObject().apply { noun.skills.forEach { put("${noun.id}:${it.name}", System.currentTimeMillis() + 86400000) } })
+        }
+        assertEquals(NextPractice.NothingLeft, model.nextPractice(false))
+    }
+
+    @Test fun standardDailyGenderQuotaStaysTen() = withModel { model ->
+        val nouns = model.entries.filter { it.gender != null }.take(12)
+        val learned = nouns.flatMapIndexed { index, noun -> Skill.placement.mapIndexed { skillIndex, skill ->
+            "${noun.id}:${skill.name}" to reviewed(index * 3 + skillIndex, Instant.now().plusSeconds(864000))
+        } }.toMap()
+        model.restoreToday(0, 5, cards = learned)
+        model.start(false, false)
+        model.drain()
+        assertEquals(10, JSONObject(model.backup()).getJSONObject("data").getInt("genderIntroduced"))
     }
 
     @Test fun extraPracticeShowsDueReviewsBeforeNewMeanings() = withModel { model ->
         val key = "${model.entries.first().id}:Reading"
-        model.restoreToday(StudyPolicy.DAILY_SECONDS, cards = mapOf(
+        model.restoreToday(StudyPolicy.DAILY_SECONDS, 5, 10, cards = mapOf(
             key to reviewed(1, Instant.now().minusSeconds(3600))
         ))
         model.startExtraBlock(ExtraMinutes.Ten, false)
@@ -137,8 +267,8 @@ class ExtraPracticeTest {
         val days = listOf(
             Day("a due card", true, StudyPolicy.NEW_SENSES, cards = mapOf("${word.id}:Reading" to reviewed(1, Instant.now().minusSeconds(3600)))),
             Day("room to introduce", true, 0),
-            Day("new meanings used up, nothing due", false, StudyPolicy.NEW_SENSES),
-            Day("gender cap reached, nothing else", false, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS, learned),
+            Day("daily meanings used up", true, StudyPolicy.NEW_SENSES),
+            Day("daily gender cap reached", true, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS, learned),
             Day("room for one gender card", true, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS - 1, learned),
         )
         days.forEach { day ->
