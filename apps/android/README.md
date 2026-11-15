@@ -66,9 +66,12 @@ recordings are bundled; installed offline French TTS supplies pronunciation.
 The measured coverage and preparation pipeline are documented in
 `../../docs/research/content-audit-2026-11-12.md`.
 
-- Optional placement checks six entries separately for reading, listening and
-  production; it seeds only those assessed cards, not an inferred B2 vocabulary.
-  Pausing/restarting preserves the position. Unassessed entries start fresh.
+- The optional vocabulary starting check samples 60 words and 30 invented words.
+  It saves each answer locally and resumes from the menu after a pause or restart.
+  Results suggest rank 1, 2,501 or 7,001; the learner confirms or adjusts the rank.
+  It never marks a card known. Retake it from the menu, or adjust the preference
+  on the packs page. This is an unvalidated estimate, not a CEFR test.
+  See `../../docs/design/placement-test.md` for scoring and licensing.
 - Reading, listening and sentence-gap production use distinct FSRS cards.
   Nouns also get a Gender card (choose *un* or *une*, graded by the app: right is
   Good, wrong is Again), for one meaning per noun. Gender cards arrive as a sibling

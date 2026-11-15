@@ -74,6 +74,11 @@ object ContentFiles {
         val cards = data.getJSONObject("cards")
         cards.keys().forEach { key -> validateCard(key, cards.getString(key), ids) }
         require(data.optInt("seconds") >= 0 && data.optInt("introduced") >= 0 && data.optInt("placementIndex") in 0..18)
+        if (data.has("vocabularyPlacementV1")) {
+            val answers = data.getJSONArray("vocabularyPlacementV1")
+            require(answers.length() <= 90)
+            (0 until answers.length()).forEach { require(answers.get(it) is Boolean) }
+        }
         if (data.has("minimumRank")) require(data.getInt("minimumRank") in listOf(1, 2501, 7001))
         // Validate optional collections before any file is replaced.
         for (key in listOf("buried", "failures", "paused", "suspended", "cardEdited", "resets")) if (data.has(key)) data.getJSONObject(key)

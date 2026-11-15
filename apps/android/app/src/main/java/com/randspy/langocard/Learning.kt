@@ -156,6 +156,24 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         // Found by their shipped wording, then taken from the active library so web edits apply.
         .map { word -> bundled.first { it.word == word }.let { b -> entries.firstOrNull { it.id == b.id } ?: b } }
     val placementDone get() = data.optBoolean("placementDone")
+    val vocabularyPlacement = VocabularyPlacement(JSONArray(getApplication<Application>().assets.open("placement-items.json").bufferedReader().use { it.readText() }).let { a ->
+        (0 until a.length()).map { i -> a.getJSONObject(i).let { PlacementItem(it.getString("word"), it.getInt("band")) } }
+    })
+    val vocabularyAnswers get() = data.optJSONArray("vocabularyPlacementV1")?.let { a ->
+        (0 until a.length()).map { a.getBoolean(it) }
+    } ?: emptyList()
+    fun openVocabularyPlacement() { screen = "vocabularyPlacement" }
+    fun answerVocabularyPlacement(known: Boolean) {
+        val answers = vocabularyAnswers
+        if (answers.size >= vocabularyPlacement.items.size) return
+        data.put("vocabularyPlacementV1", JSONArray(answers + known)); save()
+    }
+    fun retakeVocabularyPlacement() { data.remove("vocabularyPlacementV1"); save() }
+    fun acceptVocabularyPlacement(rank: Int) {
+        require(vocabularyAnswers.size == vocabularyPlacement.items.size)
+        setMinimumRank(rank)
+        data.put("placementDone", true); home()
+    }
     val placementProgress get() = "$placementIndex / 18"
     val minimumRank get() = data.optInt("minimumRank", 2501)
     fun setMinimumRank(rank: Int) {

@@ -51,3 +51,10 @@ an absolute or contemporary universal ranking.
 
 Redistributed adaptations must retain attribution, this change notice, license
 links and applicable ShareAlike conditions. No warranties are provided.
+
+## Vocabulary starting-check items
+
+`placement-items.json` selects 60 lemmas from the ranked Lexique reference above.
+Thirty original invented control words were added for Langocard. This item set
+is distributed under CC BY-SA 4.0, with the attribution and source links above.
+It is not LexTALE-FR and has not been independently validated.
