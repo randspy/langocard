@@ -1,0 +1,150 @@
+{
+  "rules": [
+    {
+      "ending": "ation",
+      "gender": "feminine",
+      "total": 18,
+      "follows": 18
+    },
+    {
+      "ending": "tion",
+      "gender": "feminine",
+      "total": 16,
+      "follows": 16
+    },
+    {
+      "ending": "sion",
+      "gender": "feminine",
+      "total": 2,
+      "follows": 2
+    },
+    {
+      "ending": "ence",
+      "gender": "feminine",
+      "total": 1,
+      "follows": 1
+    },
+    {
+      "ending": "ance",
+      "gender": "feminine",
+      "total": 8,
+      "follows": 8
+    },
+    {
+      "ending": "ette",
+      "gender": "feminine",
+      "total": 3,
+      "follows": 3
+    },
+    {
+      "ending": "ité",
+      "gender": "feminine",
+      "total": 6,
+      "follows": 6
+    },
+    {
+      "ending": "age",
+      "gender": "masculine",
+      "total": 12,
+      "follows": 11
+    },
+    {
+      "ending": "ment",
+      "gender": "masculine",
+      "total": 12,
+      "follows": 12
+    },
+    {
+      "ending": "isme",
+      "gender": "masculine",
+      "total": 1,
+      "follows": 1
+    },
+    {
+      "ending": "eau",
+      "gender": "masculine",
+      "total": 8,
+      "follows": 8
+    }
+  ],
+  "cases": [
+    {
+      "word": "une nation",
+      "gender": "feminine",
+      "ending": "ation",
+      "follows": true
+    },
+    {
+      "word": "la question",
+      "gender": "feminine",
+      "ending": "tion",
+      "follows": true
+    },
+    {
+      "word": "une image",
+      "gender": "feminine",
+      "ending": "age",
+      "follows": false
+    },
+    {
+      "word": "le silence",
+      "gender": "masculine",
+      "ending": "ence",
+      "follows": false
+    },
+    {
+      "word": "l’arbre",
+      "gender": "masculine",
+      "ending": null,
+      "follows": null
+    },
+    {
+      "word": "l'agence",
+      "gender": "feminine",
+      "ending": "ence",
+      "follows": true
+    },
+    {
+      "word": "un arbre",
+      "gender": "masculine",
+      "ending": null,
+      "follows": null
+    },
+    {
+      "word": "un garage",
+      "gender": "masculine",
+      "ending": "age",
+      "follows": true
+    },
+    {
+      "word": "une ACTIVITÉ",
+      "gender": "feminine",
+      "ending": "ité",
+      "follows": true
+    },
+    {
+      "word": "une activité",
+      "gender": "feminine",
+      "ending": "ité",
+      "follows": true
+    },
+    {
+      "word": "une salle de classe",
+      "gender": "feminine",
+      "ending": null,
+      "follows": null
+    },
+    {
+      "word": "pourtant",
+      "gender": null,
+      "ending": null,
+      "follows": null
+    },
+    {
+      "word": "l'agence",
+      "gender": null,
+      "ending": null,
+      "follows": null
+    }
+  ]
+}
