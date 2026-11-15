@@ -401,8 +401,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val genderRoom = block.genderRoom(data.optInt("genderIntroduced"))
         val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
-        if (dueCount(audio) == 0 && sibling != null) return sibling
-        if (dueCount(audio) == 0 && block.meaningRoom(data.optInt("introduced"))) {
+        if (sibling != null) return sibling
+        if (block.meaningRoom(data.optInt("introduced"))) {
             return available.filter { state(it) == null && it.skill != Skill.Gender && Skill.entries.none { skill -> cards.has("${it.entry.id}:${skill.name}") } && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
         }
         return cleanup

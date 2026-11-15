@@ -94,6 +94,30 @@ class ExtraPracticeTest {
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
     }
 
+    @Test fun buriedOverdueCardsDoNotBlockFreshMeaningsInAnExtension() = withModel { model ->
+        val buriedWord = model.entries.first()
+        val buriedKey = "${buriedWord.id}:Reading"
+        val overdue = reviewed(1, Instant.now().minusSeconds(3600))
+        model.restoreToday(1217, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS,
+            cards = mapOf(buriedKey to overdue)) { data ->
+            data.put("buried", JSONObject().apply {
+                buriedWord.skills.forEach { put("${buriedWord.id}:${it.name}", today) }
+            })
+        }
+        assertEquals(1, model.dueCount(false))
+        assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
+
+        model.startExtraBlock(ExtraMinutes.Five, false)
+        assertEquals("review", model.screen)
+        assertNotEquals(buriedWord.id, model.prompt!!.entry.id)
+        assertNull("the extension introduces an unburied meaning", model.state(model.prompt!!))
+        model.rate(Rating.GOOD, false)
+
+        val saved = JSONObject(model.backup()).getJSONObject("data")
+        assertEquals(overdue.toJson(), saved.getJSONObject("cards").getString(buriedKey))
+        assertEquals(today, saved.getJSONObject("buried").getString(buriedKey))
+    }
+
     @Test fun everyLengthGrantsExactSeparateMeaningAndGenderQuotas() = withModel { model ->
         val nouns = model.entries.filter { it.gender != null }.take(8)
         val learned = nouns.flatMapIndexed { index, noun -> Skill.placement.mapIndexed { skillIndex, skill ->
