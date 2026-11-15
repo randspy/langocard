@@ -67,13 +67,17 @@ data class Prompt(val entry: Entry, val skill: Skill, val example: Example = ent
 
 object StudyPolicy {
     const val DAILY_SECONDS = 15 * 60
+    const val WIND_DOWN_SECONDS = 2 * 60
+    const val CLEANUP_SECONDS = 2 * 60
     const val NEW_SENSES = 5
     /** New Gender cards a day, counted apart from new meanings; they take seconds each. */
     const val NEW_GENDER_CARDS = 10
     fun canIntroduce(overdue: Int, seconds: Int, introduced: Int) =
-        overdue == 0 && seconds < DAILY_SECONDS && introduced < NEW_SENSES
+        overdue == 0 && introductionsOpen(seconds) && introduced < NEW_SENSES
+    fun introductionsOpen(seconds: Int) = seconds < DAILY_SECONDS - WIND_DOWN_SECONDS
     /** Whether a session may show another card; checked between cards, so the card on screen is always finished. */
-    fun sessionOpen(placement: Boolean, seconds: Int) = placement || seconds < DAILY_SECONDS
+    fun sessionOpen(placement: Boolean, seconds: Int, cleanup: Boolean = false) =
+        placement || seconds < DAILY_SECONDS + (if (cleanup) CLEANUP_SECONDS else 0)
     fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
 }
 
@@ -121,7 +125,23 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private val paused = data.optJSONObject("paused") ?: JSONObject().also { data.put("paused", it) }
     /** Manual suspensions made in the web app (synced; this app only honours them). */
     private val suspended get() = data.optJSONObject("suspended") ?: JSONObject()
-    private val scheduler = Scheduler.builder().desiredRetention(0.9).build()
+    private var scheduler = fittedSettings()?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
+    private fun fittedSettings() = data.optJSONObject("fittedSettings")?.let { FittedSettings.parse(it.toString()) }
+    val schedulingDescription: String get() = fittedSettings()?.let {
+        "FSRS · ${(it.retention * 100).toInt()}% target recall · fitted with ${it.reviewCount} reviews on ${it.fitDate}"
+    } ?: "FSRS defaults · 90% target recall"
+    fun importFittedSettings(text: String) {
+        val fit = FittedSettings.parse(text)
+        val replacement = fit.scheduler()
+        data.put("fittedSettings", fit.toJson())
+        scheduler = replacement
+        save()
+    }
+    fun resetFittedSettings() {
+        data.remove("fittedSettings")
+        scheduler = Scheduler.builder().desiredRetention(0.9).build()
+        save()
+    }
     var revision by mutableIntStateOf(0); private set
     var screen by androidx.compose.runtime.mutableStateOf("home"); private set
     var prompt by androidx.compose.runtime.mutableStateOf<Prompt?>(null); private set
@@ -141,6 +161,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     var sessionSeconds by mutableIntStateOf(0); private set
     private var placementIndex = data.optInt("placementIndex")
     private var placing = false
+    private val sessionLearning = SessionLearning()
     private var lastTick = android.os.SystemClock.elapsedRealtime()
     private val placementEntries = listOf("pourtant", "un enjeu", "se méfier", "une intrigue", "mettre en œuvre", "fiable")
         // Found by their shipped wording, then taken from the active library so web edits apply.
@@ -207,6 +228,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         replace(paused, restored.optJSONObject("paused") ?: JSONObject())
         val sync = data.optJSONObject("sync")
         replace(data, restored)
+        scheduler = fittedSettings()?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
         data.put("cards", cards).put("reviews", logs).put("buried", buried).put("failures", failures).put("paused", paused)
         // The restored progress is pushed again on the next sync; newer cloud reviews still win.
         data.put("sync", sync ?: JSONObject()); SyncData.reset(data)
@@ -261,12 +283,13 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     fun start(placement: Boolean, audio: Boolean) {
         rollover(); placing = placement; sessionReviews = 0; sessionRecalled = 0; sessionSeconds = 0
+        sessionLearning.clear()
         screen = "review"; lastTick = android.os.SystemClock.elapsedRealtime(); next(audio)
     }
     fun tick() {
         val now = android.os.SystemClock.elapsedRealtime()
         val seconds = ((now - lastTick) / 1000).toInt()
-        if (screen != "review") {
+        if (screen != "review" && !readingPassageActive) {
             if (seconds >= 60) { lastTick = now; rollover(); revision++ }
             return
         }
@@ -275,6 +298,18 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             sessionSeconds += seconds; data.put("seconds", spent + seconds); revision++
             if (sessionSeconds % 10 == 0) save()
         }
+    }
+    var readingPassageActive = false
+    /** Reading recall history supplies vocabulary without mutating scheduling. */
+    fun passageVocabulary(): PassageVocabulary {
+        val recalled = (0 until logs.length()).mapNotNull { index ->
+            val row = logs.getJSONObject(index)
+            val rating = io.github.openspacedrepetition.ReviewLog.fromJson(row.getString("log")).rating
+            row.optString("key").takeIf { rating != Rating.AGAIN }
+        }.toSet()
+        val known = entries.filter { "${it.id}:Reading" in recalled && memory.containsKey("${it.id}:Reading") }.take(100)
+        val due = prompts(false).filter { it.skill == Skill.Reading && state(it)?.due?.isAfter(Instant.now()) == false }.take(3).map { it.entry }
+        return PassageVocabulary(known, due)
     }
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
     fun persist() { save() }
@@ -305,7 +340,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
     }
     private fun next(audio: Boolean) {
-        if (!StudyPolicy.sessionOpen(placing, spent)) return finish()
+        if (!StudyPolicy.sessionOpen(placing, spent, cleanup = true)) return finish()
         val chosen = choose(audio)
         if (chosen != null) prompt = shown(chosen)
         else { if (placing) data.put("placementDone", true); finish() }
@@ -321,9 +356,14 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             return null
         }
         val available = prompts(audio).filter { buried.optString(it.key) != today() }
+        val cleanup = sessionLearning.next(available.map { it.key }) { key ->
+            memory[key]?.state != io.github.openspacedrepetition.State.REVIEW
+        }?.let { key -> available.first { it.key == key } }
+        if (spent >= StudyPolicy.DAILY_SECONDS) return cleanup
         val due = available.filter { state(it)?.due?.let { date -> !date.isAfter(Instant.now()) } == true }
             .minByOrNull { state(it)!!.due }
         if (due != null) return due
+        if (!StudyPolicy.introductionsOpen(spent)) return cleanup
         // Existing senses gain additional skills on later days, before new senses.
         // Gender comes last, a few a day: it needs the meaning to be familiar first.
         val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
@@ -331,9 +371,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
         if (dueCount(audio) == 0 && sibling != null) return sibling
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
-            return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
+            return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
         }
-        return null
+        return cleanup
     }
     fun rate(rating: Rating, audio: Boolean) {
         val p = prompt ?: return
@@ -342,6 +382,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val card = state(p) ?: MemoryCard.builder().cardId(nextCardId).build()
         if (state(p) == null) { nextCardId++; data.put("nextCardId", nextCardId) }
         val result = scheduler.reviewCard(card, rating)
+        if (!placing) sessionLearning.reviewed(p.key, state(p) == null, rating)
         cards.put(p.key, result.card().toJson())
         SyncData.markCard(data, p.key, result.card().lastReview?.toEpochMilli() ?: 0L)
         memory[p.key] = result.card()

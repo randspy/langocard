@@ -81,6 +81,7 @@ object ContentFiles {
         if (data.has("minimumRank")) require(data.getInt("minimumRank") in listOf(1, 2501, 7001))
         // Validate optional collections before any file is replaced.
         for (key in listOf("buried", "failures", "paused", "suspended", "cardEdited", "resets")) if (data.has(key)) data.getJSONObject(key)
+        if (data.has("fittedSettings")) FittedSettings.parse(data.getJSONObject("fittedSettings").toString())
         if (data.has("reviews")) data.getJSONArray("reviews")
         if (data.has("sources")) data.getJSONArray("sources")
         return data

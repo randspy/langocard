@@ -26,4 +26,21 @@ class MemoryHookTest {
         SyncData.apply(data, "hooks", listOf(hook("", 30)), setOf("e"))
         assertEquals("", data.getJSONObject("hooks").getJSONObject("e").getString("text"))
     }
+    @Test fun pulledHooksCanBePushedAgainAfterBackupRestore() {
+        val data = JSONObject().put("version", 2).put("cards", JSONObject())
+        val remote = JSONObject().put("entryId", "e").put("text", "my image")
+            .put("editedAt", 20).put("updatedAt", 30)
+        SyncData.apply(data, "hooks", listOf(remote), setOf("e"))
+        val envelope = JSONObject().put("format", "langocard-backup").put("version", 2).put("data", data)
+        val restored = ContentFiles.backupData(envelope.toString(), setOf("e"))
+        for (state in listOf(data, restored)) {
+            val outgoing = SyncData.outbox(state, "2026-11-15").batches().first()
+                .getJSONArray("hooks").getJSONObject(0)
+            assertEquals(setOf("entryId", "text", "editedAt"), outgoing.keys().asSequence().toSet())
+            assertEquals("e", outgoing.getString("entryId"))
+            assertEquals("my image", outgoing.getString("text"))
+            assertEquals(20L, outgoing.getLong("editedAt"))
+        }
+        assertTrue(remote.has("updatedAt"))
+    }
 }
