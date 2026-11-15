@@ -59,7 +59,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         }
     }
     var destination by rememberSaveable { mutableStateOf("study") }
-    val destinations = mapOf("study" to "Daily practice", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "sync" to "Cloud sync", "export" to "Export to Anki", "sources" to "Content sources")
+    val destinations = mapOf("study" to "Daily practice", "reading" to "Reading passage", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "backup" to "Backup & restore", "sync" to "Cloud sync", "export" to "Export to Anki", "sources" to "Content sources")
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val revision = model.revision
@@ -135,6 +135,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
+                "reading" -> ReadingPassagePage(model, speech, drawer.currentValue == DrawerValue.Closed && drawer.targetValue == DrawerValue.Closed)
                 "review" -> Review(model, speech, revealed || chosen != null, played, chosen, typed, { typed = it }, comparison) { played = speech.say(current!!.example.text) || played }
                 "summary" -> {
                     Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
