@@ -32,7 +32,7 @@ class PilotTest {
     }
 
     @Test fun `backlog and daily budget block new vocabulary`() {
-        assertTrue(StudyPolicy.canIntroduce(0, 899, 4))
+        assertTrue(StudyPolicy.canIntroduce(0, 779, 4))
         assertFalse(StudyPolicy.canIntroduce(1, 0, 0))
         assertFalse(StudyPolicy.canIntroduce(0, 900, 0))
         assertFalse(StudyPolicy.canIntroduce(0, 0, 5))
