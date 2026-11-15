@@ -20,7 +20,7 @@ import javax.net.ssl.HttpsURLConnection
  * Every rule is idempotent, so a failed sync is simply retried.
  */
 object SyncData {
-    val TABLES = listOf("entries", "sources", "cards", "reviews", "buried", "settings")
+    val TABLES = listOf("hooks", "entries", "sources", "cards", "reviews", "buried", "settings")
     const val BATCH = 500
     /** Pulls overlap by a minute so writes committed while a pull ran aren't skipped. */
     const val CURSOR_OVERLAP_MS = 60_000L
@@ -132,10 +132,10 @@ object SyncData {
 
     class Outbox(val generation: Int, val cards: List<JSONObject>, val reviews: List<JSONObject>,
                  val entries: List<JSONObject>, val sources: List<JSONObject>, val buried: List<JSONObject>,
-                 val settings: JSONObject, val reviewCount: Int, val entryCount: Int, val sourceCount: Int) {
+                 val settings: JSONObject, val hooks: List<JSONObject> = emptyList(), val reviewCount: Int, val entryCount: Int, val sourceCount: Int) {
         /** Push arguments in batches the backend accepts; settings travel with the first. */
         fun batches(): List<JSONObject> {
-            val kinds = listOf("cards" to cards, "reviews" to reviews, "entries" to entries, "sources" to sources, "buried" to buried)
+            val kinds = listOf("hooks" to hooks, "cards" to cards, "reviews" to reviews, "entries" to entries, "sources" to sources, "buried" to buried)
             val count = maxOf(1, kinds.maxOf { (it.second.size + BATCH - 1) / BATCH })
             return (0 until count).map { i ->
                 JSONObject().also { args ->
@@ -160,6 +160,7 @@ object SyncData {
             (sync.optInt(from).coerceAtMost(array.length()) until array.length()).map { map(array.getJSONObject(it)) }
         return Outbox(
             generation = sync.getInt("generation"),
+            hooks = (data.optJSONObject("hooks") ?: JSONObject()).let { h -> h.keys().asSequence().map { h.getJSONObject(it) }.toList() },
             cards = pending.keys().asSequence().filter(cards::has).map { key ->
                 JSONObject().put("key", key).put("card", cards.getString(key)).put("lastReview", pending.getLong(key))
                     .put("failures", failures.optInt(key)).put("pausedUntil", paused.optLong(key))
@@ -205,6 +206,13 @@ object SyncData {
     /** Merges one page of remote rows into [data]. Invalid rows are skipped, not fatal. */
     fun apply(data: JSONObject, table: String, rows: List<JSONObject>, entryIds: Set<String>): Applied {
         when (table) {
+            "hooks" -> {
+                val hooks = data.optJSONObject("hooks") ?: JSONObject().also { data.put("hooks", it) }
+                rows.forEach { row ->
+                    val id = row.getString("entryId")
+                    if (row.getString("text").length <= 500 && row.getDouble("editedAt") > (hooks.optJSONObject(id)?.optDouble("editedAt") ?: 0.0)) hooks.put(id, row)
+                }
+            }
             "entries" -> {
                 // The server already merged these rows, so they replace what this device holds.
                 val remote = data.optJSONObject("remoteEntries") ?: JSONObject().also { data.put("remoteEntries", it) }

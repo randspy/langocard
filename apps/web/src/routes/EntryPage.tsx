@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { api } from "@backend/_generated/api";
 import { contentOf } from "@backend/entryRules";
@@ -54,6 +55,7 @@ export function EntryPage() {
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
         </header>
         {entry.deleted && <p className="rounded-md bg-line/50 p-3 text-sm">Restore this entry to edit it.</p>}
+        <MemoryHook entryId={entryId} />
         <EntryForm
           key={`${entry.editedAt}-${entry.deletedAt}`}
           entryId={entry.entryId}
@@ -91,4 +93,20 @@ function NotFound() {
       <h1 className="font-serif text-3xl">Entry not found</h1>
     </div>
   );
+}
+
+function MemoryHook({ entryId }: { entryId: string }) {
+  const hook = useTokenQuery(api.sync.memoryHook, { entryId });
+  const save = useTokenMutation(api.sync.saveMemoryHook);
+  const { run, error } = useAsyncAction();
+  if (hook === undefined) return <p>Loading memory hook…</p>;
+  return <HookEditor key={`${entryId}-${hook?.editedAt}`} initial={hook?.text ?? ""} save={text => run(() => save({ entryId, text }))} error={error} />;
+}
+function HookEditor({ initial, save, error }: { initial: string; save: (text: string) => Promise<unknown>; error: string | null }) {
+  const [text, setText] = useState(initial);
+  return <form className="space-y-2" onSubmit={event => { event.preventDefault(); void save(text); }}>
+    <label className="block">Memory hook<textarea className="block w-full rounded border p-2" value={text} maxLength={500} onChange={event => setText(event.target.value)} /></label>
+    <Button type="submit">Save memory hook</Button>
+    {error && <p role="alert">{error}</p>}
+  </form>;
 }

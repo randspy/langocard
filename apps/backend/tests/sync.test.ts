@@ -154,3 +154,15 @@ describe("mergeSettings", () => {
     expect(mergeSettings(a, b)).toEqual(mergeSettings(b, a));
   });
 });
+
+test("memory hooks merge independently, keep ties, and sync clearing", async () => {
+  const t = convexTest(schema, modules);
+  const send = (text: string, editedAt: number) => t.mutation(api.sync.push, { token, ...empty, hooks: [{ entryId: "e", text, editedAt }] });
+  await send("image", 20);
+  await send("old", 10);
+  await send("tie", 20);
+  expect(await t.query(api.sync.memoryHook, { token, entryId: "e" })).toMatchObject({ text: "image" });
+  await send("", 30);
+  expect((await t.query(api.sync.pull, { token, table: "hooks", since: 0, cursor: null })).page).toMatchObject([{ text: "", editedAt: 30 }]);
+  await expect(send("x".repeat(501), 40)).rejects.toThrow();
+});

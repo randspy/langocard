@@ -8,6 +8,8 @@ import { cardFields, entryClocks, settingsFields, storedEntryContent } from "./v
  * since their previous sync. Merge rules live in `merge.ts`.
  */
 export default defineSchema({
+  hooks: defineTable({ entryId: v.string(), text: v.string(), editedAt: v.number(), updatedAt: v.number() })
+    .index("by_entry", ["entryId"]).index("by_updated", ["updatedAt"]),
   // One FSRS card per "<entryId>:<Skill>". Review fields and manual fields merge separately.
   cards: defineTable({
     key: v.string(),

@@ -71,6 +71,10 @@ object ContentFiles {
         // Synced library rows (web edits, entries from other devices) also own cards.
         val remote = data.optJSONObject("remoteEntries") ?: JSONObject()
         val ids = bundled + extra.map { it.id } + remote.keys().asSequence().filter { SyncData.rowEntry(remote.getJSONObject(it)) != null }
+        data.optJSONObject("hooks")?.let { hooks -> hooks.keys().forEach { id ->
+            val hook = hooks.getJSONObject(id)
+            require(hook.getString("entryId") == id && hook.getString("text").length <= 500 && hook.getDouble("editedAt") > 0)
+        } }
         val cards = data.getJSONObject("cards")
         cards.keys().forEach { key -> validateCard(key, cards.getString(key), ids) }
         require(data.optInt("seconds") >= 0 && data.optInt("introduced") >= 0 && data.optInt("placementIndex") in 0..18)

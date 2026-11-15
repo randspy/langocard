@@ -70,6 +70,15 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         if (model.screen == "review") model.finish() else { model.home(); destination = "study" }
     }
     val current = model.prompt
+    model.hookOffer?.let { entry ->
+        var hook by remember(entry.id) { mutableStateOf(model.memoryHook(entry.id)) }
+        AlertDialog(onDismissRequest = model::dismissHook,
+            title = { Text("A new way to remember ${entry.word}") },
+            text = { Column { Text("This skill is paused for three days. Add a personal memory hook.")
+                OutlinedTextField(value = hook, onValueChange = { if (it.length <= 500) hook = it }, label = { Text("Memory hook") }) } },
+            confirmButton = { TextButton(onClick = { model.saveMemoryHook(hook) }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = model::dismissHook) { Text("Skip") } })
+    }
     var revealed by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
     var played by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
     /** The article chosen on a Gender card; choosing reveals the answer. */
@@ -231,6 +240,7 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                 if (!p.example.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.example.answer}")
                 Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
                 Text(p.entry.definition)
+                model.memoryHook(p.entry.id).takeIf { it.isNotBlank() }?.let { Text("Memory hook: $it") }
                 Text(p.example.text)
                 if (speech.available) OutlinedButton(onClick = { speech.say(p.example.text) }) { Text("Hear example") }
             }
