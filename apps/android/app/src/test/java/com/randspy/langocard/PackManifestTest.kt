@@ -10,12 +10,12 @@ class PackManifestTest {
     @Test fun `bundled catalogue and dictionaries have matching identities and valid entries`() {
         val packs = PackManifest.parse(File("src/main/assets/catalogue.json").readText())
         assertEquals(3, packs.size)
-        assertEquals(1116, packs.sumOf { it.meanings })
+        assertEquals(19909, packs.sumOf { it.meanings })
         val frequent = File("src/main/assets/frequent-pack.json").readText()
         PackManifest.verifyPayload(frequent, packs.first())
         val entries = ContentFiles.readEntries(JSONObject(frequent).getJSONArray("entries"))
-        assertEquals(501, entries.size)
-        assertTrue(entries.all { it.rank in 1..2500 && it.lemma.isNotBlank() && it.sourceUrl.isNotBlank() })
+        assertEquals(2330, entries.size)
+        assertTrue(entries.all { it.rank in 103..2500 && it.lemma.isNotBlank() && it.sourceUrl.isNotBlank() })
         val restored = ContentFiles.readEntries(JSONArray().put(ContentFiles.entryJson(entries.first()))).single()
         assertEquals(entries.first(), restored)
     }

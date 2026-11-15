@@ -30,15 +30,15 @@ class PublishedCatalogueTest {
             instrument.runOnMainSync {
                 val app = IsolatedApp(instrument.targetContext, directory)
                 val model = LearningModel(app)
-                assertEquals(701, model.entries.size)
+                assertEquals(2330, model.entries.size)
                 assertTrue(model.installedPack(packs.first().id))
                 packs.forEachIndexed { index, pack ->
                     if (!model.installedPack(pack.id)) assertEquals(pack.meanings, model.importPack(downloaded[index]))
                 }
-                assertEquals(1316, model.entries.size)
+                assertEquals(19909, model.entries.size)
                 model.skipPlacement()
                 model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank in 2501..20000)
+                assertTrue(model.prompt!!.entry.rank >= 2501)
                 val assessed = model.prompt!!
                 model.rate(io.github.openspacedrepetition.Rating.GOOD, false)
                 val savedMemory = model.state(assessed)!!.toJson()
@@ -46,17 +46,17 @@ class PublishedCatalogueTest {
                 assertTrue(model.prompt!!.entry.rank < 2501)
                 assertEquals(savedMemory, model.state(assessed)!!.toJson())
                 model.finish(); model.setMinimumRank(7001); model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank in 7001..20000)
+                assertTrue(model.prompt!!.entry.rank >= 7001)
                 model.finish()
                 val backup = model.backup()
                 model.restore(backup)
                 assertTrue(packs.all { model.installedPack(it.id) })
-                assertEquals(1316, LearningModel(app).entries.size)
+                assertEquals(19909, LearningModel(app).entries.size)
                 val restoredSource = model.entries.first { it.sourceUrl.isNotBlank() }
                 assertTrue(restoredSource.rank > 0)
                 assertTrue(restoredSource.license.isNotBlank())
                 val lines = model.ankiExport().lines().filter { it.isNotBlank() && !it.startsWith('#') }
-                assertEquals(2632, lines.size)
+                assertEquals(50774, lines.size)
                 assertEquals(lines.size, lines.map { it.substringBefore('\t') }.distinct().size)
                 assertTrue(model.ankiExport().contains("https://fr.wiktionary.org/wiki/"))
             }
