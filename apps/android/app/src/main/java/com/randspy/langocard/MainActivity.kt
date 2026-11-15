@@ -197,7 +197,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                         Text("Listening cards wait until an offline voice is available.")
                         OutlinedButton(onClick = settings) { Text("Open speech settings") }
                     }
-                    Text("${model.bundledCount} built-in meanings · Includes the original 200 drafts and frequency-ranked dictionary content. Further packs are available in the menu.", style = MaterialTheme.typography.bodySmall)
+                    Text("${model.bundledCount} built-in meanings from the Frequent French pack. Further packs are available in the menu.", style = MaterialTheme.typography.bodySmall)
                     Text("${model.schedulingDescription} · up to 5 new meanings per day. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
                 }
             }

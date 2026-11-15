@@ -22,23 +22,14 @@ class NounEndingsTest {
     }
 
     @Test fun `every shipped noun is audited against the advertised tendencies`() {
-        val assets = File("src/main/assets")
-        val nouns = assets.resolve("pilot.tsv").readLines().filter { it.isNotBlank() }.map { line ->
-            val word = line.split('|')[1]
-            word to Gender.ofArticle(word)
-        }.toMutableList()
-        (listOf(assets.resolve("frequent-pack.json")) + File("../../../content").listFiles()!!.filter {
-            it.name.startsWith("fr-source-") && it.extension == "json"
-        }).forEach { file ->
+        val nouns = File("../../../content").listFiles()!!.filter { it.name.startsWith("fr-core-") && it.extension == "json" }.flatMap { file ->
             val entries = JSONObject(file.readText()).getJSONArray("entries")
-            for (i in 0 until entries.length()) {
-                val e = entries.getJSONObject(i)
-                nouns.add(e.getString("word") to Gender.read(e, e.getString("word")))
-            }
+            (0 until entries.length()).map { i -> entries.getJSONObject(i).let { e -> e.getString("word") to Gender.read(e, e.getString("word")) } }
         }
         val unique = nouns.filter { it.second != null }.distinctBy { Gender.noun(it.first) to it.second }
         val exceptions = unique.filter { (word, gender) -> NounEndings.match(word, gender)?.follows == false }
-        assertEquals(listOf("image"), exceptions.map { Gender.noun(it.first) }.sorted())
+        assertEquals(listOf("bastion", "bénédicité", "cage", "comité", "déshérité", "eau", "exploité", "image", "invité", "jument",
+            "nage", "page", "peau", "plage", "rage", "retraité", "silence", "squelette", "traité"), exceptions.map { Gender.noun(it.first) }.sorted())
         val audited = fixtures().getJSONArray("rules")
         assertEquals(NounEndings.rules.size, audited.length())
         for (i in 0 until audited.length()) {

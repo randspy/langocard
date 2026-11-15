@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest";
 import { SUSPENDED_INDEFINITELY } from "@backend/merge";
 import { DAY, NOW, libraryEntry } from "@/test/fixtures";
-import { filterLibrary, skillStatus, validateSearch } from "./library";
+import { filterLibrary, originLabel, skillStatus, validateSearch } from "./library";
 
 const entries = [
   libraryEntry({ entryId: "a", word: "élève", english: "pupil", rank: 900, topic: "culture" }),
   libraryEntry({ entryId: "b", word: "un enjeu", english: "stake", rank: 3000, edited: true, gender: "masculine",
     examples: ["Voici {un enjeu}.", "Quel est {l'enjeu} du débat ?"] }),
-  libraryEntry({ entryId: "c", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-source-extended-2026-11-v1", installed: false }),
+  libraryEntry({ entryId: "c", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-core-extended-2026-11-v1", installed: false }),
   libraryEntry({ entryId: "d", word: "ma trouvaille", english: "my find", rank: null, origin: "personal", deleted: true }),
   libraryEntry({ entryId: "e", word: "pourtant", english: "however", rank: 20, skills: { Listening: { due: null, state: null, pausedUntil: 0, suspendedUntil: NOW + DAY } } }),
 ];
@@ -78,5 +78,15 @@ describe("validateSearch", () => {
 
   test("treats the default status as no filter", () => {
     expect(validateSearch({ status: "active" })).toEqual({});
+  });
+});
+
+describe("originLabel", () => {
+  test("names the downloadable packs and falls back to the pack ID", () => {
+    expect(originLabel("bundled")).toBe("Built-in");
+    expect(originLabel("personal")).toBe("Personal");
+    expect(originLabel("pack:fr-core-everyday-2026-11-v1")).toBe("Everyday pack");
+    expect(originLabel("pack:fr-core-extended-2026-11-v1")).toBe("Extended pack");
+    expect(originLabel("pack:fr-extra")).toBe("fr-extra");
   });
 });

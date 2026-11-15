@@ -64,29 +64,32 @@ show no hint. Article stripping includes both forms of elided `l'`.
 
 `NounEndings` holds a small reviewed table of common tendencies. We say
 "usually", never "always". The library audit is a regression check, not an
-estimate of reliability across all French nouns. In particular, this library
-has little evidence for `-ence`, `-sion`, `-ette` and `-isme`.
+estimate of reliability across all French nouns.
 
 `content/noun-ending-fixtures.json` shares the table, expected counts, and
-example matches with future clients. Unit tests audit all 200 pilot entries and
-all three published packs, deduplicating by noun and gender. Longest matching
-suffix owns each noun, so `-ation` is counted separately from `-tion`.
+example matches with future clients. Unit tests audit all three published
+`fr-core` packs, deduplicating by noun and gender. Nouns that take either gender
+have no recorded gender and are not audited. Longest matching suffix owns each
+noun, so `-ation` is counted separately from `-tion`.
 
 | Ending | Expected gender | Following / matching nouns |
 | --- | --- | --- |
-| -ation | feminine | 18 / 18 |
-| -tion | feminine | 16 / 16 |
-| -sion | feminine | 2 / 2 |
-| -ence | feminine | 1 / 1 |
-| -ance | feminine | 8 / 8 |
-| -ette | feminine | 3 / 3 |
-| -ité | feminine | 6 / 6 |
-| -age | masculine | 11 / 12 |
-| -ment | masculine | 12 / 12 |
-| -isme | masculine | 1 / 1 |
-| -eau | masculine | 8 / 8 |
+| -ation | feminine | 466 / 466 |
+| -tion | feminine | 235 / 236 |
+| -sion | feminine | 122 / 122 |
+| -ence | feminine | 109 / 110 |
+| -ance | feminine | 133 / 133 |
+| -ette | feminine | 185 / 186 |
+| -ité | feminine | 286 / 293 |
+| -age | masculine | 230 / 236 |
+| -ment | masculine | 375 / 376 |
+| -isme | masculine | 96 / 96 |
+| -eau | masculine | 108 / 110 |
 
-The shipped exception is *une image*. Fixtures also cover *le silence* as an
-exception to `-ence`, elided nouns, unknown gender, Unicode normalization and
-unmatched endings. Counts must be reviewed when content changes. None of these
-small samples justifies an "always" claim, even when every shipped noun follows.
+The 19 shipped exceptions are *bastion* (-tion), *silence* (-ence), *squelette*
+(-ette), *jument* (-ment), *eau* and *peau* (-eau), six feminine -age nouns (*image*,
+*page*, *plage*, *cage*, *rage*, *nage*) and seven masculine -ité nouns (*comité*,
+*traité*, *invité*, *retraité*, *déshérité*, *exploité*, *bénédicité*). Fixtures also
+cover elided nouns, unknown gender, Unicode normalization and unmatched endings.
+Counts must be reviewed when content changes. No count justifies an "always"
+claim, even when every shipped noun follows.

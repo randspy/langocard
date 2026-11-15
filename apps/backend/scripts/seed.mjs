@@ -1,5 +1,5 @@
-// Seeds the shipped French library into Convex: the bundled library (pilot list and
-// the frequent pack that ships in the APK) and the downloadable packs.
+// Seeds the shipped French library into Convex: the frequent pack that ships in the APK
+// (origin "bundled") and the downloadable catalogue packs.
 // Usage: npm run seed            (development deployment)
 //        npm run seed -- --prod  (production deployment)
 //        npm run seed -- --dry-run (validate and count entries without writing)
@@ -19,20 +19,13 @@ const run = (fn, args) => JSON.parse(execFileSync("npx",
   ["convex", "run", `seed:${fn}`, JSON.stringify(args), ...(prod ? ["--prod"] : [])],
   { cwd: backend, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }));
 
-// The 200-entry pilot list: id|word|english|definition|topic|example|example…
-const pilot = read("apps/android/app/src/main/assets/pilot.tsv").split("\n").filter((line) => line.trim())
-  .map((line) => {
-    const [id, word, english, definition, topic, ...examples] = line.split("|");
-    return { ...fromAndroidJson({ id, word, english, definition, topic, examples }), origin: "bundled" };
-  });
-
 const bundledPack = "apps/android/app/src/main/assets/frequent-pack.json";
 const catalogue = JSON.parse(read("content/catalogue.json"));
 const packs = [{ path: bundledPack, origin: "bundled" }].concat(
   catalogue.packs.map((p) => ({ path: `content/${p.id}.json`, origin: `pack:${p.id}` })),
 );
-const entries = [...pilot];
-const seen = new Set(pilot.map((e) => e.entryId));
+const entries = [];
+const seen = new Set();
 for (const { path, origin } of packs) {
   for (const raw of JSON.parse(read(path)).entries) {
     if (seen.has(raw.id)) continue; // the bundled frequent pack is also in the catalogue

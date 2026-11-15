@@ -30,6 +30,8 @@ class ExtraPracticeTest {
             instrumentation.runOnMainSync {
                 val model = LearningModel(IsolatedApp(instrumentation.targetContext, folder))
                 model.skipPlacement()
+                // These session tests need eligible words from the bundled Frequent French pack.
+                model.setMinimumRank(1)
                 base = model.backup()
                 test(model)
             }

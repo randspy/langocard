@@ -3,68 +3,68 @@
     {
       "ending": "ation",
       "gender": "feminine",
-      "total": 18,
-      "follows": 18
+      "total": 466,
+      "follows": 466
     },
     {
       "ending": "tion",
       "gender": "feminine",
-      "total": 16,
-      "follows": 16
+      "total": 236,
+      "follows": 235
     },
     {
       "ending": "sion",
       "gender": "feminine",
-      "total": 2,
-      "follows": 2
+      "total": 122,
+      "follows": 122
     },
     {
       "ending": "ence",
       "gender": "feminine",
-      "total": 1,
-      "follows": 1
+      "total": 110,
+      "follows": 109
     },
     {
       "ending": "ance",
       "gender": "feminine",
-      "total": 8,
-      "follows": 8
+      "total": 133,
+      "follows": 133
     },
     {
       "ending": "ette",
       "gender": "feminine",
-      "total": 3,
-      "follows": 3
+      "total": 186,
+      "follows": 185
     },
     {
       "ending": "ité",
       "gender": "feminine",
-      "total": 6,
-      "follows": 6
+      "total": 293,
+      "follows": 286
     },
     {
       "ending": "age",
       "gender": "masculine",
-      "total": 12,
-      "follows": 11
+      "total": 236,
+      "follows": 230
     },
     {
       "ending": "ment",
       "gender": "masculine",
-      "total": 12,
-      "follows": 12
+      "total": 376,
+      "follows": 375
     },
     {
       "ending": "isme",
       "gender": "masculine",
-      "total": 1,
-      "follows": 1
+      "total": 96,
+      "follows": 96
     },
     {
       "ending": "eau",
       "gender": "masculine",
-      "total": 8,
-      "follows": 8
+      "total": 110,
+      "follows": 108
     }
   ],
   "cases": [

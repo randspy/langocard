@@ -132,8 +132,8 @@ export function filterLibrary(entries: LibraryEntry[], search: LibrarySearch, no
 export function originLabel(origin: string): string {
   if (originGroup(origin) !== "pack") return origin === "personal" ? "Personal" : "Built-in";
   const pack = origin.slice("pack:".length);
-  if (pack.startsWith("fr-source-everyday")) return "Everyday pack";
-  if (pack.startsWith("fr-source-extended")) return "Extended pack";
+  if (pack.startsWith("fr-core-everyday")) return "Everyday pack";
+  if (pack.startsWith("fr-core-extended")) return "Extended pack";
   return pack;
 }
 

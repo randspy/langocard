@@ -6,7 +6,6 @@ import io.github.openspacedrepetition.Scheduler
 import io.github.openspacedrepetition.State
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.File
 import java.time.Instant
 
 class PilotTest {
@@ -70,24 +69,5 @@ class PilotTest {
         fun due(retention: Double) = Scheduler.builder().desiredRetention(retention).enableFuzzing(false).build()
             .reviewCard(card, Rating.GOOD, now).card().due
         assertTrue(due(0.95).isBefore(due(0.9)))
-    }
-
-    @Test fun `all 200 entries have unique identities and usable sense specific clozes`() {
-        val rows = File("src/main/assets/pilot.tsv").readLines().filter(String::isNotBlank).map { it.split('|') }
-        assertEquals(200, rows.size)
-        assertEquals(200, rows.map { it.first() }.distinct().size)
-        rows.forEach { row ->
-            assertTrue(row.size in 6..5 + ContentFiles.MAX_EXAMPLES)
-            assertTrue(row.all(String::isNotBlank))
-            val e = Entry(row[0], row[1], row[2], row[3], row.drop(5).map(::Example), row[4])
-            ContentFiles.validateEntry(e)
-            e.examples.forEach { example ->
-                assertEquals(1, Regex("\\{[^}]+}").findAll(example.marked).count())
-                assertTrue(example.answer.isNotBlank())
-                assertFalse(example.text.contains('{'))
-                assertTrue(example.cloze.contains("________"))
-            }
-            assertTrue(e.topic in setOf("daily", "culture", "news"))
-        }
     }
 }
