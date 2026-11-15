@@ -80,7 +80,7 @@ The measured coverage and preparation pipeline are documented in
   one. See `../../docs/design/several-examples.md`.
   The pinned MIT-licensed `io.github.open-spaced-repetition:fsrs:1.0.0`
   ([Java-FSRS](https://github.com/open-spaced-repetition/java-fsrs)) schedules at
-  90% desired retention using default parameters. Model fitting is deferred.
+  90% desired retention using default parameters, or imported personal settings (see below).
 - The personal B2 default starts new ranked dictionary entries above rank 2,500.
   The packs page can change this to all ranks or 7,001+. This is a frequency
   preference, not a CEFR mapping or a claim that lower-ranked words are known.
@@ -232,3 +232,10 @@ Retention minimizes simulated time per remembered card over the optimizer's
 so missing durations use a uniform 10 seconds. This is a model-based suggestion,
 not a measured personal learning-per-minute optimum. The optional
 `durationAssumption` field records this limitation. No data leaves the computer.
+
+Copy `params.json` to your phone and choose Backup → Load fitted FSRS settings.
+The page shows the active fit's review count, date and target recall. Reset FSRS
+to defaults restores the library's default weights and 90% target. Import and
+reset affect future reviews and rating-button previews; existing due dates are
+preserved. Settings persist locally and travel in backups, but are not cloud-synced.
+Restoring a backup without fitted settings restores defaults.
