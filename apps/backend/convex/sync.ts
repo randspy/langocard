@@ -21,11 +21,12 @@ export const push = mutation({
     entries: v.array(v.object({ entryId: v.string(), ...entryContent, ...entryClocks })),
     sources: v.array(v.object({ sourceId: v.string(), source: v.string() })),
     buried: v.array(v.object({ key: v.string(), day: v.string() })),
+    hooks: v.optional(v.array(v.object({ entryId: v.string(), text: v.string(), editedAt: v.number() }))),
     settings: v.optional(v.object(settingsFields)),
   },
   handler: async (ctx, args) => {
     requireToken(args.token);
-    for (const list of [args.cards, args.reviews, args.entries, args.sources, args.buried]) {
+    for (const list of [args.cards, args.reviews, args.entries, args.sources, args.buried, args.hooks ?? []]) {
       if (list.length > MAX_BATCH) throw new ConvexError(`At most ${MAX_BATCH} items of each kind per push`);
     }
     const updatedAt = Date.now();
@@ -39,6 +40,12 @@ export const push = mutation({
         const merged = mergeCard(stored, incoming);
         if (!sameCard(merged, stored)) await ctx.db.patch(stored._id, { ...merged, updatedAt });
       }
+    }
+    for (const hook of args.hooks ?? []) {
+      if (hook.text.length > 500 || !Number.isFinite(hook.editedAt) || hook.editedAt <= 0) throw new ConvexError("Invalid memory hook");
+      const stored = await ctx.db.query("hooks").withIndex("by_entry", q => q.eq("entryId", hook.entryId)).unique();
+      if (!stored) await ctx.db.insert("hooks", { ...hook, updatedAt });
+      else if (hook.editedAt > stored.editedAt) await ctx.db.patch(stored._id, { ...hook, updatedAt });
     }
     for (const review of args.reviews) {
       const stored = await ctx.db.query("reviews").withIndex("by_review", (q) => q.eq("reviewId", review.reviewId)).unique();
@@ -89,7 +96,7 @@ function sameSettings(a: Settings, b: Settings) {
   return (Object.keys(settingsFields) as (keyof Settings)[]).every((field) => a[field] === b[field]);
 }
 
-const tables = ["cards", "reviews", "entries", "sources", "buried", "settings"] as const;
+const tables = ["hooks", "cards", "reviews", "entries", "sources", "buried", "settings"] as const;
 type SyncTable = (typeof tables)[number] & keyof DataModel;
 
 /**
@@ -125,5 +132,25 @@ export const pull = query({
       continueCursor: result.continueCursor,
       serverTime: Date.now(),
     };
+  },
+});
+
+export const memoryHook = query({
+  args: { token: v.string(), entryId: v.string() },
+  handler: async (ctx, args) => {
+    requireToken(args.token);
+    return await ctx.db.query("hooks").withIndex("by_entry", q => q.eq("entryId", args.entryId)).unique();
+  },
+});
+export const saveMemoryHook = mutation({
+  args: { token: v.string(), entryId: v.string(), text: v.string() },
+  handler: async (ctx, args) => {
+    requireToken(args.token);
+    if (args.text.length > 500) throw new ConvexError("Use at most 500 characters");
+    const stored = await ctx.db.query("hooks").withIndex("by_entry", q => q.eq("entryId", args.entryId)).unique();
+    const now = Date.now();
+    const hook = { entryId: args.entryId, text: args.text.trim(), editedAt: Math.max(now, (stored?.editedAt ?? 0) + 1), updatedAt: now };
+    if (stored) await ctx.db.patch(stored._id, hook);
+    else await ctx.db.insert("hooks", hook);
   },
 });

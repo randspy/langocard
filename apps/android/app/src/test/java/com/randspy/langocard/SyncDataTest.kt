@@ -23,7 +23,7 @@ class SyncDataTest {
         val outbox = SyncData.outbox(from, today)
         // The server marks pushed entries as personal (it refuses any other new entry).
         val entries = outbox.entries.map { JSONObject(it.toString()).put("origin", "personal").put("retired", false) }
-        val rows = mapOf("cards" to outbox.cards, "reviews" to outbox.reviews, "entries" to entries,
+        val rows = mapOf("hooks" to outbox.hooks, "cards" to outbox.cards, "reviews" to outbox.reviews, "entries" to entries,
             "sources" to outbox.sources, "buried" to outbox.buried, "settings" to listOf(outbox.settings))
         SyncData.TABLES.forEach { table ->
             val local = to.getJSONArray("extraEntries").let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("id") } }

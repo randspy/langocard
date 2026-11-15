@@ -145,6 +145,17 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     var revision by mutableIntStateOf(0); private set
     var screen by androidx.compose.runtime.mutableStateOf("home"); private set
     var prompt by androidx.compose.runtime.mutableStateOf<Prompt?>(null); private set
+    var hookOffer by androidx.compose.runtime.mutableStateOf<Entry?>(null); private set
+    fun memoryHook(entryId: String): String = data.optJSONObject("hooks")?.optJSONObject(entryId)?.optString("text") ?: ""
+    fun dismissHook() { hookOffer = null }
+    fun saveMemoryHook(text: String) {
+        val entry = hookOffer ?: return
+        require(text.length <= 500)
+        val hooks = data.optJSONObject("hooks") ?: JSONObject().also { data.put("hooks", it) }
+        val clock = maxOf(System.currentTimeMillis(), (hooks.optJSONObject(entry.id)?.optLong("editedAt") ?: 0L) + 1)
+        hooks.put(entry.id, JSONObject().put("entryId", entry.id).put("text", text.trim()).put("editedAt", clock))
+        hookOffer = null; save()
+    }
     var sessionReviews by mutableIntStateOf(0); private set
     var sessionRecalled by mutableIntStateOf(0); private set
     var sessionSeconds by mutableIntStateOf(0); private set
@@ -385,7 +396,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         logs.put(JSONObject().put("key", p.key).put("placement", placing).put("log", result.reviewLog().toJson()))
         val missed = if (rating == Rating.AGAIN) failures.optInt(p.key) + 1 else 0
         failures.put(p.key, missed)
-        if (missed >= 4) { paused.put(p.key, System.currentTimeMillis() + 3 * 86400000L); failures.put(p.key, 0) }
+        if (StuckWords.needsHook(missed)) { hookOffer = p.entry; paused.put(p.key, System.currentTimeMillis() + 3 * 86400000L); failures.put(p.key, 0) }
         if (!placing) {
             // Bury siblings only: a failed card itself may return at its real FSRS due time.
             entries.filter { it.lexeme == p.entry.lexeme }.forEach { related ->
