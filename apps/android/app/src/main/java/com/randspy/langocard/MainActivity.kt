@@ -346,7 +346,7 @@ private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
 
 @Composable
 private fun VocabularyPlacementScreen(model: LearningModel) {
-    val answers = model.vocabularyAnswers
+    val answers = remember(model.revision) { model.vocabularyAnswers }
     val test = model.vocabularyPlacement
     Text("Vocabulary starting check", style = MaterialTheme.typography.headlineMedium)
     if (answers.size < test.items.size) {
