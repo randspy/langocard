@@ -72,6 +72,8 @@ object StudyPolicy {
     const val NEW_GENDER_CARDS = 10
     fun canIntroduce(overdue: Int, seconds: Int, introduced: Int) =
         overdue == 0 && seconds < DAILY_SECONDS && introduced < NEW_SENSES
+    /** Whether a session may show another card; checked between cards, so the card on screen is always finished. */
+    fun sessionOpen(placement: Boolean, seconds: Int) = placement || seconds < DAILY_SECONDS
     fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
 }
 
@@ -261,7 +263,6 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             lastTick += seconds * 1000L; rollover()
             sessionSeconds += seconds; data.put("seconds", spent + seconds); revision++
             if (sessionSeconds % 10 == 0) save()
-            if (!placing && spent >= StudyPolicy.DAILY_SECONDS) finish()
         }
     }
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
@@ -282,6 +283,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     /** [p] showing the meaning's next example, so each exposure meets the word in another sentence. */
     private fun shown(p: Prompt) = p.copy(example = p.entry.exampleAt(exposures(p.entry.id)))
     private fun next(audio: Boolean) {
+        if (!StudyPolicy.sessionOpen(placing, spent)) return finish()
         val chosen = choose(audio)
         if (chosen != null) prompt = shown(chosen)
         else { if (placing) data.put("placementDone", true); finish() }
@@ -305,7 +307,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
         val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
-        if (dueCount(audio) == 0 && sibling != null && spent < StudyPolicy.DAILY_SECONDS) return sibling
+        if (dueCount(audio) == 0 && sibling != null) return sibling
         if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"))) {
             return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull()
         }

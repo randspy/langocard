@@ -38,6 +38,13 @@ class PilotTest {
         assertFalse(StudyPolicy.canIntroduce(0, 0, 5))
     }
 
+    @Test fun `reaching the daily target mid-card ends the session at the next card, not before`() {
+        assertTrue(StudyPolicy.sessionOpen(placement = false, seconds = 899))
+        assertFalse(StudyPolicy.sessionOpen(placement = false, seconds = 900))
+        assertFalse(StudyPolicy.sessionOpen(placement = false, seconds = 1200))
+        assertTrue(StudyPolicy.sessionOpen(placement = true, seconds = 1200))
+    }
+
     @Test fun `FSRS survives serialization and skills remain independent`() {
         val now = Instant.parse("2026-11-11T12:00:00Z")
         val reading = Card.builder().cardId(1).due(now).build()
