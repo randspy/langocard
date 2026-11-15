@@ -125,7 +125,23 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private val paused = data.optJSONObject("paused") ?: JSONObject().also { data.put("paused", it) }
     /** Manual suspensions made in the web app (synced; this app only honours them). */
     private val suspended get() = data.optJSONObject("suspended") ?: JSONObject()
-    private val scheduler = Scheduler.builder().desiredRetention(0.9).build()
+    private var scheduler = fittedSettings()?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
+    private fun fittedSettings() = data.optJSONObject("fittedSettings")?.let { FittedSettings.parse(it.toString()) }
+    val schedulingDescription: String get() = fittedSettings()?.let {
+        "FSRS · ${(it.retention * 100).toInt()}% target recall · fitted with ${it.reviewCount} reviews on ${it.fitDate}"
+    } ?: "FSRS defaults · 90% target recall"
+    fun importFittedSettings(text: String) {
+        val fit = FittedSettings.parse(text)
+        val replacement = fit.scheduler()
+        data.put("fittedSettings", fit.toJson())
+        scheduler = replacement
+        save()
+    }
+    fun resetFittedSettings() {
+        data.remove("fittedSettings")
+        scheduler = Scheduler.builder().desiredRetention(0.9).build()
+        save()
+    }
     var revision by mutableIntStateOf(0); private set
     var screen by androidx.compose.runtime.mutableStateOf("home"); private set
     var prompt by androidx.compose.runtime.mutableStateOf<Prompt?>(null); private set
@@ -212,6 +228,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         replace(paused, restored.optJSONObject("paused") ?: JSONObject())
         val sync = data.optJSONObject("sync")
         replace(data, restored)
+        scheduler = fittedSettings()?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
         data.put("cards", cards).put("reviews", logs).put("buried", buried).put("failures", failures).put("paused", paused)
         // The restored progress is pushed again on the next sync; newer cloud reviews still win.
         data.put("sync", sync ?: JSONObject()); SyncData.reset(data)

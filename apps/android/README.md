@@ -80,7 +80,7 @@ The measured coverage and preparation pipeline are documented in
   one. See `../../docs/design/several-examples.md`.
   The pinned MIT-licensed `io.github.open-spaced-repetition:fsrs:1.0.0`
   ([Java-FSRS](https://github.com/open-spaced-repetition/java-fsrs)) schedules at
-  90% desired retention using default parameters. Model fitting is deferred.
+  90% desired retention using default parameters, or imported personal settings (see below).
 - The personal B2 default starts new ranked dictionary entries above rank 2,500.
   The packs page can change this to all ranks or 7,001+. This is a frequency
   preference, not a CEFR mapping or a claim that lower-ranked words are known.
@@ -211,6 +211,39 @@ source metadata, and verifies combined Anki prompts remain distinct. Without
 `--live-catalogue`, the wrapper runs only the offline device checks.
 Library browsing is paginated to avoid composing thousands of rows at once.
 Different meanings and skills of the same lemma are spaced across days.
+
+## Fit personal FSRS settings
+
+Save a backup, then run on a computer with Python 3.10 or newer:
+
+```sh
+python3 -m venv /tmp/langocard-fit
+/tmp/langocard-fit/bin/pip install -r tools/fsrs/requirements.txt
+/tmp/langocard-fit/bin/python tools/fsrs/fit.py backup.json params.json
+python3 -m unittest discover -s tools/fsrs -p 'test_*.py'
+```
+
+The pinned `fsrs[optimizer]==6.3.0` fits FSRS-6's 21 weights, the model used
+by java-fsrs 1.0.0. Placement reviews are included to preserve initial card
+histories. Card identity uses the backup key, rather than device-local numeric IDs.
+Duplicate synced reviews count once. At least 1,000 unique reviews are required, including 512 reviews at least 24 hours after the preceding review of the same card. Only each card's first 64 reviews count toward that training minimum, matching the pinned optimizer. First reviews and intraday retries still provide history but do not count as training evidence.
+A small or unrepresentative history can still give a poor fit.
+
+The JSON format is `format: "langocard-fsrs"`, `version: 1`, `parameters`
+(21 numbers), `desiredRetention` (a fraction), `reviewCount` and `fitDate`
+(an ISO 8601 timestamp with timezone). `optimizer` records the pinned implementation.
+Retention minimizes simulated time per remembered card over the optimizer's
+70%, 75%, 80%, 85%, 90%, 95% candidates. Current Android logs omit answer duration,
+so missing durations use a uniform 10 seconds. This is a model-based suggestion,
+not a measured personal learning-per-minute optimum. The optional
+`durationAssumption` field records this limitation. No data leaves the computer.
+
+Copy `params.json` to your phone and choose Backup → Load fitted FSRS settings.
+The page shows the active fit's review count, date and target recall. Reset FSRS
+to defaults restores the library's default weights and 90% target. Import and
+reset affect future reviews and rating-button previews; existing due dates are
+preserved. Settings persist locally and travel in backups, but are not cloud-synced.
+Restoring a backup without fitted settings restores defaults.
 
 ## Reading passages
 
