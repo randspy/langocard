@@ -255,7 +255,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun tick() {
         val now = android.os.SystemClock.elapsedRealtime()
         val seconds = ((now - lastTick) / 1000).toInt()
-        if (screen != "review") {
+        if (screen != "review" && !readingPassageActive) {
             if (seconds >= 60) { lastTick = now; rollover(); revision++ }
             return
         }
@@ -264,6 +264,18 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             sessionSeconds += seconds; data.put("seconds", spent + seconds); revision++
             if (sessionSeconds % 10 == 0) save()
         }
+    }
+    var readingPassageActive = false
+    /** Reading recall history supplies vocabulary without mutating scheduling. */
+    fun passageVocabulary(): PassageVocabulary {
+        val recalled = (0 until logs.length()).mapNotNull { index ->
+            val row = logs.getJSONObject(index)
+            val rating = io.github.openspacedrepetition.ReviewLog.fromJson(row.getString("log")).rating
+            row.optString("key").takeIf { rating != Rating.AGAIN }
+        }.toSet()
+        val known = entries.filter { "${it.id}:Reading" in recalled && memory.containsKey("${it.id}:Reading") }.take(100)
+        val due = prompts(false).filter { it.skill == Skill.Reading && state(it)?.due?.isAfter(Instant.now()) == false }.take(3).map { it.entry }
+        return PassageVocabulary(known, due)
     }
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
     fun persist() { save() }
