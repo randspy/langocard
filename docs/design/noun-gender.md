@@ -54,3 +54,39 @@ EntryContent += gender: "masculine" | "feminine" | null
    reports 0 updated).
 2. `npm run seed` (writes nothing new; the seed already carries gender).
 3. Install the new APK. Older APKs fail argument validation until updated.
+
+## Ending feedback
+
+After a Gender answer, the card shows the longest matching ending tendency and
+whether the entry's recorded gender follows it. It never changes grading or
+scheduling. Unknown gender, unmatched endings, and compound or multiword nouns
+show no hint. Article stripping includes both forms of elided `l'`.
+
+`NounEndings` holds a small reviewed table of common tendencies. We say
+"usually", never "always". The library audit is a regression check, not an
+estimate of reliability across all French nouns. In particular, this library
+has little evidence for `-ence`, `-sion`, `-ette` and `-isme`.
+
+`content/noun-ending-fixtures.json` shares the table, expected counts, and
+example matches with future clients. Unit tests audit all 200 pilot entries and
+all three published packs, deduplicating by noun and gender. Longest matching
+suffix owns each noun, so `-ation` is counted separately from `-tion`.
+
+| Ending | Expected gender | Following / matching nouns |
+| --- | --- | --- |
+| -ation | feminine | 18 / 18 |
+| -tion | feminine | 16 / 16 |
+| -sion | feminine | 2 / 2 |
+| -ence | feminine | 1 / 1 |
+| -ance | feminine | 8 / 8 |
+| -ette | feminine | 3 / 3 |
+| -ité | feminine | 6 / 6 |
+| -age | masculine | 11 / 12 |
+| -ment | masculine | 12 / 12 |
+| -isme | masculine | 1 / 1 |
+| -eau | masculine | 8 / 8 |
+
+The shipped exception is *une image*. Fixtures also cover *le silence* as an
+exception to `-ence`, elided nouns, unknown gender, Unicode normalization and
+unmatched endings. Counts must be reviewed when content changes. None of these
+small samples justifies an "always" claim, even when every shipped noun follows.

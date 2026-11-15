@@ -228,6 +228,11 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                         style = MaterialTheme.typography.titleMedium)
                 }
                 Text(p.entry.labelledWord, style = MaterialTheme.typography.headlineMedium)
+                if (p.skill == Skill.Gender) {
+                    NounEndings.match(p.entry.word, p.entry.gender)?.let { hint ->
+                        Text(hint.feedback, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
                 if (!p.example.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.example.answer}")
                 Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
                 Text(p.entry.definition)
