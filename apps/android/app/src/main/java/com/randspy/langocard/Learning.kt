@@ -70,10 +70,8 @@ object StudyPolicy {
     const val WIND_DOWN_SECONDS = 2 * 60
     const val CLEANUP_SECONDS = 2 * 60
     const val NEW_SENSES = 5
-    /** New Gender cards a day, counted apart from new meanings; they take seconds each. */
+    /** Standard daily Gender introductions, counted apart from new meanings. */
     const val NEW_GENDER_CARDS = 10
-    fun canIntroduce(overdue: Int, seconds: Int, introduced: Int, limit: Int) =
-        overdue == 0 && introductionsOpen(seconds, limit) && introduced < NEW_SENSES
     fun introductionsOpen(seconds: Int, limit: Int) = seconds < limit - WIND_DOWN_SECONDS
     /** Whether a session may show another card; checked between cards, so the card on screen is always finished. */
     fun sessionOpen(placement: Boolean, seconds: Int, limit: Int, cleanup: Boolean = false) =
@@ -82,7 +80,7 @@ object StudyPolicy {
 }
 
 /** What today's practice offers outside a session, once placement is done. */
-enum class NextPractice { Session, ExtraBlock, NothingLeft }
+enum class NextPractice { Session, ExtraBlock, MoreVocabulary, NothingLeft }
 
 class LearningModel(application: Application) : AndroidViewModel(application) {
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
@@ -194,20 +192,31 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     val spent: Int get() { rollover(); return data.optInt("seconds") }
     /** Today's block: the daily target, or the extra block picked after it. */
     val block: PracticeBlock get() = PracticeBlock.read(data, today(), spent)
-    /**
-     * [NextPractice.Session] while today's block has time left. Once it is used up,
-     * [NextPractice.ExtraBlock] if a new block would show a card, else [NextPractice.NothingLeft].
-     */
+    /** Offers a resume only when the current block can produce work; fresh grants never reuse usage. */
     fun nextPractice(audio: Boolean): NextPractice {
         val seconds = spent
-        if (seconds < block.end) return NextPractice.Session
-        // Every length opens the same gates at its first card, so the shortest answers for all.
-        val shortest = PracticeBlock.extra(seconds, ExtraMinutes.entries.first())
-        return if (choose(audio, shortest.end, SessionLearning()) != null) NextPractice.ExtraBlock else NextPractice.NothingLeft
+        val current = block
+        if (seconds < current.end && choose(audio, current, SessionLearning()) != null) return NextPractice.Session
+        if (seconds >= StudyPolicy.DAILY_SECONDS) {
+            val prospective = PracticeBlock.extra(seconds, ExtraMinutes.Five)
+            if (choose(audio, prospective, SessionLearning()) != null) return NextPractice.ExtraBlock
+        }
+        val unstarted = entries.any { entry -> entry.rank >= minimumRank && entry.id !in retired &&
+            Skill.entries.none { cards.has("${entry.id}:${it.name}") } }
+        val now = System.currentTimeMillis()
+        val genderOwners = genderOwners()
+        val temporarilyBlocked = entries.any { entry -> entry.skills.any { skill ->
+            val p = Prompt(entry, skill)
+            val relevant = (skill != Skill.Listening || audio) && (skill != Skill.Gender || entry.id in genderOwners)
+            val started = Skill.entries.any { cards.has("${entry.id}:${it.name}") }
+            val work = if (state(p) == null) started else state(p)!!.due?.isAfter(Instant.now()) == false
+            relevant && work && (buried.optString(p.key) == today() || paused.optLong(p.key) > now || suspended.optLong(p.key) > now)
+        } }
+        return if (unstarted || temporarilyBlocked) NextPractice.NothingLeft else NextPractice.MoreVocabulary
     }
     /** Starts an extra block of [length]; does nothing unless one is on offer, so a second tap is harmless. */
     fun startExtraBlock(length: ExtraMinutes, audio: Boolean) {
-        if (nextPractice(audio) != NextPractice.ExtraBlock) return
+        if (screen == "review" || nextPractice(audio) != NextPractice.ExtraBlock) return
         PracticeBlock.extra(spent, length).write(data, today()); save()
         start(placement = false, audio)
     }
@@ -370,18 +379,14 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
     }
     private fun next(audio: Boolean) {
-        val limit = block.end
-        if (!StudyPolicy.sessionOpen(placing, spent, limit, cleanup = true)) return finish()
-        val chosen = choose(audio, limit, sessionLearning)
+        val current = block
+        if (!StudyPolicy.sessionOpen(placing, spent, current.end, cleanup = true)) return finish()
+        val chosen = choose(audio, current, sessionLearning)
         if (chosen != null) prompt = shown(chosen)
         else { if (placing) data.put("placementDone", true); finish() }
     }
-    /**
-     * The card a study session shows next when today's practice ends at [limit] and [session]
-     * holds its learning cards, or null. Reads only, so [nextPractice] can ask what a new block
-     * would show by passing the empty queue that [start] leaves.
-     */
-    private fun choose(audio: Boolean, limit: Int, session: SessionLearning): Prompt? {
+    private fun choose(audio: Boolean, block: PracticeBlock, session: SessionLearning): Prompt? {
+        val limit = block.end
         val available = prompts(audio).filter { buried.optString(it.key) != today() }
         val cleanup = session.next(available.map { it.key }) { key ->
             memory[key]?.state != io.github.openspacedrepetition.State.REVIEW
@@ -393,19 +398,21 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         if (!StudyPolicy.introductionsOpen(spent, limit)) return cleanup
         // Existing senses gain additional skills on later days, before new senses.
         // Gender comes last, a few a day: it needs the meaning to be familiar first.
-        val genderRoom = data.optInt("genderIntroduced") < StudyPolicy.NEW_GENDER_CARDS
+        val genderRoom = block.genderRoom(data.optInt("genderIntroduced"))
         val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
             Skill.entries.any { cards.has("${p.entry.id}:${it.name}") } }.minByOrNull { it.skill == Skill.Gender }
-        if (dueCount(audio) == 0 && sibling != null) return sibling
-        if (StudyPolicy.canIntroduce(dueCount(audio), spent, data.optInt("introduced"), limit)) {
-            return available.filter { state(it) == null && it.skill != Skill.Gender && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
+        if (sibling != null) return sibling
+        if (block.meaningRoom(data.optInt("introduced"))) {
+            return available.filter { state(it) == null && it.skill != Skill.Gender && Skill.entries.none { skill -> cards.has("${it.entry.id}:${skill.name}") } && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
         }
         return cleanup
     }
     fun rate(rating: Rating, audio: Boolean) {
         val p = prompt ?: return
+        val activeBlock = block
+        val wasNewGender = p.skill == Skill.Gender && state(p) == null
         val wasNewSense = Skill.entries.none { cards.has("${p.entry.id}:${it.name}") }
-        if (p.skill == Skill.Gender && state(p) == null && !placing) data.put("genderIntroduced", data.optInt("genderIntroduced") + 1)
+        if (wasNewGender && !placing) data.put("genderIntroduced", data.optInt("genderIntroduced") + 1)
         val card = state(p) ?: MemoryCard.builder().cardId(nextCardId).build()
         if (state(p) == null) { nextCardId++; data.put("nextCardId", nextCardId) }
         val result = scheduler.reviewCard(card, rating)
@@ -422,6 +429,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             entries.filter { it.lexeme == p.entry.lexeme }.forEach { related ->
                 related.skills.filter { related.id != p.entry.id || it != p.skill }.forEach { buried.put("${related.id}:${it.name}", today()) }
             }
+            activeBlock.introduced(wasNewSense, wasNewGender).write(data, today())
             if (wasNewSense) data.put("introduced", data.optInt("introduced") + 1)
         } else {
             placementIndex++; data.put("placementIndex", placementIndex)

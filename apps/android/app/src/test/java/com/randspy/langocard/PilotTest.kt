@@ -30,14 +30,6 @@ class PilotTest {
         assertEquals("e:Reading", Prompt(entry, Skill.Reading, entry.examples[1]).key)
     }
 
-    @Test fun `backlog and daily budget block new vocabulary`() {
-        val limit = StudyPolicy.DAILY_SECONDS
-        assertTrue(StudyPolicy.canIntroduce(0, 779, 4, limit))
-        assertFalse(StudyPolicy.canIntroduce(1, 0, 0, limit))
-        assertFalse(StudyPolicy.canIntroduce(0, 900, 0, limit))
-        assertFalse(StudyPolicy.canIntroduce(0, 0, 5, limit))
-    }
-
     @Test fun `reaching the daily target mid-card ends the session at the next card, not before`() {
         val limit = StudyPolicy.DAILY_SECONDS
         assertTrue(StudyPolicy.sessionOpen(placement = false, seconds = 899, limit = limit))

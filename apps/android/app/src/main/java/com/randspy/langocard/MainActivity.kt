@@ -156,8 +156,11 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     if (model.suspendedCount > 0) Text("${model.suspendedCount} cards are suspended in the web app.")
                     if (!model.isPlacement) when (model.nextPractice(speech.available)) {
                         NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
+                        NextPractice.MoreVocabulary -> VocabularyNeeded { model.home(); destination = "packs" }
                         NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
-                        NextPractice.Session -> {}
+                        NextPractice.Session -> Button(onClick = { model.start(false, speech.available) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Resume practice")
+                        }
                     }
                     Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
                 }
@@ -178,6 +181,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                                     Text("Start a session")
                                 }
                                 NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
+                                NextPractice.MoreVocabulary -> VocabularyNeeded { model.home(); destination = "packs" }
                                 NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
                             }
                         }
@@ -198,7 +202,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                         OutlinedButton(onClick = settings) { Text("Open speech settings") }
                     }
                     Text("${model.bundledCount} built-in meanings from the Frequent French pack. Further packs are available in the menu.", style = MaterialTheme.typography.bodySmall)
-                    Text("${model.schedulingDescription} · up to 5 new meanings per day. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
+                    Text("${model.schedulingDescription} · Daily practice introduces up to 5 meanings; extra blocks add their own allowance. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -277,6 +281,12 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
         }
     }
     TextButton(onClick = { speech.stop(); model.finish() }) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+}
+
+@Composable
+private fun VocabularyNeeded(openPacks: () -> Unit) {
+    Text("No unstarted words remain in your selected frequency range. Browse vocabulary packs to add more.")
+    OutlinedButton(onClick = openPacks, modifier = Modifier.fillMaxWidth()) { Text("Vocabulary packs") }
 }
 
 @Composable
