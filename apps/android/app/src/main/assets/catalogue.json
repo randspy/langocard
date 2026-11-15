@@ -3,31 +3,31 @@
   "version": 1,
   "packs": [
     {
-      "id": "fr-source-frequent-2026-11-v1",
+      "id": "fr-core-frequent-2026-11-v1",
       "title": "Frequent French",
-      "description": "Selected meanings from frequency ranks 1–2,500.",
-      "meanings": 501,
-      "lemmas": 339,
-      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v2/content/fr-source-frequent-2026-11-v1.json",
-      "sha256": "1c0843944bfd54a50579b00a310411c28b2e1aa5152afc6b8e141d639a638c86"
+      "description": "Selected meanings from frequency ranks 103–2,500.",
+      "meanings": 2330,
+      "lemmas": 2330,
+      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v3/content/fr-core-frequent-2026-11-v1.json",
+      "sha256": "c9fa37b1c00040d14b66dfcbd4df31963c8cd9e42edbf9f1210756513e929b58"
     },
     {
-      "id": "fr-source-everyday-2026-11-v1",
+      "id": "fr-core-everyday-2026-11-v1",
       "title": "Everyday expansion",
       "description": "Selected meanings from frequency ranks 2,501–7,000.",
-      "meanings": 339,
-      "lemmas": 275,
-      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v2/content/fr-source-everyday-2026-11-v1.json",
-      "sha256": "c1afc7bd7385f52a39aa55f68368679ad9405b33fc73ed9eb53fad6dafcd0275"
+      "meanings": 4414,
+      "lemmas": 4414,
+      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v3/content/fr-core-everyday-2026-11-v1.json",
+      "sha256": "ded372a55aa8665a6da2b4622e2e96b4b5d3fdb4c9b72dd8eb640ac6d130d5b2"
     },
     {
-      "id": "fr-source-extended-2026-11-v1",
+      "id": "fr-core-extended-2026-11-v1",
       "title": "Beyond the everyday",
-      "description": "Selected meanings from frequency ranks 7,001–20,000.",
-      "meanings": 276,
-      "lemmas": 254,
-      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v2/content/fr-source-extended-2026-11-v1.json",
-      "sha256": "94582eb78c8171db9e0ef133b0b34086aeeb306646485c04600c7fefe25993ea"
+      "description": "Selected meanings from frequency ranks 7,001–20,765.",
+      "meanings": 13160,
+      "lemmas": 13160,
+      "url": "https://raw.githubusercontent.com/randspy/langocard/content-v3/content/fr-core-extended-2026-11-v1.json",
+      "sha256": "29c19b376bd2164396f650bdeeedcbeb6fb0231700c948a6f8a54874d15c6cfc"
     }
   ]
 }

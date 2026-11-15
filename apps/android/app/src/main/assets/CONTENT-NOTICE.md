@@ -1,10 +1,10 @@
-# French source-aligned content, version 2026-11-v1
+# French core content, version 2026-11-v1
 
-These packs are adaptations of French Wiktionary and Lexique, distributed under
+These packs adapt French Wiktionary and Lexique and are distributed under
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 The application code and personal review history are separate from this content.
 
-## Dictionary definitions, English equivalents, and examples
+## French definitions
 
 Credit: **French Wiktionary contributors**. Each entry retains its French Wiktionary
 page URL (`sourceUrl`); that page provides contributor history and edit attribution.
@@ -14,24 +14,26 @@ page URL (`sourceUrl`); that page provides contributor history and edit attribut
 - Reuse terms: https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use
 - Extracted using **Wiktextract**, Tatu Ylonen and contributors, via **Kaikki**:
   https://kaikki.org/dictionary/rawdata.html
-- Snapshot: 2026-10-01 dump, 2026-10-30 extraction as listed by Kaikki on 2026-11-12.
-- SHA256 of the exact compressed input is recorded in `audit.json`.
+- Snapshot: 2026-10-01 dump, 2026-10-30 extraction as listed by Kaikki on 2026-11-12
+  (`fr-extract.jsonl.gz`, SHA256
+  `61d27bfc4bef9eb8f19d6e280ebf310adb07196da41d2f5777ff5942bef66a28`).
 
-Changes: selected French entries and meaning labels; aligned English translations
-by a unique normalized French meaning-label/definition prefix; omitted unaligned
-translations, nested definitions, attributed quotation examples, marked uncommon
-forms and unsuitable examples. Added noun articles, marked one example gap, assigned
-IDs derived from the original word/POS/definition, and added frequency ranks.
-The source wording remains dictionary French and is not guaranteed to be a simple
-learner definition. IDs are stable for this pinned snapshot; upstream definition
-changes require an explicit ID migration rather than silent reidentification.
+Changes: selected one meaning per lemma and adapted its French definition; added
+`un`/`une` to nouns of a single gender. The source wording remains dictionary French
+and is not guaranteed to be a simple learner definition. `sourceSense` records which
+Wiktionary meaning an entry follows.
 
-Examples with citation/ref metadata are excluded. No third-party recordings are
-included; installed local French TTS supplies pronunciation on the device.
-Source alignment and format checks are not independent linguistic review. Known
-sample failures were excluded; further content corrections should preserve IDs
-and record the changed fields. Packs intentionally do not assert 20,000 usable
-study words. `ranked-lemmas.json` is a **frequency reference**, not a study deck.
+## English glosses and examples
+
+The English gloss and the example sentence of every entry, including its `{answer}`
+cloze, are machine-generated. They are not taken from Wiktionary and have not been
+independently reviewed by a French or English speaker. Format checks are not
+linguistic review. No third-party recordings are included; installed local French
+TTS supplies pronunciation on the device.
+
+Entry IDs are stable for this release; content corrections should preserve IDs and
+record the changed fields. `ranked-lemmas.json` is a **frequency reference**, not a
+study deck.
 
 ## Frequency backbone
 
@@ -39,6 +41,7 @@ Credit: **Boris New, Christophe Pallier and Lexique contributors**, including Ro
 Peereman, Sophie Dufour and Christian Lachaud.
 
 - Dataset: **Lexique 3.83**, https://www.lexique.org/databases/Lexique383/Lexique383.zip
+  (SHA256 `e181d132b3b0d3d87efc98d376968441b517353933011cebea5366321a6024e6`)
 - Publisher/license: https://openlexicon.fr/datasets-info/Lexique383/README-Lexique.html
 - License: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
 

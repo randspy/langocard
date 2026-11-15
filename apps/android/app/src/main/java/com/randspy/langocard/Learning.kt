@@ -82,15 +82,8 @@ object StudyPolicy {
 }
 
 class LearningModel(application: Application) : AndroidViewModel(application) {
-    private val pilot = application.assets.open("pilot.tsv").bufferedReader().useLines { lines ->
-        lines.filter { it.isNotBlank() }.map { line ->
-            // id|word|english|definition|topic|example|example…
-            val c = line.split('|'); require(c.size >= 6)
-            Entry(c[0], c[1], c[2], c[3], c.drop(5).map(::Example), c[4], gender = Gender.ofArticle(c[1]))
-        }.toList().also { require(it.size == 200 && it.map(Entry::id).distinct().size == 200) }
-    }
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
-    private val bundled = pilot + ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
+    private val bundled = ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
     val bundledCount get() = bundled.size
     private val file = AtomicFile(File(application.filesDir, "learning-v${ContentFiles.DATA_VERSION}.json"))
     private val data = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
@@ -163,9 +156,6 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     private var placing = false
     private val sessionLearning = SessionLearning()
     private var lastTick = android.os.SystemClock.elapsedRealtime()
-    private val placementEntries = listOf("pourtant", "un enjeu", "se méfier", "une intrigue", "mettre en œuvre", "fiable")
-        // Found by their shipped wording, then taken from the active library so web edits apply.
-        .map { word -> bundled.first { it.word == word }.let { b -> entries.firstOrNull { it.id == b.id } ?: b } }
     val placementDone get() = data.optBoolean("placementDone")
     val vocabularyPlacement = VocabularyPlacement(JSONArray(getApplication<Application>().assets.open("placement-items.json").bufferedReader().use { it.readText() }).let { a ->
         (0 until a.length()).map { i -> a.getJSONObject(i).let { PlacementItem(it.getString("word"), it.getInt("band")) } }
@@ -365,14 +355,6 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     /** The card to study next, or null when the session (or placement) is over. */
     private fun choose(audio: Boolean): Prompt? {
-        if (placing) {
-            while (placementIndex < 18) {
-                val p = Prompt(placementEntries[placementIndex % 6], Skill.placement[placementIndex / 6])
-                if (p.skill != Skill.Listening || audio) return p
-                placementIndex++ // unavailable audio remains unassessed, not marked known
-            }
-            return null
-        }
         val available = prompts(audio).filter { buried.optString(it.key) != today() }
         val cleanup = sessionLearning.next(available.map { it.key }) { key ->
             memory[key]?.state != io.github.openspacedrepetition.State.REVIEW

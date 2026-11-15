@@ -1,54 +1,169 @@
 #!/usr/bin/env python3
-"""Create versioned packs and a digest-pinned catalogue from the measured audit."""
-import argparse,hashlib,json
+"""Publish content/core-entries.json as rank-band packs and a digest-pinned catalogue.
+
+Rerun after editing the draft or NOTICE.md. The same input gives byte-identical output.
+"""
+import hashlib
+import json
+import re
 from pathlib import Path
-from prepare_pack import prepare
+from typing import NamedTuple
+from urllib.parse import quote
 
-ROOT=Path(__file__).resolve().parents[2]
-BASE='https://raw.githubusercontent.com/randspy/langocard/content-v2/content/'
-SOURCE=('French Wiktionary contributors via Kaikki/Wiktextract, dump 2026-10-01, extraction 2026-10-30; '
-        'https://kaikki.org/dictionary/rawdata.html; per-entry French Wiktionary URLs. '
-        'Frequency: Lexique 3.83, Boris New, Christophe Pallier and contributors, '
-        'https://openlexicon.fr/datasets-info/Lexique383/README-Lexique.html. '
-        'Adaptations: filtered definitions and examples, English sense alignment, noun articles, cloze markup, frequency ranks.')
-LICENSE='CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/; see NOTICE.md for attribution and modifications'
+ROOT = Path(__file__).resolve().parents[2]
+DRAFT = 'content/core-entries.json'
+NOTICE = 'content/NOTICE.md'
+ASSETS = 'apps/android/app/src/main/assets'
+BASE_URL = 'https://raw.githubusercontent.com/randspy/langocard/content-v3/content/'
+SOURCE = ('French definitions adapted from French Wiktionary contributors, https://fr.wiktionary.org/ '
+          '(per-entry sourceUrl), extracted with Wiktextract via Kaikki, https://kaikki.org/dictionary/rawdata.html. '
+          'Frequency ranks: Lexique 3.83, Boris New, Christophe Pallier and contributors, '
+          'https://openlexicon.fr/datasets-info/Lexique383/README-Lexique.html. '
+          'English glosses and example sentences are machine-generated and not independently reviewed. '
+          'Adaptations: one selected meaning per lemma, noun articles, cloze markup, frequency ranks.')
+LICENSE = 'CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/; see NOTICE.md for attribution and modifications'
+STATUS = ('French definitions source-aligned; English glosses and examples machine-generated; '
+          'not independently language-reviewed')
+
+MAX_BYTES = 20 * 1024 * 1024
+MAX_ENTRIES = 30000
+MAX_EXAMPLES = 5
+TOPICS = {'daily', 'culture', 'news'}
+ID = re.compile(r'[A-Za-z0-9_-]{1,100}')
+ONE_ANSWER = re.compile(r'[^{}]*\{[^{}]*\S[^{}]*\}[^{}]*')
 
 
-def publish(audit,out):
-    out.mkdir(parents=True,exist_ok=True)
-    pilot=prepare(ROOT/'apps/android/app/src/main/assets/pilot.tsv','Original pilot','Personal draft')['entries']
-    excluded={e['word'].removeprefix('un ').removeprefix('une ') for e in pilot}
-    rows=[json.loads(line) for line in (audit/'candidates.jsonl').read_text().splitlines()]
-    # Known source-quality failures found during the sample audit are not shipped.
-    rejected={'frw-2a17fcda27685276aed5','frw-70b85ca43846827de58d','frw-9bb19acfa42c9a277599','frw-4dabba405a41606d260e'}
-    rows=[e for e in rows if e['lemma'] not in excluded and e['id'] not in rejected]
-    bands=[(1,2500,'frequent','Frequent French'),(2501,7000,'everyday','Everyday expansion'),(7001,20000,'extended','Beyond the everyday')]
-    manifest=[]
-    for low,high,key,title in bands:
-        entries=[e for e in rows if low<=e['rank']<=high]
-        if not entries:continue
-        pack_id='fr-source-'+key+'-2026-11-v1'
-        pack=dict(format='langocard-pack',version=2,packId=pack_id,packVersion=2,source=SOURCE,license=LICENSE,
-                  status='source-aligned; not independently language-reviewed',entries=entries)
-        payload=(json.dumps(pack,ensure_ascii=False,indent=2)+'\n').encode()
-        assert len(payload)<20*1024*1024
-        filename=pack_id+'.json';(out/filename).write_bytes(payload)
-        manifest.append(dict(id=pack_id,title=title,description=f'Selected meanings from frequency ranks {low:,}–{high:,}.',
-                             meanings=len(entries),lemmas=len({e['lemma'] for e in entries}),url=BASE+filename,sha256=hashlib.sha256(payload).hexdigest()))
-    catalogue=dict(format='langocard-catalogue',version=1,packs=manifest)
-    (out/'catalogue.json').write_text(json.dumps(catalogue,ensure_ascii=False,indent=2)+'\n')
-    (ROOT/'apps/android/app/src/main/assets/catalogue.json').write_text(json.dumps(catalogue,ensure_ascii=False,indent=2)+'\n')
-    report=json.loads((audit/'audit.json').read_text())
-    report['published_senses']=len(rows);report['published_lemmas']=len({e['lemma'] for e in rows})
-    report['excluded_pilot_lemmas']=len(excluded);report['known_sample_rejections']=sorted(rejected)
-    (ROOT/'apps/android/app/src/main/assets/frequent-pack.json').write_bytes((out/(manifest[0]['id']+'.json')).read_bytes())
-    (ROOT/'apps/android/app/src/main/assets/CONTENT-NOTICE.md').write_bytes((out/'NOTICE.md').read_bytes())
-    (out/'audit.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
-    # The ranked reference list measures coverage; it is not counted as study cards.
-    reference=json.loads((audit/'ranked-lemmas.json').read_text())
-    (out/'ranked-lemmas.json').write_text('[\n'+',\n'.join(json.dumps(row,ensure_ascii=False,separators=(',',':')) for row in reference)+'\n]\n')
-    print(json.dumps(manifest,ensure_ascii=False,indent=2))
+class Band(NamedTuple):
+    key: str
+    title: str
+    low: int
+    high: int | None
 
-if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--audit',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'content')
-    a=p.parse_args();publish(a.audit,a.output)
+    @property
+    def pack_id(self):
+        return f'fr-core-{self.key}-2026-11-v1'
+
+    def holds(self, rank):
+        return self.low <= rank and (self.high is None or rank <= self.high)
+
+
+BANDS = (
+    Band('frequent', 'Frequent French', 103, 2500),
+    Band('everyday', 'Everyday expansion', 2501, 7000),
+    Band('extended', 'Beyond the everyday', 7001, None),
+)
+BUNDLED = BANDS[0]
+
+# A noun of either gender ("élève") has no single article to practise, so it gets no Gender card.
+NOUN_FORMS = {'m': ('un ', 'masculine'), 'f': ('une ', 'feminine'), 'm/f': ('', None)}
+
+
+class ContentError(ValueError):
+    pass
+
+
+def pack_entry(row):
+    """A draft row as the app reads it. `gender` is always written, because the app takes an absent one from the article."""
+    article, gender = NOUN_FORMS[row['gender']] if row['sourcePos'] == 'noun' else ('', None)
+    return {
+        'id': row['id'],
+        'word': article + row['word'],
+        'english': row['english'],
+        'definition': row['definition'],
+        'examples': [row['example']],
+        'topic': row['topic'],
+        'lemma': row['lemma'],
+        'rank': row['rank'],
+        'sourceUrl': 'https://fr.wiktionary.org/wiki/' + quote(row['lemma'].replace(' ', '_')) + '#fr',
+        'license': 'CC BY-SA 4.0',
+        'sourceSense': row['sourceSense'],
+        'sourcePos': row['sourcePos'],
+        'gender': gender,
+    }
+
+
+def band_of(rank):
+    band = next((band for band in BANDS if band.holds(rank)), None)
+    if band is None:
+        raise ContentError(f'Rank {rank} falls in no band')
+    return band
+
+
+def pack(band, entries):
+    return dict(format='langocard-pack', version=2, packId=band.pack_id, packVersion=2,
+                source=SOURCE, license=LICENSE, status=STATUS, entries=entries)
+
+
+def serialize(data):
+    return (json.dumps(data, ensure_ascii=False, indent=2) + '\n').encode()
+
+
+def entry_problem(entry):
+    """The first rule the app's importer would reject `entry` for, or None."""
+    examples = entry['examples']
+    if not ID.fullmatch(entry['id']):
+        return 'invalid ID'
+    if not all(text.strip() and len(text) <= 2000 for text in (entry['word'], entry['english'], entry['definition'], *examples)):
+        return 'blank or oversized field'
+    if entry['topic'] not in TOPICS:
+        return 'unknown topic'
+    if not 1 <= len(examples) <= MAX_EXAMPLES:
+        return f'expected 1–{MAX_EXAMPLES} examples'
+    if not all(ONE_ANSWER.fullmatch(example) for example in examples):
+        return 'each example needs exactly one {answer}'
+    if len({example.strip() for example in examples}) != len(examples):
+        return 'duplicate example'
+    return None
+
+
+def validate(packs):
+    """Raise ContentError for the first pack or entry the app would refuse; IDs must be unique across packs."""
+    ids = set()
+    for p in packs:
+        if not 0 < len(p['entries']) <= MAX_ENTRIES:
+            raise ContentError(f"{p['packId']}: expected 1–{MAX_ENTRIES} entries")
+        if len(serialize(p)) >= MAX_BYTES:
+            raise ContentError(f"{p['packId']}: pack reaches 20 MB")
+        for entry in p['entries']:
+            if entry['id'] in ids:
+                raise ContentError(f"{entry['id']}: duplicate ID")
+            ids.add(entry['id'])
+            if problem := entry_problem(entry):
+                raise ContentError(f"{entry['id']}: {problem}")
+
+
+def build(rows, notice):
+    """Every published file, keyed by repository path, from the draft rows and NOTICE.md bytes."""
+    by_band = {band: [] for band in BANDS}
+    for row in rows:
+        by_band[band_of(row['rank'])].append(pack_entry(row))
+    packs = [pack(band, entries) for band, entries in by_band.items()]
+    validate(packs)
+    files, listing = {}, []
+    for band, p in zip(BANDS, packs):
+        payload = serialize(p)
+        files[f'content/{band.pack_id}.json'] = payload
+        high = band.high or max(entry['rank'] for entry in p['entries'])
+        listing.append(dict(
+            id=band.pack_id, title=band.title,
+            description=f'Selected meanings from frequency ranks {band.low:,}–{high:,}.',
+            meanings=len(p['entries']), lemmas=len({entry['lemma'] for entry in p['entries']}),
+            url=f'{BASE_URL}{band.pack_id}.json', sha256=hashlib.sha256(payload).hexdigest()))
+    catalogue = serialize(dict(format='langocard-catalogue', version=1, packs=listing))
+    files['content/catalogue.json'] = catalogue
+    files[f'{ASSETS}/catalogue.json'] = catalogue
+    files[f'{ASSETS}/frequent-pack.json'] = files[f'content/{BUNDLED.pack_id}.json']
+    files[f'{ASSETS}/CONTENT-NOTICE.md'] = notice
+    return files
+
+
+def publish(root=ROOT):
+    files = build(json.loads((root / DRAFT).read_text()), (root / NOTICE).read_bytes())
+    for path, data in files.items():
+        (root / path).write_bytes(data)
+    return files
+
+
+if __name__ == '__main__':
+    for path, data in publish().items():
+        print(f'{path}  {len(data):,} bytes  sha256 {hashlib.sha256(data).hexdigest()}')
