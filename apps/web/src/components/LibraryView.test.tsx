@@ -10,7 +10,7 @@ const entries = [
   libraryEntry({ entryId: "a", word: "pourtant", english: "however", rank: 20,
     skills: { Reading: { due: NOW - DAY, state: "REVIEW", pausedUntil: 0, suspendedUntil: 0 } } }),
   libraryEntry({ entryId: "c", word: "une intrigue", english: "a plot", rank: 3000, gender: "feminine" }),
-  libraryEntry({ entryId: "b", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-source-extended-2026-11-v1", installed: false }),
+  libraryEntry({ entryId: "b", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-core-extended-2026-11-v1", installed: false }),
 ];
 
 function Harness({ initial = {} }: { initial?: LibrarySearch }) {
