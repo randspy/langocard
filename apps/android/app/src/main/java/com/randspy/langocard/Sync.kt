@@ -160,7 +160,11 @@ object SyncData {
             (sync.optInt(from).coerceAtMost(array.length()) until array.length()).map { map(array.getJSONObject(it)) }
         return Outbox(
             generation = sync.getInt("generation"),
-            hooks = (data.optJSONObject("hooks") ?: JSONObject()).let { h -> h.keys().asSequence().map { h.getJSONObject(it) }.toList() },
+            hooks = (data.optJSONObject("hooks") ?: JSONObject()).let { h -> h.keys().asSequence().map { key ->
+                val hook = h.getJSONObject(key)
+                JSONObject().put("entryId", hook.getString("entryId"))
+                    .put("text", hook.getString("text")).put("editedAt", hook.getLong("editedAt"))
+            }.toList() },
             cards = pending.keys().asSequence().filter(cards::has).map { key ->
                 JSONObject().put("key", key).put("card", cards.getString(key)).put("lastReview", pending.getLong(key))
                     .put("failures", failures.optInt(key)).put("pausedUntil", paused.optLong(key))
