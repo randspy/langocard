@@ -221,7 +221,7 @@ python3 -m unittest discover -s tools/fsrs -p 'test_*.py'
 The pinned `fsrs[optimizer]==6.3.0` fits FSRS-6's 21 weights, the model used
 by java-fsrs 1.0.0. Placement reviews are included to preserve initial card
 histories. Card identity uses the backup key, rather than device-local numeric IDs.
-Duplicate synced reviews count once. At least 1,000 unique reviews are required.
+Duplicate synced reviews count once. At least 1,000 unique reviews are required, including 512 reviews at least 24 hours after the preceding review of the same card. Only each card's first 64 reviews count toward that training minimum, matching the pinned optimizer. First reviews and intraday retries still provide history but do not count as training evidence.
 A small or unrepresentative history can still give a poor fit.
 
 The JSON format is `format: "langocard-fsrs"`, `version: 1`, `parameters`
