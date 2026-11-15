@@ -169,6 +169,20 @@ class SyncDataTest {
         assertTrue(data.getBoolean("placementDone"))
     }
 
+    @Test fun `the extra block is never pushed and a newer day from sync does not keep it alive`() {
+        val data = device().put("day", "2026-11-12").put("seconds", 900)
+        val withoutBlock = SyncData.outbox(JSONObject(data.toString()), "2026-11-12").settings
+        val block = PracticeBlock.extra(900, ExtraMinutes.Fifteen)
+        block.write(data, "2026-11-12")
+        assertEquals(withoutBlock.toString(), SyncData.outbox(data, "2026-11-12").settings.toString())
+        val row = JSONObject().put("placementDone", true).put("placementIndex", 0.0).put("nextCardId", 0.0).put("minimumRank", 2501.0)
+            .put("interests", "daily").put("preferencesChangedAt", 0.0).put("day", "2026-11-13").put("seconds", 950.0).put("introduced", 0.0)
+        SyncData.apply(data, "settings", listOf(row), ids)
+        assertEquals("2026-11-13", data.getString("day"))
+        assertEquals(block, PracticeBlock.read(data, "2026-11-12", 950))
+        assertEquals(PracticeBlock.DAILY, PracticeBlock.read(data, "2026-11-13", data.getInt("seconds")))
+    }
+
     @Test fun `deployment URL must be a bare https origin`() {
         assertEquals("https://happy-cat-123.convex.cloud", SyncConfig.normalize(" https://happy-cat-123.convex.cloud/ "))
         listOf("http://happy-cat-123.convex.cloud", "https://user@x.convex.cloud", "https://x.convex.cloud/api", "not a url").forEach {

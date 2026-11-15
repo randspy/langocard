@@ -24,6 +24,8 @@ class SessionCleanupTest {
                 val app = IsolatedApp(instrumentation.targetContext, folder)
                 val model = LearningModel(app)
                 model.skipPlacement()
+                // These session tests need eligible words from the bundled Frequent French pack.
+                model.setMinimumRank(1)
                 model.start(false, false)
                 val key = model.prompt!!.key
                 val data = JSONObject(model.backup()).getJSONObject("data")

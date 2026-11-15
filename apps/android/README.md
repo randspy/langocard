@@ -55,6 +55,12 @@ Use an `x86_64` system image on Intel hosts. The welcome screen also has an Andr
 
 ## Offline learning library
 
+After the daily 15-minute goal, the home and summary screens offer +5, +10 or +15
+minutes when eligible cards remain. Extra blocks keep due reviews first, the daily
+introduction caps, and the usual two-minute wind-down and cleanup. A partly used
+block can be resumed. The allowance stays on this device and expires with the day;
+actual practice time still syncs, and the daily goal stays at 15 minutes.
+
 The app bundles **2,330 meanings**, the Frequent French pack (frequency ranks
 103 to 2,500). The in-app catalogue offers two more packs (4,414 and 13,160
 meanings), bringing the installed total to **19,904 meanings**, one per lemma.
