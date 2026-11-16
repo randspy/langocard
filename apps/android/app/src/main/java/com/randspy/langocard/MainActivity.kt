@@ -11,11 +11,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.randspy.langocard.ui.theme.LangocardTheme
@@ -100,16 +104,9 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                             Text("MANAGE", modifier = Modifier.padding(start = 28.dp, bottom = 8.dp),
                                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        NavigationDrawerItem(
-                            label = { Text(label) }, selected = destination == id,
-                            colors = NavigationDrawerItemDefaults.colors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                selectedBadgeColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                            onClick = { if (id == "placement") model.openVocabularyPlacement() else destination = id; scope.launch { drawer.close() } },
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
-                            badge = if (id == "library") ({ Text(model.entries.size.toString()) }) else null,
-                        )
+                        DrawerRow(label, selected = destination == id, badge = if (id == "library") model.entries.size.toString() else null) {
+                            if (id == "placement") model.openVocabularyPlacement() else destination = id; scope.launch { drawer.close() }
+                        }
                     }
                 }
             }
@@ -204,6 +201,22 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
     }
 }
 
+}
+
+@Composable
+private fun DrawerRow(label: String, selected: Boolean, badge: String?, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val content = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant
+    Row(Modifier.fillMaxWidth().height(56.dp)
+        .drawBehind { if (selected) {
+            drawRect(colors.primaryContainer.copy(alpha = 0.45f))
+            drawRect(colors.primary, size = Size(4.dp.toPx(), size.height))
+        } }
+        .selectable(selected, role = Role.Tab, onClick = onClick)
+        .padding(horizontal = 28.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f), color = content, style = MaterialTheme.typography.bodyLarge)
+        badge?.let { Text(it, color = content, style = MaterialTheme.typography.bodyLarge) }
+    }
 }
 
 @Composable
