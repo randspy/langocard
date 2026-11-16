@@ -85,7 +85,6 @@ enum class NextPractice { Session, ExtraBlock, MoreVocabulary, NothingLeft }
 class LearningModel(application: Application) : AndroidViewModel(application) {
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
     private val bundled = ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
-    val bundledCount get() = bundled.size
     private val file = AtomicFile(File(application.filesDir, "learning-v${ContentFiles.DATA_VERSION}.json"))
     private val data = if (file.baseFile.exists() || File(file.baseFile.path + ".bak").exists()) {
         file.openRead().bufferedReader().use { JSONObject(it.readText()) }

@@ -165,8 +165,6 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
                 }
                 else -> {
-                    Text("A little French.\nEvery day.", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                    Text("Read, listen, and find the words to speak. Your daily target is 15 minutes.")
                     ElevatedCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("TODAY", style = MaterialTheme.typography.labelLarge)
@@ -196,13 +194,10 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                             FilterChip(selected = id in model.interests, onClick = { model.toggleInterest(id) }, label = { Text(label) })
                         }
                     }
-                    Text(speech.message, style = MaterialTheme.typography.bodySmall)
                     if (!speech.available) {
                         Text("Listening cards wait until an offline voice is available.")
                         OutlinedButton(onClick = settings) { Text("Open speech settings") }
                     }
-                    Text("${model.bundledCount} built-in meanings from the Frequent French pack. Further packs are available in the menu.", style = MaterialTheme.typography.bodySmall)
-                    Text("${model.schedulingDescription} · Daily practice introduces up to 5 meanings; extra blocks add their own allowance. Again means forgotten; Hard means recalled with difficulty.", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
