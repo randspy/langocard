@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.drop
+import java.text.CollationKey
 import java.text.Collator
 import java.util.Locale
 
@@ -33,20 +34,23 @@ fun Entry.matches(query: String): Boolean =
 private val french = Collator.getInstance(Locale.FRENCH).apply { strength = Collator.PRIMARY }
 
 /**
- * Not [Entry.lexeme], which keeps the "le", "la" or "l'" of a personal entry. Every pack entry has a lemma, so the
- * article regex runs only for personal entries. Running it on every comparison made A–Z take over a second on 20,000 entries.
+ * Sorts by the shown word without its article, not by [Entry.lemma]: pack lemmas also drop the "se" of reflexive
+ * verbs, which a personal entry keeps. Keys are built once per entry because the article regex inside a comparator
+ * made A–Z take over a second on 20,000 entries.
  */
-private val alphabetical: Comparator<Entry> = compareBy(french) { it.lemma.ifBlank { Gender.noun(it.word) } }
+internal class Sortable(val entry: Entry) { val key: CollationKey = french.getCollationKey(Gender.noun(entry.word)) }
+
+private val alphabetical = compareBy<Sortable> { it.key }
 
 /** A–Z ignores articles, accents and case. */
-enum class VocabularySort(val label: String, val order: Comparator<Entry>) {
+enum class VocabularySort(val label: String, internal val order: Comparator<Sortable>) {
     /** Most frequent first; personal entries have no rank, so they come last, A–Z. */
-    Frequency("Frequency", compareBy<Entry> { it.rank }.then(alphabetical)),
+    Frequency("Frequency", compareBy<Sortable> { it.entry.rank }.then(alphabetical)),
     Alphabetical("A–Z", alphabetical),
 }
 
 fun List<Entry>.browse(query: String, sort: VocabularySort): List<Entry> =
-    filter { it.matches(query) }.sortedWith(sort.order)
+    filter { it.matches(query) }.map(::Sortable).sortedWith(sort.order).map { it.entry }
 
 private val openIdsSaver = Saver<Set<String>, ArrayList<String>>(save = { ArrayList(it) }, restore = { it.toSet() })
 

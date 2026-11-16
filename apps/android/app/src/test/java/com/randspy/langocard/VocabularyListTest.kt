@@ -38,6 +38,11 @@ class VocabularyListTest {
             entries.browse("", VocabularySort.Alphabetical).words())
     }
 
+    @Test fun `A to Z files a reflexive verb under se whether it came from a pack or was added by hand`() {
+        val entries = listOf(entry("se demander", rank = 200, lemma = "demander"), entry("une table"), entry("se battre"), entry("partir", rank = 116, lemma = "partir"))
+        assertEquals(listOf("partir", "se battre", "se demander", "une table"), entries.browse("", VocabularySort.Alphabetical).words())
+    }
+
     @Test fun `a search keeps the chosen order`() {
         val entries = listOf(entry("une abeille", "a bee"), entry("partir", "to leave", rank = 116), entry("une table", "a table", rank = 900))
         assertEquals(listOf("une table", "une abeille"), entries.browse("ab", VocabularySort.Frequency).words())
