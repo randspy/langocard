@@ -3,7 +3,7 @@ package com.randspy.langocard
 import io.github.openspacedrepetition.Rating
 import java.text.Normalizer
 
-/** How a typed Production answer compares with the answer its sentence expects, and the rating that suggests. */
+/** How a typed gap-fill answer (Listening or Production) compares with the answer its sentence expects, and the rating that suggests. */
 enum class AnswerMatch(val suggested: Rating, val label: String) {
     /** The same answer, ignoring case, surrounding whitespace and the apostrophe style. */
     Exact(Rating.GOOD, "✓ Right"),
@@ -21,7 +21,7 @@ enum class AnswerMatch(val suggested: Rating, val label: String) {
 data class AnswerPart(val text: String, val marked: Boolean)
 
 /**
- * A learner's typed answer to a Production card, checked against the [Example.answer] of the
+ * A learner's typed answer to a Listening or Production gap-fill, checked against the [Example.answer] of the
  * shown sentence. It only suggests a rating: the learner can still choose another.
  */
 class TypedAnswer private constructor(typed: String, expected: String, noun: Boolean) {
