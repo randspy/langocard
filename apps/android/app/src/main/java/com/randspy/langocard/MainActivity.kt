@@ -84,7 +84,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
     /** The article chosen on a Gender card; choosing reveals the answer. */
     var chosen by remember(current?.key, model.sessionReviews) { mutableStateOf<Gender?>(null) }
     var typed by remember(current?.key, model.sessionReviews) { mutableStateOf("") }
-    val comparison = if (current?.skill == Skill.Production) TypedAnswer.of(typed, current.example, current.entry.gender != null) else null
+    val comparison = if (current?.skill?.fillsGap == true) TypedAnswer.of(typed, current.example, current.entry.gender != null) else null
     ModalNavigationDrawer(
         drawerState = drawer,
         gesturesEnabled = model.screen == "home",
@@ -227,12 +227,7 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                 }
                 Skill.Production -> {
                     Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
-                    Text(p.example.cloze, style = MaterialTheme.typography.titleLarge)
-                    if (!revealed) OutlinedTextField(value = typed, onValueChange = { type(it.take(200)) },
-                        label = { Text("Your answer (optional)") }, singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            autoCorrectEnabled = false, capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None))
+                    GapFill(p.example, revealed, typed, type)
                     Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
                 }
                 Skill.Gender -> {
@@ -241,7 +236,6 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                     Text("Un or une?", style = MaterialTheme.typography.bodySmall)
                 }
                 Skill.Listening -> {
-                    Text("Listen, then recall the meaning.", style = MaterialTheme.typography.titleLarge)
                     Button(onClick = play, enabled = speech.available) {
                         Text(if (played) "Play again" else "Play French sentence")
                     }
@@ -249,6 +243,8 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                         Text(speech.message)
                         TextButton(onClick = model::deferAudio) { Text("Continue without listening") }
                     }
+                    GapFill(p.example, revealed, typed, type)
+                    Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
                 }
             }
             if (revealed) {
@@ -276,6 +272,17 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
         }
     }
     TextButton(onClick = { speech.stop(); model.finish() }) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+}
+
+/** The example with its answer blanked out, and an optional field to type the missing French. */
+@Composable
+private fun GapFill(example: Example, revealed: Boolean, typed: String, type: (String) -> Unit) {
+    Text(example.cloze, style = MaterialTheme.typography.titleLarge)
+    if (!revealed) OutlinedTextField(value = typed, onValueChange = { type(it.take(200)) },
+        label = { Text("Your answer (optional)") }, singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            autoCorrectEnabled = false, capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None))
 }
 
 @Composable

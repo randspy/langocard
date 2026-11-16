@@ -86,6 +86,9 @@ See `../../docs/design/core-entries.md`.
   on the packs page. This is an unvalidated estimate, not a CEFR test.
   See `../../docs/design/placement-test.md` for scoring and licensing.
 - Reading, listening and sentence-gap production use distinct FSRS cards.
+  Listening plays the example and shows it with the target blanked out: the
+  learner fills the gap by ear (typing is optional and suggests a rating, as in
+  production), then recalls the meaning.
   Nouns also get a Gender card (choose *un* or *une*, graded by the app: right is
   Good, wrong is Again), for one meaning per noun. Gender cards arrive as a sibling
   skill on a later day, at most ten during standard daily practice. In production, the right word
