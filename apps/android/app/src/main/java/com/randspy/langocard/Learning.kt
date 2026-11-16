@@ -208,7 +208,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val genderOwners = genderOwners()
         val temporarilyBlocked = entries.any { entry -> entry.skills.any { skill ->
             val p = Prompt(entry, skill)
-            val relevant = (skill != Skill.Listening || audio) && (skill != Skill.Gender || entry.id in genderOwners)
+            val relevant = studiable(p, audio, genderOwners)
             val started = Skill.entries.any { cards.has("${entry.id}:${it.name}") }
             val work = if (state(p) == null) started else state(p)!!.due?.isAfter(Instant.now()) == false
             relevant && work && (buried.optString(p.key) == today() || paused.optLong(p.key) > now || suspended.optLong(p.key) > now)
@@ -227,13 +227,15 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun state(p: Prompt): MemoryCard? = memory[p.key]
     /** Meanings whose Gender card is studied; see [GenderCards]. */
     private fun genderOwners() = GenderCards.owners(entries) { memory[it]?.cardId }
+    /** Whether [p] belongs in practice at all, before pausing, suspending, burying and scheduling. */
+    private fun studiable(p: Prompt, audio: Boolean, genderOwners: Set<String>) =
+        (p.skill != Skill.Listening || audio && !listeningMuted) && (p.skill != Skill.Gender || p.entry.id in genderOwners)
     /** Every card that could be studied now, before burying and scheduling. */
     private fun prompts(audio: Boolean): List<Prompt> {
         val owners = genderOwners()
         val now = System.currentTimeMillis()
         return entries.flatMap { e -> e.skills.map { Prompt(e, it) } }.filter { p ->
-            (p.skill != Skill.Listening || audio) && (p.skill != Skill.Gender || p.entry.id in owners) &&
-                paused.optLong(p.key) <= now && suspended.optLong(p.key) <= now
+            studiable(p, audio, owners) && paused.optLong(p.key) <= now && suspended.optLong(p.key) <= now
         }
     }
     fun dueCount(audio: Boolean): Int = prompts(audio).count { p -> state(p)?.due?.let { !it.isAfter(Instant.now()) } == true }
@@ -354,7 +356,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
     fun persist() { save() }
     fun finish() { screen = "summary"; prompt = null; save(); sync() }
-    fun home() { screen = "home"; prompt = null; save() }
+    fun home() { screen = "home"; prompt = null; listeningMuted = false; save() }
     fun skipPlacement() { data.put("placementDone", true); placing = false; home() }
     val isPlacement get() = placing
     /**
@@ -440,7 +442,13 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
         save(); next(audio)
     }
-    fun deferAudio() { if (prompt?.skill == Skill.Listening) next(false) }
+    /** Set for the rest of the sitting, until [home]; skipping leaves the card's schedule untouched. */
+    var listeningMuted by androidx.compose.runtime.mutableStateOf(false); private set
+    fun muteListening() {
+        listeningMuted = true
+        if (prompt?.skill == Skill.Listening) next(audio = false)
+    }
+    fun unmuteListening() { listeningMuted = false }
     fun interval(rating: Rating): String {
         val p = prompt ?: return ""
         val card = state(p) ?: MemoryCard.builder().cardId(nextCardId).build()

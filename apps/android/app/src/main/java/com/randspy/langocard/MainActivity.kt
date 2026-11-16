@@ -229,6 +229,10 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
         block.isExtra -> "EXTRA PRACTICE · ${block.minutesIn(model.spent)} / ${block.minutes} min"
         else -> "DAILY PRACTICE · ${model.spent / 60} / 15 min"
     }, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+    if (model.listeningMuted) Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Text("Listening paused ·", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextButton(onClick = model::unmuteListening) { Text("Turn back on") }
+    }
     Text(p.skill.label, style = MaterialTheme.typography.headlineLarge)
     ElevatedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -252,10 +256,8 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                     Button(onClick = play, enabled = speech.available) {
                         Text(if (played) "Play again" else "Play French sentence")
                     }
-                    if (!speech.available) {
-                        Text(speech.message)
-                        TextButton(onClick = model::deferAudio) { Text("Continue without listening") }
-                    }
+                    if (!speech.available) Text(speech.message)
+                    TextButton(onClick = model::muteListening) { Text("Can't listen now: skip listening this session") }
                     GapFill(p.example, revealed, typed, type)
                     Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
                 }
