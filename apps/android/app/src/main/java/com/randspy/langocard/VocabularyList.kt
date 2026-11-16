@@ -83,7 +83,7 @@ fun VocabularyList(entries: List<Entry>, speech: FrenchSpeech, modifier: Modifie
         if (visible.isEmpty() && query.isNotBlank()) {
             Text("No words match \"$query\"", Modifier.padding(top = 16.dp))
             TextButton(onClick = { query = "" }) { Text("Clear search") }
-        } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list) {
+        } else LazyColumn(Modifier.weight(1f).fillMaxWidth().imePadding(), state = list) {
             itemsIndexed(visible, key = { _, entry -> entry.id }) { index, entry ->
                 if (index > 0) HorizontalDivider()
                 VocabularyRow(entry, entry.id in openIds, { openIds = if (entry.id in openIds) openIds - entry.id else openIds + entry.id }, speech)

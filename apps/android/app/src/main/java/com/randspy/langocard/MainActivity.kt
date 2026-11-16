@@ -124,7 +124,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         }
     }) { padding ->
         val shown = if (model.screen == "home") destination else model.screen
-        Column(Modifier.fillMaxSize().padding(padding).then(if (shown == "library") Modifier else Modifier.verticalScroll(scroll)).padding(24.dp),
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).then(if (shown == "library") Modifier else Modifier.verticalScroll(scroll)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
