@@ -123,7 +123,8 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                 reveal = { revealed = true }, comparison = comparison)
         }
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll).padding(24.dp),
+        val shown = if (model.screen == "home") destination else model.screen
+        Column(Modifier.fillMaxSize().padding(padding).then(if (shown == "library") Modifier else Modifier.verticalScroll(scroll)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -137,11 +138,11 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                 }
                 SyncIndicator(model, onClick = if (model.screen == "home") ({ destination = "sync" }) else null)
             }
-            when (if (model.screen == "home") destination else model.screen) {
-                "library", "add", "packs", "backup", "sync", "export", "sources" -> {
+            when (shown) {
+                "library" -> VocabularyList(model.entries, speech, Modifier.weight(1f))
+                "add", "packs", "backup", "sync", "export", "sources" -> {
                     Text(destinations.getValue(destination), style = MaterialTheme.typography.headlineMedium)
                     if (destination == "sources") ContentSources()
-                    else if (destination == "library") Library(model, speech, alwaysOpen = true)
                     else key(destination) { LibraryTools(model, destination) }
                 }
                 "vocabularyPlacement" -> VocabularyPlacementScreen(model)
@@ -355,39 +356,6 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed:
                 Text("Suggested ${comparison.match.suggested.name.lowercase()}. Change it if needed.", style = MaterialTheme.typography.bodySmall)
                 Button(onClick = { selected?.let { speech.stop(); model.rate(it, speech.available) } },
                     modifier = Modifier.fillMaxWidth()) { Text("Confirm rating") }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Library(model: LearningModel, speech: FrenchSpeech, alwaysOpen: Boolean = false) {
-    var expanded by remember { mutableStateOf(alwaysOpen) }
-    var search by remember { mutableStateOf("") }
-    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-    if (!alwaysOpen) TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Close library" else "Browse library") }
-    if (expanded) {
-        OutlinedTextField(value = search, onValueChange = { search = it }, label = { Text("French or English") }, modifier = Modifier.fillMaxWidth())
-        val matches = model.entries.filter { it.word.contains(search, true) || it.english.contains(search, true) }
-        var page by remember(search) { mutableIntStateOf(0) }
-        val shownPage = page.coerceAtMost((matches.size - 1).coerceAtLeast(0) / 50)
-        Text("${matches.size} meanings found", style = MaterialTheme.typography.bodySmall)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(enabled = shownPage > 0, onClick = { page = shownPage - 1 }) { Text("Previous") }
-            TextButton(enabled = (shownPage + 1) * 50 < matches.size, onClick = { page = shownPage + 1 }) { Text("Next 50") }
-        }
-        matches.drop(shownPage * 50).take(50).forEach { entry ->
-            HorizontalDivider()
-            Text(entry.labelledWord, style = MaterialTheme.typography.titleMedium)
-            Text(entry.english)
-            Text(entry.definition)
-            entry.examples.forEach { example ->
-                Text(example.text)
-                if (speech.available) TextButton(onClick = { speech.say(example.text) }) { Text("Listen") }
-            }
-            if (entry.sourceUrl.isNotBlank()) {
-                Text("Frequency rank ${entry.rank} · ${entry.license}", style = MaterialTheme.typography.bodySmall)
-                TextButton(onClick = { uriHandler.openUri(entry.sourceUrl) }) { Text("Dictionary source") }
             }
         }
     }
