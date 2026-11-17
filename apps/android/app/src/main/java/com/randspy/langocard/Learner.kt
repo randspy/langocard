@@ -5,6 +5,7 @@ import io.github.openspacedrepetition.Rating
 import io.github.openspacedrepetition.ReviewLog
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.Instant
 
 /**
  * What this device has saved about the learner: FSRS cards and the answers behind them, burials,
@@ -77,6 +78,15 @@ class Learner(val document: JSONObject) {
     /** Consecutive failed answers to [key]. */
     fun failures(key: String) = failureStreaks.optInt(key)
     fun setFailures(key: String, count: Int) { failureStreaks.put(key, count) }
+    /** Four consecutive misses pause this card for three days and offer a memory hook. */
+    fun recordRecall(key: String, rating: Rating, now: Instant): Boolean {
+        val missed = if (rating == Rating.AGAIN) failures(key) + 1 else 0
+        setFailures(key, missed)
+        if (!StuckWords.needsHook(missed)) return false
+        pause(key, now.toEpochMilli() + 3 * 86400000L)
+        setFailures(key, 0)
+        return true
+    }
     fun pausedUntil(key: String) = paused.optLong(key)
     fun pause(key: String, until: Long) { paused.put(key, until) }
     fun isPausedOrSuspended(key: String, now: Long) = paused.optLong(key) > now || suspended.optLong(key) > now

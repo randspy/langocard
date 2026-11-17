@@ -16,74 +16,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 
-/**
- * A French sentence that uses a meaning, with exactly one marked answer: "Il pleut, {pourtant} elle sort."
- * The answer is the word as this sentence uses it, so it may be an inflected form.
- * Mirrors `answerOf`, `textOf` and `clozeOf` in `apps/backend/convex/entryRules.ts`.
- */
-data class Example(val marked: String) {
-    val answer get() = marked.substringAfter("{").substringBefore("}")
-    /** The sentence as read or spoken, without the answer marks. */
-    val text get() = marked.replace("{", "").replace("}", "")
-    /** The sentence with the answer replaced by a gap, as Production shows it. */
-    val cloze get() = marked.replace("{$answer}", "________")
-    override fun toString() = marked
-}
-
-/**
- * IDs identify meanings; changing examples must never change scheduling identity.
- * [examples] holds 1 to [ContentFiles.MAX_EXAMPLES] sentences; the first is the introductory example.
- */
-data class Entry(val id: String, val word: String, val english: String, val definition: String,
-                 val examples: List<Example>, val topic: String,
-                 val lemma: String = "", val rank: Int = Int.MAX_VALUE,
-                 val sourceUrl: String = "", val license: String = "", val gender: Gender? = null) {
-    val lexeme get() = lemma.ifBlank { word.removePrefix("un ").removePrefix("une ") }
-    /** The skills this entry has cards for: Gender only for nouns. */
-    val skills get() = if (gender == null) Skill.entries - Skill.Gender else Skill.entries
-    /** [word] with its gender tag for nouns: "une intrigue (f.)". */
-    val labelledWord get() = gender?.let { "$word (${it.tag})" } ?: word
-    /**
-     * The example a meaning shows after [exposures] reviews: they rotate in order, starting
-     * from the introductory example. Mirrors `exampleAt` in `entryRules.ts`.
-     */
-    fun exampleAt(exposures: Int): Example = examples[exposures % examples.size]
-    /** How the learning file, sync and backups name this meaning's [skill] card: "<id>:<Skill>". */
-    fun cardKey(skill: Skill) = "$id:${skill.name}"
-}
-enum class Skill(val label: String) {
-    Reading("Read"), Listening("Listen"), Production("Speak"),
-    /** Choosing un or une for a noun; graded by the app, not the learner. */
-    Gender("Gender");
-    /** Whether the card shows its example as a gap-fill the learner can answer by typing. */
-    val fillsGap get() = this == Listening || this == Production
-    companion object {
-        /** The placement check samples these; Gender isn't part of it. */
-        val placement = listOf(Reading, Listening, Production)
-    }
-}
-/** One card to study, with the [example] it shows. The example never affects the card's [key]. */
-data class Prompt(val entry: Entry, val skill: Skill, val example: Example = entry.examples.first()) {
-    val key get() = entry.cardKey(skill)
-}
-
-object StudyPolicy {
-    const val DAILY_SECONDS = 15 * 60
-    const val WIND_DOWN_SECONDS = 2 * 60
-    const val CLEANUP_SECONDS = 2 * 60
-    const val NEW_SENSES = 5
-    /** Standard daily Gender introductions, counted apart from new meanings. */
-    const val NEW_GENDER_CARDS = 10
-    fun introductionsOpen(seconds: Int, limit: Int) = seconds < limit - WIND_DOWN_SECONDS
-    /** Whether a session may show another card; checked between cards, so the card on screen is always finished. */
-    fun sessionOpen(placement: Boolean, seconds: Int, limit: Int, cleanup: Boolean = false) =
-        placement || seconds < limit + (if (cleanup) CLEANUP_SECONDS else 0)
-    fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
-}
-
-/** What today's practice offers outside a session, once placement is done. */
-enum class NextPractice { Session, ExtraBlock, MoreVocabulary, NothingLeft }
-
 class LearningModel(application: Application) : AndroidViewModel(application) {
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
     private val bundled = ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
@@ -170,23 +102,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     val block: PracticeBlock get() = PracticeBlock.read(learner.document, today(), spent)
     /** Offers a resume only when the current block can produce work; fresh grants never reuse usage. */
     fun nextPractice(audio: Boolean): NextPractice {
-        val seconds = spent
         val current = block
-        if (seconds < current.end && choose(audio, current, SessionLearning()) != null) return NextPractice.Session
-        if (seconds >= StudyPolicy.DAILY_SECONDS) {
-            val prospective = PracticeBlock.extra(seconds, ExtraMinutes.Five)
-            if (choose(audio, prospective, SessionLearning()) != null) return NextPractice.ExtraBlock
-        }
-        val unstarted = entries.any { entry -> entry.rank >= minimumRank && entry.id !in retired && !learner.started(entry) }
-        val now = System.currentTimeMillis()
-        val genderOwners = genderOwners()
-        val temporarilyBlocked = entries.any { entry -> entry.skills.any { skill ->
-            val p = Prompt(entry, skill)
-            val relevant = studiable(p, audio, genderOwners)
-            val work = if (state(p) == null) learner.started(entry) else state(p)!!.due?.isAfter(Instant.now()) == false
-            relevant && work && (learner.isBuried(p.key, today()) || learner.isPausedOrSuspended(p.key, now))
-        } }
-        return if (unstarted || temporarilyBlocked) NextPractice.NothingLeft else NextPractice.MoreVocabulary
+        val now = Instant.now()
+        return studyRules.nextPractice(audio && !listeningMuted, current, now, StudyPolicy.date(now))
     }
     /** Starts an extra block of [length]; does nothing unless one is on offer, so a second tap is harmless. */
     fun startExtraBlock(length: ExtraMinutes, audio: Boolean) {
@@ -198,20 +116,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     val pausedCount get() = learner.pausedCount(System.currentTimeMillis())
     val suspendedCount get() = learner.suspendedCount(System.currentTimeMillis())
     fun state(p: Prompt): MemoryCard? = learner.card(p.key)
-    /** Meanings whose Gender card is studied; see [GenderCards]. */
-    private fun genderOwners() = GenderCards.owners(entries) { learner.card(it)?.cardId }
-    /** Whether [p] belongs in practice at all, before pausing, suspending, burying and scheduling. */
-    private fun studiable(p: Prompt, audio: Boolean, genderOwners: Set<String>) =
-        (p.skill != Skill.Listening || audio && !listeningMuted) && (p.skill != Skill.Gender || p.entry.id in genderOwners)
-    /** Every card that could be studied now, before burying and scheduling. */
-    private fun prompts(audio: Boolean): List<Prompt> {
-        val owners = genderOwners()
-        val now = System.currentTimeMillis()
-        return entries.flatMap { e -> e.skills.map { Prompt(e, it) } }.filter { p ->
-            studiable(p, audio, owners) && !learner.isPausedOrSuspended(p.key, now)
-        }
-    }
-    fun dueCount(audio: Boolean): Int = prompts(audio).count { p -> state(p)?.due?.let { !it.isAfter(Instant.now()) } == true }
+    private val studyRules get() = StudyRules(entries, learner, retired)
+    fun dueCount(audio: Boolean): Int = studyRules.dueCount(audio && !listeningMuted, Instant.now())
     private fun save() { store.save(learner); revision++ }
     fun backup(): String {
         persist()
@@ -284,7 +190,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun passageVocabulary(): PassageVocabulary {
         val recalled = learner.reviews.filter { it.rating != Rating.AGAIN }.map { it.key }.toSet()
         val known = entries.filter { it.cardKey(Skill.Reading).let { key -> key in recalled && learner.card(key) != null } }.take(100)
-        val due = prompts(false).filter { it.skill == Skill.Reading && state(it)?.due?.isAfter(Instant.now()) == false }.take(3).map { it.entry }
+        val now = Instant.now()
+        val due = studyRules.prompts(false, now).filter { it.skill == Skill.Reading && state(it)?.due?.isAfter(now) == false }.take(3).map { it.entry }
         return PassageVocabulary(known, due)
     }
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
@@ -293,54 +200,14 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun home() { screen = "home"; prompt = null; listeningMuted = false; save() }
     fun skipPlacement() { learner.placementDone = true; placing = false; home() }
     val isPlacement get() = placing
-    /**
-     * How many times the meaning has been shown in a sentence: its logged Reading, Listening
-     * and Production reviews, placement and other devices' reviews included. Gender cards
-     * show no sentence, so they don't count.
-     */
-    private fun exposures(entry: Entry): Int {
-        val shown = Skill.placement.map { entry.cardKey(it) }.toSet()
-        return learner.reviews.count { it.key in shown }
-    }
-    /** [p] showing the meaning's next example, so each exposure meets the word in another sentence. */
-    private fun shown(p: Prompt): Prompt {
-        val count = exposures(p.entry)
-        val until = learner.pausedUntil(p.key)
-        val returning = until > 0 && until <= System.currentTimeMillis() &&
-            (state(p)?.lastReview?.toEpochMilli() ?: 0L) < until
-        val recent = if (returning) learner.reviews.filter { it.key == p.key }
-            .sortedBy { it.reviewedAt }.takeLast(4)
-            .mapNotNull { it.example.takeIf(String::isNotBlank) } else emptyList()
-        return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
-    }
     private fun next(audio: Boolean) {
         val current = block
         if (!StudyPolicy.sessionOpen(placing, spent, current.end, cleanup = true)) return finish()
-        val chosen = choose(audio, current, sessionLearning)
-        if (chosen != null) prompt = shown(chosen)
+        val now = Instant.now()
+        val rules = studyRules
+        val chosen = rules.choose(audio && !listeningMuted, current, sessionLearning, now, StudyPolicy.date(now))
+        if (chosen != null) prompt = rules.shown(chosen, now)
         else { if (placing) learner.placementDone = true; finish() }
-    }
-    private fun choose(audio: Boolean, block: PracticeBlock, session: SessionLearning): Prompt? {
-        val limit = block.end
-        val available = prompts(audio).filter { !learner.isBuried(it.key, today()) }
-        val cleanup = session.next(available.map { it.key }) { key ->
-            learner.card(key)?.state != io.github.openspacedrepetition.State.REVIEW
-        }?.let { key -> available.first { it.key == key } }
-        if (spent >= limit) return cleanup
-        val due = available.filter { state(it)?.due?.let { date -> !date.isAfter(Instant.now()) } == true }
-            .minByOrNull { state(it)!!.due }
-        if (due != null) return due
-        if (!StudyPolicy.introductionsOpen(spent, limit)) return cleanup
-        // Existing senses gain additional skills on later days, before new senses.
-        // Gender comes last, a few a day: it needs the meaning to be familiar first.
-        val genderRoom = block.genderRoom(learner.genderIntroduced)
-        val sibling = available.filter { p -> state(p) == null && (p.skill != Skill.Gender || genderRoom) &&
-            learner.started(p.entry) }.minByOrNull { it.skill == Skill.Gender }
-        if (sibling != null) return sibling
-        if (block.meaningRoom(learner.introduced)) {
-            return available.filter { state(it) == null && it.skill != Skill.Gender && !learner.started(it.entry) && it.entry.rank >= minimumRank && it.entry.id !in retired }.sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 + if (it.entry.topic in interests) 0 else 50 }.firstOrNull() ?: cleanup
-        }
-        return cleanup
     }
     fun rate(rating: Rating, audio: Boolean) {
         val p = prompt ?: return
@@ -352,20 +219,15 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val result = scheduler.reviewCard(card, rating)
         if (!placing) sessionLearning.reviewed(p.key, state(p) == null, rating)
         learner.answered(p.key, result.card(), result.reviewLog(), p.example, placing)
-        val missed = if (rating == Rating.AGAIN) learner.failures(p.key) + 1 else 0
-        learner.setFailures(p.key, missed)
-        if (StuckWords.needsHook(missed)) { hookOffer = p.entry; learner.pause(p.key, System.currentTimeMillis() + 3 * 86400000L); learner.setFailures(p.key, 0) }
+        val now = Instant.now()
+        val day = StudyPolicy.date(now)
+        if (learner.recordRecall(p.key, rating, now)) hookOffer = p.entry
+        studyRules.siblingsToBury(p, placing).forEach { learner.bury(it, day) }
         if (!placing) {
-            // Bury siblings only: a failed card itself may return at its real FSRS due time.
-            entries.filter { it.lexeme == p.entry.lexeme }.forEach { related ->
-                related.skills.filter { related.id != p.entry.id || it != p.skill }.forEach { learner.bury(related.cardKey(it), today()) }
-            }
-            activeBlock.introduced(wasNewSense, wasNewGender).write(learner.document, today())
+            activeBlock.introduced(wasNewSense, wasNewGender).write(learner.document, day)
             if (wasNewSense) learner.introduced++
         } else {
             placementIndex++; learner.placementIndex = placementIndex
-            // Placement starts the noun, so its Gender card waits for a later day like any sibling.
-            if (p.entry.gender != null) learner.bury(p.entry.cardKey(Skill.Gender), today())
         }
         sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
         save(); next(audio)
