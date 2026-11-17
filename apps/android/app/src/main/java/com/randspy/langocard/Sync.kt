@@ -27,6 +27,8 @@ object SyncData {
 
     /** Bookkeeping kept in the learning file so it's written atomically with the data it tracks. */
     fun state(data: JSONObject): JSONObject = data.optJSONObject("sync") ?: reset(data)
+    /** Counts restores, so a sync that started before one can tell and stop. */
+    fun generation(data: JSONObject): Int = state(data).getInt("generation")
 
     /** Marks everything local as unsent and pulls everything again (first sync, after restore). */
     fun reset(data: JSONObject): JSONObject {
