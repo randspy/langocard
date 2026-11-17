@@ -56,9 +56,9 @@ class ExtraPracticeTest {
 
     private fun LearningModel.drain() {
         var remaining = 100
-        while (prompt != null && remaining-- > 0) rate(Rating.GOOD, false)
+        while (screen is LearningScreen.Review && remaining-- > 0) rate(Rating.GOOD, false)
         assertTrue("session eventually exhausts eligible work", remaining > 0)
-        assertEquals("summary", screen)
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), screen)
     }
 
     private fun reviewed(id: Int, due: Instant) = Card.builder().cardId(id).state(State.REVIEW).stability(10.0).difficulty(5.0)
@@ -66,31 +66,31 @@ class ExtraPracticeTest {
 
     @Test fun extraBlockUnlocksIntroductionsAndEndsAtItsOwnLimit() = withModel { model ->
         model.restoreToday(seconds = StudyPolicy.DAILY_SECONDS)
-        model.start(false, false)
-        assertEquals("summary", model.screen)
+        model.start(SessionKind.Practice, false)
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
 
         model.startExtraBlock(ExtraMinutes.Five, false)
-        assertEquals("review", model.screen)
-        assertNull("a new meaning is introduced", model.state(model.prompt!!))
+        assertTrue(model.screen is LearningScreen.Review)
+        assertNull("a new meaning is introduced", model.state(model.review.card.prompt))
         assertEquals(PracticeBlock.extra(StudyPolicy.DAILY_SECONDS, ExtraMinutes.Five), model.block)
 
-        val introduced = model.prompt!!.key
+        val introduced = model.review.card.prompt.key
         model.practise(5 * 60 + StudyPolicy.CLEANUP_SECONDS - 1)
         model.rate(Rating.GOOD, false)
-        assertEquals("cleanup brings the new card back before the block's cleanup ends", introduced, model.prompt?.key)
+        assertEquals("cleanup brings the new card back before the block's cleanup ends", introduced, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
         model.practise(1)
         model.rate(Rating.GOOD, false)
-        assertEquals("summary", model.screen)
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
     }
 
     @Test fun dailyCapsDoNotConsumeAFreshExtension() = withModel { model ->
         model.restoreToday(StudyPolicy.DAILY_SECONDS, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS)
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
         model.startExtraBlock(ExtraMinutes.Five, false)
-        assertNotNull(model.prompt)
+        assertTrue(model.screen is LearningScreen.Review)
         model.drain()
-        assertEquals("summary", model.screen)
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
     }
 
@@ -108,9 +108,9 @@ class ExtraPracticeTest {
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(false))
 
         model.startExtraBlock(ExtraMinutes.Five, false)
-        assertEquals("review", model.screen)
-        assertNotEquals(buriedWord.id, model.prompt!!.entry.id)
-        assertNull("the extension introduces an unburied meaning", model.state(model.prompt!!))
+        assertTrue(model.screen is LearningScreen.Review)
+        assertNotEquals(buriedWord.id, model.review.card.prompt.entry.id)
+        assertNull("the extension introduces an unburied meaning", model.state(model.review.card.prompt))
         model.rate(Rating.GOOD, false)
 
         val saved = JSONObject(model.backup()).getJSONObject("data")
@@ -126,7 +126,7 @@ class ExtraPracticeTest {
         listOf(ExtraMinutes.Five to 2, ExtraMinutes.Ten to 3, ExtraMinutes.Fifteen to 5).forEach { (length, quota) ->
             model.restoreToday(900, 5, 10, learned)
             model.startExtraBlock(length, false)
-            assertEquals(Skill.Gender, model.prompt!!.skill)
+            assertEquals(Skill.Gender, model.review.card.prompt.skill)
             model.drain()
             val saved = JSONObject(model.backup()).getJSONObject("data")
             assertEquals(5 + quota, saved.getInt("introduced"))
@@ -140,13 +140,13 @@ class ExtraPracticeTest {
     @Test fun failedIntroductionCountsOnceAndResumeRestoreAndRestartKeepUsage() = withModel { model ->
         model.restoreToday(900, 5, 10)
         model.startExtraBlock(ExtraMinutes.Five, false)
-        val key = model.prompt!!.key
+        val key = model.review.card.prompt.key
         model.rate(Rating.AGAIN, false)
         assertEquals(1, JSONObject(model.backup()).getJSONObject("data").getJSONObject("extraBlock").getInt("meaningsUsed"))
         model.finish(); model.home()
         val backup = model.backup()
         model.restore(backup)
-        model.start(false, false)
+        model.start(SessionKind.Practice, false)
         model.drain()
         val saved = JSONObject(model.backup()).getJSONObject("data")
         assertEquals(7, saved.getInt("introduced"))
@@ -183,7 +183,7 @@ class ExtraPracticeTest {
         val merged = SyncData.mergeSettings(local, remote)
         merged.keys().forEach { data.put(it, merged.get(it)) }
         model.restore(backup.toString())
-        model.start(false, false)
+        model.start(SessionKind.Practice, false)
         model.drain()
         assertEquals(100, JSONObject(model.backup()).getJSONObject("data").getInt("introduced"))
     }
@@ -194,7 +194,7 @@ class ExtraPracticeTest {
         model.startExtraBlock(ExtraMinutes.Five, false)
         assertEquals(PracticeBlock.DAILY, model.block)
         model.restoreToday(0)
-        model.start(false, false)
+        model.start(SessionKind.Practice, false)
         model.drain()
         assertEquals(5, JSONObject(model.backup()).getJSONObject("data").getInt("introduced"))
     }
@@ -237,7 +237,7 @@ class ExtraPracticeTest {
             "${noun.id}:${skill.name}" to reviewed(index * 3 + skillIndex, Instant.now().plusSeconds(864000))
         } }.toMap()
         model.restoreToday(0, 5, cards = learned)
-        model.start(false, false)
+        model.start(SessionKind.Practice, false)
         model.drain()
         assertEquals(10, JSONObject(model.backup()).getJSONObject("data").getInt("genderIntroduced"))
     }
@@ -248,10 +248,10 @@ class ExtraPracticeTest {
             key to reviewed(1, Instant.now().minusSeconds(3600))
         ))
         model.startExtraBlock(ExtraMinutes.Ten, false)
-        assertEquals(key, model.prompt?.key)
+        assertEquals(key, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
         model.rate(Rating.GOOD, false)
-        assertNotNull(model.prompt)
-        assertNull("after due reviews, the normal mix can introduce a meaning", model.state(model.prompt!!))
+        assertTrue(model.screen is LearningScreen.Review)
+        assertNull("after due reviews, the normal mix can introduce a meaning", model.state(model.review.card.prompt))
     }
 
     @Test fun partlyUsedBlockResumesWithoutGrantingMoreTime() = withModel { model ->
@@ -263,9 +263,9 @@ class ExtraPracticeTest {
         model.home()
         assertEquals(NextPractice.Session, model.nextPractice(false))
         model.startExtraBlock(ExtraMinutes.Fifteen, false)
-        assertEquals("home", model.screen)
-        model.start(false, false)
-        assertEquals("review", model.screen)
+        assertEquals(LearningScreen.Home, model.screen)
+        model.start(SessionKind.Practice, false)
+        assertTrue(model.screen is LearningScreen.Review)
         assertEquals(granted, model.block)
         assertEquals(1, model.block.minutesIn(model.spent))
     }
@@ -304,8 +304,8 @@ class ExtraPracticeTest {
             model.restoreToday(seconds, day.introduced, day.genderIntroduced, day.cards) {
                 PracticeBlock.extra(seconds, ExtraMinutes.Ten).write(it, today)
             }
-            model.start(false, false)
-            assertEquals(day.name, offered, model.prompt != null)
+            model.start(SessionKind.Practice, false)
+            assertEquals(day.name, offered, model.screen is LearningScreen.Review)
         }
     }
 }

@@ -41,8 +41,6 @@ enum class Skill(val label: String) {
     Reading("Read"), Listening("Listen"), Production("Speak"),
     /** Choosing un or une for a noun; graded by the app, not the learner. */
     Gender("Gender");
-    /** Whether the card shows its example as a gap-fill the learner can answer by typing. */
-    val fillsGap get() = this == Listening || this == Production
     companion object {
         /** The placement check samples these; Gender isn't part of it. */
         val placement = listOf(Reading, Listening, Production)

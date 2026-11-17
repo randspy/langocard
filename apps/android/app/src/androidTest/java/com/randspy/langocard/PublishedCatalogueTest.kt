@@ -37,16 +37,16 @@ class PublishedCatalogueTest {
                 }
                 assertEquals(19904, model.entries.size)
                 model.skipPlacement()
-                model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank >= 2501)
-                val assessed = model.prompt!!
+                model.start(SessionKind.Practice, false)
+                assertTrue(model.review.card.prompt.entry.rank >= 2501)
+                val assessed = model.review.card.prompt
                 model.rate(io.github.openspacedrepetition.Rating.GOOD, false)
                 val savedMemory = model.state(assessed)!!.toJson()
-                model.finish(); model.setMinimumRank(1); model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank < 2501)
+                model.finish(); model.setMinimumRank(1); model.start(SessionKind.Practice, false)
+                assertTrue(model.review.card.prompt.entry.rank < 2501)
                 assertEquals(savedMemory, model.state(assessed)!!.toJson())
-                model.finish(); model.setMinimumRank(7001); model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank >= 7001)
+                model.finish(); model.setMinimumRank(7001); model.start(SessionKind.Practice, false)
+                assertTrue(model.review.card.prompt.entry.rank >= 7001)
                 model.finish()
                 val backup = model.backup()
                 model.restore(backup)

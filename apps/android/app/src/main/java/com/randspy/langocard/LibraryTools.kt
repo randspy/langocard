@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun LibraryTools(model: LearningModel, section: String) {
+fun LibraryTools(model: LearningModel, section: LibraryTool) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var message by remember { mutableStateOf("") }
@@ -63,8 +63,8 @@ fun LibraryTools(model: LearningModel, section: String) {
     }
     if (message.isNotEmpty()) Text(message)
     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-    if (section == "add") AddEntry(model)
-    if (section == "packs") {
+    if (section == LibraryTool.Add) AddEntry(model)
+    if (section == LibraryTool.Packs) {
         PackCatalogue(model)
         HorizontalDivider(Modifier.padding(vertical = 12.dp))
         Text("Other packs", style = MaterialTheme.typography.titleMedium)
@@ -76,7 +76,7 @@ fun LibraryTools(model: LearningModel, section: String) {
         "Downloaded ${model.importPack(text)} meanings; available offline"
     } }, enabled = !busy && url.isNotBlank()) { Text("Download pack") }
     }
-    if (section == "backup") {
+    if (section == LibraryTool.Backup) {
         val schedulingDescription = remember(model.revision) { model.schedulingDescription }
         Text(schedulingDescription)
         OutlinedButton(onClick = { fitted.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Load fitted FSRS settings") }
@@ -85,8 +85,8 @@ fun LibraryTools(model: LearningModel, section: String) {
     OutlinedButton(onClick = { backup.launch("langocard-backup.json") }, enabled = !busy) { Text("Save backup") }
     OutlinedButton(onClick = { restore.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Restore backup") }
     }
-    if (section == "sync") CloudSyncSettings(model)
-    if (section == "export") {
+    if (section == LibraryTool.Sync) CloudSyncSettings(model)
+    if (section == LibraryTool.Export) {
         Text("Export reading and production cards for Anki. Review schedules and synthetic audio stay in Langocard.")
     OutlinedButton(onClick = { export.launch("langocard-anki.tsv") }, enabled = !busy) { Text("Export cards to Anki") }
     }

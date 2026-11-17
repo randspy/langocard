@@ -54,8 +54,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         save()
     }
     var revision by mutableIntStateOf(0); private set
-    var screen by androidx.compose.runtime.mutableStateOf("home"); private set
-    var prompt by androidx.compose.runtime.mutableStateOf<Prompt?>(null); private set
+    var screen by androidx.compose.runtime.mutableStateOf<LearningScreen>(LearningScreen.Home); private set
     var hookOffer by androidx.compose.runtime.mutableStateOf<Entry?>(null); private set
     fun memoryHook(entryId: String): String = learner.hook(entryId)
     fun dismissHook() { hookOffer = null }
@@ -69,7 +68,6 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     var sessionRecalled by mutableIntStateOf(0); private set
     var sessionSeconds by mutableIntStateOf(0); private set
     private var placementIndex = learner.placementIndex
-    private var placing = false
     private val sessionLearning = SessionLearning()
     private var lastTick = android.os.SystemClock.elapsedRealtime()
     val placementDone get() = learner.placementDone
@@ -77,7 +75,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         (0 until a.length()).map { i -> a.getJSONObject(i).let { PlacementItem(it.getString("word"), it.getInt("band")) } }
     })
     val vocabularyAnswers get() = learner.vocabularyAnswers
-    fun openVocabularyPlacement() { screen = "vocabularyPlacement" }
+    fun openVocabularyPlacement() { screen = LearningScreen.VocabularyPlacement }
     fun answerVocabularyPlacement(known: Boolean) {
         if (vocabularyAnswers.size >= vocabularyPlacement.items.size) return
         learner.answerVocabulary(known); save()
@@ -108,9 +106,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     /** Starts an extra block of [length]; does nothing unless one is on offer, so a second tap is harmless. */
     fun startExtraBlock(length: ExtraMinutes, audio: Boolean) {
-        if (screen == "review" || nextPractice(audio) != NextPractice.ExtraBlock) return
+        if (screen is LearningScreen.Review || nextPractice(audio) != NextPractice.ExtraBlock) return
         PracticeBlock.extra(spent, length).write(learner.document, today()); save()
-        start(placement = false, audio)
+        start(SessionKind.Practice, audio)
     }
     val studied get() = entries.count { e -> e.skills.any { learner.hasCard(e.cardKey(it)) } }
     val pausedCount get() = learner.pausedCount(System.currentTimeMillis())
@@ -128,7 +126,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         learner = store.restore(text, bundledIds, learner)
         scheduler = learner.fittedSettings?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
         rebuildEntries()
-        placementIndex = learner.placementIndex; placing = false
+        placementIndex = learner.placementIndex
         home()
     }
 
@@ -167,15 +165,15 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         val next = interests.toMutableSet().apply { if (!add(topic)) remove(topic) }
         if (next.isNotEmpty()) { learner.setInterests(next); save() }
     }
-    fun start(placement: Boolean, audio: Boolean) {
-        rollover(); placing = placement; sessionReviews = 0; sessionRecalled = 0; sessionSeconds = 0
+    fun start(kind: SessionKind, audio: Boolean) {
+        rollover(); sessionReviews = 0; sessionRecalled = 0; sessionSeconds = 0
         sessionLearning.clear()
-        screen = "review"; lastTick = android.os.SystemClock.elapsedRealtime(); next(audio)
+        lastTick = android.os.SystemClock.elapsedRealtime(); next(kind, audio)
     }
     fun tick() {
         val now = android.os.SystemClock.elapsedRealtime()
         val seconds = ((now - lastTick) / 1000).toInt()
-        if (screen != "review" && !readingPassageActive) {
+        if (screen !is LearningScreen.Review && !readingPassageActive) {
             if (seconds >= 60) { lastTick = now; rollover(); revision++ }
             return
         }
@@ -196,21 +194,34 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     fun resumeClock() { lastTick = android.os.SystemClock.elapsedRealtime() }
     fun persist() { save() }
-    fun finish() { screen = "summary"; prompt = null; save(); sync() }
-    fun home() { screen = "home"; prompt = null; listeningMuted = false; save() }
-    fun skipPlacement() { learner.placementDone = true; placing = false; home() }
-    val isPlacement get() = placing
-    private fun next(audio: Boolean) {
+    fun finish() {
+        val review = screen as? LearningScreen.Review ?: return
+        finish(review.kind)
+    }
+    private fun finish(kind: SessionKind) { screen = LearningScreen.Summary(kind); save(); sync() }
+    fun home() { screen = LearningScreen.Home; listeningMuted = false; save() }
+    fun skipPlacement() { learner.placementDone = true; home() }
+    /** Applies an interaction only to the currently shown card, without changing its scheduling identity. */
+    fun presentCard(change: (ReviewCard) -> ReviewCard) {
+        val review = screen as? LearningScreen.Review ?: return
+        val card = change(review.card)
+        require(card.prompt == review.card.prompt)
+        screen = review.copy(card = card)
+    }
+    private fun next(kind: SessionKind, audio: Boolean) {
+        val placing = kind == SessionKind.Placement
         val current = block
-        if (!StudyPolicy.sessionOpen(placing, spent, current.end, cleanup = true)) return finish()
+        if (!StudyPolicy.sessionOpen(placing, spent, current.end, cleanup = true)) return finish(kind)
         val now = Instant.now()
         val rules = studyRules
         val chosen = rules.choose(audio && !listeningMuted, current, sessionLearning, now, StudyPolicy.date(now))
-        if (chosen != null) prompt = rules.shown(chosen, now)
-        else { if (placing) learner.placementDone = true; finish() }
+        if (chosen != null) screen = LearningScreen.Review(ReviewCard.question(rules.shown(chosen, now)), kind)
+        else { if (placing) learner.placementDone = true; finish(kind) }
     }
     fun rate(rating: Rating, audio: Boolean) {
-        val p = prompt ?: return
+        val review = screen as? LearningScreen.Review ?: return
+        val p = review.card.prompt
+        val placing = review.kind == SessionKind.Placement
         val activeBlock = block
         val wasNewGender = p.skill == Skill.Gender && state(p) == null
         val wasNewSense = !learner.started(p.entry)
@@ -230,17 +241,18 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             placementIndex++; learner.placementIndex = placementIndex
         }
         sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
-        save(); next(audio)
+        save(); next(review.kind, audio)
     }
     /** Set for the rest of the sitting, until [home]; skipping leaves the card's schedule untouched. */
     var listeningMuted by androidx.compose.runtime.mutableStateOf(false); private set
     fun muteListening() {
         listeningMuted = true
-        if (prompt?.skill == Skill.Listening) next(audio = false)
+        val review = screen as? LearningScreen.Review
+        if (review?.card?.prompt?.skill == Skill.Listening) next(review.kind, audio = false)
     }
     fun unmuteListening() { listeningMuted = false }
     fun interval(rating: Rating): String {
-        val p = prompt ?: return ""
+        val p = (screen as? LearningScreen.Review)?.card?.prompt ?: return ""
         val card = state(p) ?: MemoryCard.builder().cardId(learner.nextCardId).build()
         val result = scheduler.reviewCard(card, rating)
         val minutes = ((java.time.Duration.between(Instant.now(), result.card().due).seconds + 59) / 60).coerceAtLeast(1)
@@ -258,7 +270,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun sync(manual: Boolean = false) {
         refreshSyncConfig()
         val config = SyncConfig.load(getApplication()) ?: run { if (manual) syncStatus = "Set up sync first"; return }
-        if (syncing || (screen == "review" && !manual)) return
+        if (syncing || (screen is LearningScreen.Review && !manual)) return
         syncing = true; syncStatus = "Syncing…"
         viewModelScope.launch {
             syncStatus = try {
@@ -304,6 +316,6 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         if (rows.isEmpty()) return
         if (table == "settings") rollover()
         if (learner.merge(table, rows, knownIds())) rebuildEntries()
-        if (!placing) placementIndex = learner.placementIndex
+        if ((screen as? LearningScreen.Review)?.kind != SessionKind.Placement) placementIndex = learner.placementIndex
     }
 }
