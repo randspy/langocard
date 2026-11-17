@@ -55,10 +55,10 @@ object GenderCards {
         entries.filter { it.gender != null }
             .groupBy { Gender.noun(it.word).lowercase() to it.gender }
             .values.flatMap { meanings ->
-                val studied = meanings.filter { cardId("${it.id}:${Skill.Gender.name}") != null }
+                val studied = meanings.filter { cardId(it.cardKey(Skill.Gender)) != null }
                 studied.ifEmpty {
                     listOfNotNull(meanings.mapNotNull { e ->
-                        Skill.entries.mapNotNull { cardId("${e.id}:${it.name}") }.minOrNull()?.let { e to it }
+                        Skill.entries.mapNotNull { cardId(e.cardKey(it)) }.minOrNull()?.let { e to it }
                     }.minByOrNull { it.second }?.first)
                 }
             }.map { it.id }.toSet()

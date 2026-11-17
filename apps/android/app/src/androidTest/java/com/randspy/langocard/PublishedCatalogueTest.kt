@@ -30,35 +30,35 @@ class PublishedCatalogueTest {
             instrument.runOnMainSync {
                 val app = IsolatedApp(instrument.targetContext, directory)
                 val model = LearningModel(app)
-                assertEquals(2330, model.entries.size)
-                assertTrue(model.installedPack(packs.first().id))
+                assertEquals(2330, model.library.entries.size)
+                assertTrue(model.library.installedPack(packs.first().id))
                 packs.forEachIndexed { index, pack ->
-                    if (!model.installedPack(pack.id)) assertEquals(pack.meanings, model.importPack(downloaded[index]))
+                    if (!model.library.installedPack(pack.id)) assertEquals(pack.meanings, model.library.importPack(downloaded[index]))
                 }
-                assertEquals(19904, model.entries.size)
+                assertEquals(19904, model.library.entries.size)
                 model.skipPlacement()
-                model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank >= 2501)
-                val assessed = model.prompt!!
+                model.start(SessionKind.Practice, false)
+                assertTrue(model.review.card.prompt.entry.rank >= 2501)
+                val assessed = model.review.card.prompt
                 model.rate(io.github.openspacedrepetition.Rating.GOOD, false)
                 val savedMemory = model.state(assessed)!!.toJson()
-                model.finish(); model.setMinimumRank(1); model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank < 2501)
+                model.finish(); model.library.setMinimumRank(1); model.start(SessionKind.Practice, false)
+                assertTrue(model.review.card.prompt.entry.rank < 2501)
                 assertEquals(savedMemory, model.state(assessed)!!.toJson())
-                model.finish(); model.setMinimumRank(7001); model.start(false, false)
-                assertTrue(model.prompt!!.entry.rank >= 7001)
+                model.finish(); model.library.setMinimumRank(7001); model.start(SessionKind.Practice, false)
+                assertTrue(model.review.card.prompt.entry.rank >= 7001)
                 model.finish()
-                val backup = model.backup()
+                val backup = model.library.backup()
                 model.restore(backup)
-                assertTrue(packs.all { model.installedPack(it.id) })
-                assertEquals(19904, LearningModel(app).entries.size)
-                val restoredSource = model.entries.first { it.sourceUrl.isNotBlank() }
+                assertTrue(packs.all { model.library.installedPack(it.id) })
+                assertEquals(19904, LearningModel(app).library.entries.size)
+                val restoredSource = model.library.entries.first { it.sourceUrl.isNotBlank() }
                 assertTrue(restoredSource.rank > 0)
                 assertTrue(restoredSource.license.isNotBlank())
-                val lines = model.ankiExport().lines().filter { it.isNotBlank() && !it.startsWith('#') }
+                val lines = model.library.ankiExport().lines().filter { it.isNotBlank() && !it.startsWith('#') }
                 assertEquals(50774, lines.size)
                 assertEquals(lines.size, lines.map { it.substringBefore('\t') }.distinct().size)
-                assertTrue(model.ankiExport().contains("https://fr.wiktionary.org/wiki/"))
+                assertTrue(model.library.ankiExport().contains("https://fr.wiktionary.org/wiki/"))
             }
         } finally { directory.deleteRecursively() }
     }

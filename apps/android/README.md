@@ -118,8 +118,9 @@ See `../../docs/design/core-entries.md`.
   earlier if eligible material is exhausted. Suspensions and sibling burying still apply.
   Background time is excluded. The clock is checkpointed every ten seconds and
   on leaving the activity (an abrupt process termination can lose up to ten seconds).
-- Card states, placement, interests, history and daily counters are written using
-  `AtomicFile` to private `files/learning-v2.json` before advancing each answer.
+- Card states, placement, interests, history and daily counters are kept in private
+  `files/learning-v2.json` using `AtomicFile`. The app copies them after each answer,
+  and finishes the atomic write before showing the next card.
   The app ignores the older `learning-v1.json` (single-example entries): start fresh,
   or sync.
   Asset IDs remain stable when example wording is corrected. No account required.

@@ -27,6 +27,8 @@ object SyncData {
 
     /** Bookkeeping kept in the learning file so it's written atomically with the data it tracks. */
     fun state(data: JSONObject): JSONObject = data.optJSONObject("sync") ?: reset(data)
+    /** Counts restores, so a sync that started before one can tell and stop. */
+    fun generation(data: JSONObject): Int = state(data).getInt("generation")
 
     /** Marks everything local as unsent and pulls everything again (first sync, after restore). */
     fun reset(data: JSONObject): JSONObject {
@@ -207,7 +209,7 @@ object SyncData {
     /** What a pulled page changed: whether the library must be rebuilt, and cards set or reset. */
     class Applied(val library: Boolean = false, val cards: Map<String, Card> = emptyMap(), val resetCards: Set<String> = emptySet())
 
-    /** Merges one page of remote rows into [data]. Invalid rows are skipped, not fatal. */
+    /** Merges non-review rows into [data]. [Learner.merge] owns review union and its query indexes. Invalid rows are skipped. */
     fun apply(data: JSONObject, table: String, rows: List<JSONObject>, entryIds: Set<String>): Applied {
         when (table) {
             "hooks" -> {
@@ -271,14 +273,6 @@ object SyncData {
                     }
                 }
                 return Applied(cards = changed, resetCards = reset)
-            }
-            "reviews" -> {
-                val logs = data.optJSONArray("reviews") ?: JSONArray().also { data.put("reviews", it) }
-                val known = (0 until logs.length()).mapNotNull { runCatching { reviewId(logs.getJSONObject(it)) }.getOrNull() }.toMutableSet()
-                rows.forEach { row ->
-                    if (known.add(row.getString("reviewId"))) logs.put(JSONObject().put("key", row.getString("key"))
-                        .put("placement", row.optBoolean("placement")).put("log", row.getString("log")))
-                }
             }
             "buried" -> {
                 val buried = data.optJSONObject("buried") ?: JSONObject().also { data.put("buried", it) }
@@ -364,10 +358,16 @@ data class SyncConfig(val url: String, val token: String) {
     }
 }
 
+/** The sync protocol's blocking transport, called off the learner's owning thread. */
+interface SyncClient {
+    fun query(path: String, args: JSONObject): JSONObject
+    fun mutation(path: String, args: JSONObject): JSONObject
+}
+
 /** Calls public Convex functions over the HTTP API (`/api/query`, `/api/mutation`). */
-class ConvexHttp(private val config: SyncConfig) {
-    fun query(path: String, args: JSONObject) = call("query", path, args)
-    fun mutation(path: String, args: JSONObject) = call("mutation", path, args)
+class ConvexHttp(private val config: SyncConfig) : SyncClient {
+    override fun query(path: String, args: JSONObject) = call("query", path, args)
+    override fun mutation(path: String, args: JSONObject) = call("mutation", path, args)
 
     private fun call(kind: String, path: String, args: JSONObject): JSONObject {
         val body = JSONObject().put("path", path).put("args", JSONObject(args.toString()).put("token", config.token)).put("format", "json")

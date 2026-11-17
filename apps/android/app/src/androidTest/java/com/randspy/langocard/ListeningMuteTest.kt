@@ -28,8 +28,8 @@ class ListeningMuteTest {
             instrumentation.runOnMainSync {
                 val model = LearningModel(IsolatedApp(instrumentation.targetContext, folder))
                 model.skipPlacement()
-                model.setMinimumRank(1)
-                base = model.backup()
+                model.library.setMinimumRank(1)
+                base = model.library.backup()
                 test(model)
             }
         } finally { folder.deleteRecursively() }
@@ -53,23 +53,23 @@ class ListeningMuteTest {
     /** Answers every card with sound available, failing if a Listening card is shown. */
     private fun LearningModel.drainHearing() {
         var remaining = 100
-        while (prompt != null && remaining-- > 0) {
-            assertNotEquals("muted listening stays out of the session", Skill.Listening, prompt!!.skill)
+        while (screen is LearningScreen.Review && remaining-- > 0) {
+            assertNotEquals("muted listening stays out of the session", Skill.Listening, review.card.prompt.skill)
             rate(Rating.GOOD, true)
         }
         assertTrue("session eventually exhausts eligible work", remaining > 0)
-        assertEquals("summary", screen)
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), screen)
     }
 
-    private fun LearningModel.scheduling() = JSONObject(backup()).getJSONObject("data").let { data ->
+    private fun LearningModel.scheduling() = JSONObject(library.backup()).getJSONObject("data").let { data ->
         listOf("cards", "reviews", "buried", "failures", "paused").associateWith { data.opt(it)?.toString() }
     }
 
     private fun reviewed(id: Int, due: Instant) = Card.builder().cardId(id).state(State.REVIEW).stability(10.0).difficulty(5.0)
         .due(due).lastReview(Instant.now().minusSeconds(86400)).build()
 
-    private val LearningModel.heard get() = entries.first()
-    private val LearningModel.read get() = entries.first { it.lexeme != heard.lexeme }
+    private val LearningModel.heard get() = library.entries.first()
+    private val LearningModel.read get() = library.entries.first { it.lexeme != heard.lexeme }
     private val LearningModel.listeningKey get() = "${heard.id}:Listening"
     private val LearningModel.readingKey get() = "${read.id}:Reading"
 
@@ -77,15 +77,15 @@ class ListeningMuteTest {
         restoreToday(0, cards = mapOf(
             listeningKey to reviewed(1, Instant.now().minusSeconds(7200)),
             readingKey to reviewed(2, Instant.now().minusSeconds(3600))))
-        start(false, true)
-        assertEquals(listeningKey, prompt?.key)
+        start(SessionKind.Practice, true)
+        assertEquals(listeningKey, (screen as? LearningScreen.Review)?.card?.prompt?.key)
     }
 
     @Test fun skippingMovesOnWithoutTouchingTheSchedule() = withModel { model ->
         model.startOnDueListening()
         val before = model.scheduling()
         model.muteListening()
-        assertEquals(model.readingKey, model.prompt?.key)
+        assertEquals(model.readingKey, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
         assertEquals("no rating, log, bury or failure is recorded", before, model.scheduling())
         assertEquals(1, model.dueCount(false))
     }
@@ -97,25 +97,25 @@ class ListeningMuteTest {
                 model.heard.skills.filter { it != Skill.Listening }.forEach { put("${model.heard.id}:${it.name}", today) }
             })
         }
-        model.start(false, true)
-        assertEquals(model.listeningKey, model.prompt?.key)
+        model.start(SessionKind.Practice, true)
+        assertEquals(model.listeningKey, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
         model.muteListening()
-        assertEquals("summary", model.screen)
-        assertEquals(due.toJson(), JSONObject(model.backup()).getJSONObject("data").getJSONObject("cards").getString(model.listeningKey))
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
+        assertEquals(due.toJson(), JSONObject(model.library.backup()).getJSONObject("data").getJSONObject("cards").getString(model.listeningKey))
     }
 
     @Test fun mutedListeningStaysOutForTheRestOfTheSittingIncludingExtraBlocks() = withModel { model ->
         model.startOnDueListening()
         model.muteListening()
         model.rate(Rating.GOOD, true)
-        assertNotEquals("rating with sound on does not bring it back", Skill.Listening, model.prompt?.skill)
+        assertNotEquals("rating with sound on does not bring it back", Skill.Listening, (model.screen as? LearningScreen.Review)?.card?.prompt?.skill)
         model.practise(StudyPolicy.DAILY_SECONDS)
         model.drainHearing()
         assertEquals(0, model.dueCount(true))
 
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(true))
         model.startExtraBlock(ExtraMinutes.Five, true)
-        assertEquals("review", model.screen)
+        assertTrue(model.screen is LearningScreen.Review)
         model.drainHearing()
         assertEquals(0, model.dueCount(true))
         assertNotEquals("the due Listening card is not offered as more practice", NextPractice.Session, model.nextPractice(true))
@@ -125,10 +125,10 @@ class ListeningMuteTest {
         model.startOnDueListening()
         model.muteListening()
         model.unmuteListening()
-        assertEquals(model.readingKey, model.prompt?.key)
+        assertEquals(model.readingKey, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
         assertEquals("the due Listening card counts again", model.dueCount(false) + 1, model.dueCount(true))
         model.rate(Rating.GOOD, true)
-        assertEquals(model.listeningKey, model.prompt?.key)
+        assertEquals(model.listeningKey, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
     }
 
     @Test fun goingHomeEndsTheMute() = withModel { model ->
@@ -137,7 +137,7 @@ class ListeningMuteTest {
         model.finish()
         model.home()
         assertEquals("the due Listening card counts again", model.dueCount(false) + 1, model.dueCount(true))
-        model.start(false, true)
-        assertEquals(model.listeningKey, model.prompt?.key)
+        model.start(SessionKind.Practice, true)
+        assertEquals(model.listeningKey, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
     }
 }

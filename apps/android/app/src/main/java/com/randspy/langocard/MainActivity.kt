@@ -36,6 +36,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         model = ViewModelProvider(this)[LearningModel::class.java]
+        // Answer input and reveal state last only for this Activity instance.
+        model.presentCard { ReviewCard.question(it.prompt) }
         speech = FrenchSpeech(this)
         setContent { LangocardTheme { PilotApp(model, speech) {
             runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
@@ -43,10 +45,10 @@ class MainActivity : ComponentActivity() {
     }
     override fun onStart() {
         super.onStart()
-        if (::model.isInitialized) { model.resumeClock(); model.sync() }
+        if (::model.isInitialized) { model.resumeClock(); model.cloudSync.sync() }
     }
     override fun onStop() {
-        if (::model.isInitialized) { model.tick(); model.persist() }
+        if (::model.isInitialized) { model.tick(); model.library.save() }
         if (::speech.isInitialized) speech.stop()
         super.onStop()
     }
@@ -54,7 +56,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -> Unit) {
+internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -> Unit) {
     val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(model, lifecycle) {
         lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
@@ -62,18 +64,18 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
             while (true) { delay(1000); model.tick() }
         }
     }
-    var destination by rememberSaveable { mutableStateOf("study") }
-    val destinations = mapOf("study" to "Daily practice", "reading" to "Reading passage", "library" to "My vocabulary", "add" to "Add an entry", "packs" to "Vocabulary packs", "placement" to "Vocabulary starting check", "backup" to "Backup & restore", "sync" to "Cloud sync", "export" to "Export to Anki", "sources" to "Content sources")
+    var destination by rememberSaveable { mutableStateOf(Destination.Study) }
+    val screen = model.screen
+    val review = screen as? LearningScreen.Review
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val revision = model.revision
+    val revision = model.library.revision
     val scroll = rememberScrollState()
-    LaunchedEffect(model.screen, destination, model.prompt?.key, model.sessionReviews) { scroll.scrollTo(0) }
-    BackHandler(model.screen != "home" || destination != "study") {
+    LaunchedEffect(screen::class, destination, review?.card?.prompt?.key, model.sessionReviews) { scroll.scrollTo(0) }
+    BackHandler(screen != LearningScreen.Home || destination != Destination.Study) {
         speech.stop()
-        if (model.screen == "review") model.finish() else { model.home(); destination = "study" }
+        if (screen is LearningScreen.Review) model.finish() else { model.home(); destination = Destination.Study }
     }
-    val current = model.prompt
     model.hookOffer?.let { entry ->
         var hook by remember(entry.id) { mutableStateOf(model.memoryHook(entry.id)) }
         AlertDialog(onDismissRequest = model::dismissHook,
@@ -83,29 +85,23 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
             confirmButton = { TextButton(onClick = { model.saveMemoryHook(hook) }) { Text("Save") } },
             dismissButton = { TextButton(onClick = model::dismissHook) { Text("Skip") } })
     }
-    var revealed by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
-    var played by remember(current?.key, model.sessionReviews) { mutableStateOf(false) }
-    /** The article chosen on a Gender card; choosing reveals the answer. */
-    var chosen by remember(current?.key, model.sessionReviews) { mutableStateOf<Gender?>(null) }
-    var typed by remember(current?.key, model.sessionReviews) { mutableStateOf("") }
-    val comparison = if (current?.skill?.fillsGap == true) TypedAnswer.of(typed, current.example, current.entry.gender != null) else null
     ModalNavigationDrawer(
         drawerState = drawer,
-        gesturesEnabled = model.screen == "home",
+        gesturesEnabled = screen == LearningScreen.Home,
         drawerContent = {
             ModalDrawerSheet {
                 Column(Modifier.widthIn(max = 320.dp).fillMaxHeight().verticalScroll(rememberScrollState()).padding(vertical = 24.dp)) {
                     Text("langocard", modifier = Modifier.padding(horizontal = 28.dp), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Text("Your French, every day", modifier = Modifier.padding(start = 28.dp, top = 4.dp, bottom = 28.dp),
                         style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    destinations.entries.forEachIndexed { index, (id, label) ->
+                    Destination.entries.forEachIndexed { index, item ->
                         if (index == 3) {
                             HorizontalDivider(Modifier.padding(horizontal = 28.dp, vertical = 16.dp))
                             Text("MANAGE", modifier = Modifier.padding(start = 28.dp, bottom = 8.dp),
                                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        DrawerRow(label, selected = destination == id, badge = if (id == "library") model.entries.size.toString() else null) {
-                            if (id == "placement") model.openVocabularyPlacement() else destination = id; scope.launch { drawer.close() }
+                        DrawerRow(item.label, selected = destination == item, badge = if (item == Destination.Library) model.library.entries.size.toString() else null) {
+                            if (item == Destination.Placement) model.openVocabularyPlacement() else destination = item; scope.launch { drawer.close() }
                         }
                     }
                 }
@@ -113,19 +109,16 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         },
     ) {
     Scaffold(bottomBar = {
-        if (model.screen == "review" && current != null) {
-            if (current.skill == Skill.Gender) GenderControls(model, speech, chosen) { chosen = it }
-            else ReviewControls(model, speech, revealed,
-                canReveal = current.skill != Skill.Listening || (played && !speech.speaking && speech.available),
-                reveal = { revealed = true }, comparison = comparison)
+        if (review != null) {
+            if (review.card.prompt.skill == Skill.Gender) GenderControls(model, speech, review.card)
+            else ReviewControls(model, speech, review.card)
         }
     }) { padding ->
-        val shown = if (model.screen == "home") destination else model.screen
-        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).then(if (shown == "library") Modifier else Modifier.verticalScroll(scroll)).padding(24.dp),
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).then(if (screen == LearningScreen.Home && destination == Destination.Library) Modifier else Modifier.verticalScroll(scroll)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    if (model.screen == "home") {
+                    if (screen == LearningScreen.Home) {
                         IconButton(onClick = { scope.launch { drawer.open() } },
                             modifier = Modifier.semantics { contentDescription = "Open side menu" }) {
                             Text("☰", style = MaterialTheme.typography.headlineSmall)
@@ -133,69 +126,75 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     }
                     Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
-                if (model.screen == "review" && current != null) SessionProgress(model)
-                SyncIndicator(model, onClick = if (model.screen == "home") ({ destination = "sync" }) else null)
+                if (review != null) SessionProgress(model, review.kind)
+                SyncIndicator(model.cloudSync, onClick = if (screen == LearningScreen.Home) ({ destination = Destination.Sync }) else null)
             }
-            when (shown) {
-                "library" -> VocabularyList(model.entries, speech, Modifier.weight(1f))
-                "add", "packs", "backup", "sync", "export", "sources" -> {
-                    Text(destinations.getValue(destination), style = MaterialTheme.typography.headlineMedium)
-                    if (destination == "sources") ContentSources()
-                    else key(destination) { LibraryTools(model, destination) }
-                }
-                "vocabularyPlacement" -> VocabularyPlacementScreen(model)
-                "reading" -> ReadingPassagePage(model, speech, drawer.currentValue == DrawerValue.Closed && drawer.targetValue == DrawerValue.Closed)
-                "review" -> Review(model, speech, revealed || chosen != null, played, chosen, typed, { typed = it }, comparison) { played = speech.say(current!!.example.text) || played }
-                "summary" -> {
-                    Text(if (model.isPlacement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
+            when (screen) {
+                LearningScreen.VocabularyPlacement -> VocabularyPlacementScreen(model)
+                is LearningScreen.Review -> Review(model, speech, screen.card, screen.kind)
+                is LearningScreen.Summary -> {
+                    Text(if (screen.kind == SessionKind.Placement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
                     Text("${model.sessionReviews} assessments · ${model.sessionRecalled} recalled")
                     Text("${model.sessionSeconds / 60}m ${model.sessionSeconds % 60}s of focused practice")
                     Text("${model.dueCount(speech.available)} reviews remain due. Related skills wait until another day; progress is saved.")
                     if (model.pausedCount > 0) Text("Repeatedly missed cards get a three-day pause. Review their examples in the library.")
                     if (model.suspendedCount > 0) Text("${model.suspendedCount} cards are suspended in the web app.")
-                    if (!model.isPlacement) when (model.nextPractice(speech.available)) {
+                    if (screen.kind != SessionKind.Placement) when (model.nextPractice(speech.available)) {
                         NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
-                        NextPractice.MoreVocabulary -> VocabularyNeeded { model.home(); destination = "packs" }
+                        NextPractice.MoreVocabulary -> VocabularyNeeded { model.home(); destination = Destination.Packs }
                         NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
-                        NextPractice.Session -> Button(onClick = { model.start(false, speech.available) }, modifier = Modifier.fillMaxWidth()) {
+                        NextPractice.Session -> Button(onClick = { model.start(SessionKind.Practice, speech.available) }, modifier = Modifier.fillMaxWidth()) {
                             Text("Resume practice")
                         }
                     }
                     Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
                 }
-                else -> {
-                    ElevatedCard(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("TODAY", style = MaterialTheme.typography.labelLarge)
-                            Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
-                            LinearProgressIndicator(progress = { (model.spent / StudyPolicy.DAILY_SECONDS.toFloat()).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                            if (model.spent >= StudyPolicy.DAILY_SECONDS) Text("Goal met", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                            Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.entries.size} meanings started")
-                            if (!model.placementDone) Button(onClick = model::openVocabularyPlacement, modifier = Modifier.fillMaxWidth()) {
-                                Text("Find my starting point")
-                            } else when (model.nextPractice(speech.available)) {
-                                NextPractice.Session -> Button(onClick = { model.start(false, speech.available) }, modifier = Modifier.fillMaxWidth()) {
-                                    Text("Start a session")
+                LearningScreen.Home -> when (destination) {
+                    Destination.Library -> VocabularyList(model.library.entries, speech, Modifier.weight(1f))
+                    Destination.Add, Destination.Packs, Destination.Backup, Destination.Sync, Destination.Export -> {
+                        Text(destination.label, style = MaterialTheme.typography.headlineMedium)
+                        key(destination) { LibraryTools(model, requireNotNull(destination.tool)) }
+                    }
+                    Destination.Sources -> {
+                        Text(destination.label, style = MaterialTheme.typography.headlineMedium)
+                        ContentSources()
+                    }
+                    Destination.Placement -> VocabularyPlacementScreen(model)
+                    Destination.Reading -> ReadingPassagePage(model, speech, drawer.currentValue == DrawerValue.Closed && drawer.targetValue == DrawerValue.Closed)
+                    Destination.Study -> {
+                        ElevatedCard(Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("TODAY", style = MaterialTheme.typography.labelLarge)
+                                Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
+                                LinearProgressIndicator(progress = { (model.spent / StudyPolicy.DAILY_SECONDS.toFloat()).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
+                                if (model.spent >= StudyPolicy.DAILY_SECONDS) Text("Goal met", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.library.entries.size} meanings started")
+                                if (!model.placementDone) Button(onClick = model::openVocabularyPlacement, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Find my starting point")
+                                } else when (model.nextPractice(speech.available)) {
+                                    NextPractice.Session -> Button(onClick = { model.start(SessionKind.Practice, speech.available) }, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Start a session")
+                                    }
+                                    NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
+                                    NextPractice.MoreVocabulary -> VocabularyNeeded { model.home(); destination = Destination.Packs }
+                                    NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
                                 }
-                                NextPractice.ExtraBlock -> ExtraBlockChoice(model, speech.available)
-                                NextPractice.MoreVocabulary -> VocabularyNeeded { model.home(); destination = "packs" }
-                                NextPractice.NothingLeft -> Text("Nothing left for today. Come back tomorrow.")
                             }
                         }
-                    }
-                    if (!model.placementDone) {
-                        Text("An optional vocabulary starting check, about five minutes. Pause and resume any time. This is an estimate, not a CEFR test.")
-                        TextButton(onClick = { model.skipPlacement() }) { Text("Skip placement and start fresh") }
-                    }
-                    Text("Your interests", style = MaterialTheme.typography.titleMedium)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("daily" to "Daily life", "culture" to "Culture", "news" to "News").forEach { (id, label) ->
-                            FilterChip(selected = id in model.interests, onClick = { model.toggleInterest(id) }, label = { Text(label) })
+                        if (!model.placementDone) {
+                            Text("An optional vocabulary starting check, about five minutes. Pause and resume any time. This is an estimate, not a CEFR test.")
+                            TextButton(onClick = { model.skipPlacement() }) { Text("Skip placement and start fresh") }
                         }
-                    }
-                    if (!speech.available) {
-                        Text("Listening cards wait until an offline voice is available.")
-                        OutlinedButton(onClick = settings) { Text("Open speech settings") }
+                        Text("Your interests", style = MaterialTheme.typography.titleMedium)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf("daily" to "Daily life", "culture" to "Culture", "news" to "News").forEach { (id, label) ->
+                                FilterChip(selected = id in model.library.interests, onClick = { model.library.toggleInterest(id) }, label = { Text(label) })
+                            }
+                        }
+                        if (!speech.available) {
+                            Text("Listening cards wait until an offline voice is available.")
+                            OutlinedButton(onClick = settings) { Text("Open speech settings") }
+                        }
                     }
                 }
             }
@@ -222,8 +221,11 @@ private fun DrawerRow(label: String, selected: Boolean, badge: String?, onClick:
 }
 
 @Composable
-private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, chosen: Gender?, typed: String, type: (String) -> Unit, comparison: TypedAnswer?, play: () -> Unit) {
-    val p = model.prompt ?: return
+private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard, kind: SessionKind) {
+    val p = card.prompt
+    val revealed = card.revealed
+    val comparison = card.comparison
+    val chosen = card.chosen
     DisposableEffect(p.key) { onDispose { speech.stop() } }
     if (model.listeningMuted) Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         Text("Listening paused ·", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -239,7 +241,7 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
             }
             Skill.Production -> {
                 Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
-                GapFill(p.example, revealed, typed, type)
+                GapFill(p.example, card) { text -> model.presentCard { it.type(text) } }
                 Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
             }
             Skill.Gender -> {
@@ -248,12 +250,12 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
                 Text("Un or une?", style = MaterialTheme.typography.bodySmall)
             }
             Skill.Listening -> {
-                Button(onClick = play, enabled = speech.available) {
-                    Text(if (played) "Play again" else "Play French sentence")
+                Button(onClick = { val success = speech.say(p.example.text); model.presentCard { it.played(success) } }, enabled = speech.available) {
+                    Text(if (card.played) "Play again" else "Play French sentence")
                 }
                 if (!speech.available) Text(speech.message)
                 TextButton(onClick = model::muteListening) { Text("Can't listen now: skip listening this session") }
-                GapFill(p.example, revealed, typed, type)
+                GapFill(p.example, card) { text -> model.presentCard { it.type(text) } }
                 Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -280,15 +282,15 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean
             if (speech.available) OutlinedButton(onClick = { speech.say(p.example.text) }) { Text("Hear example") }
         }
     }
-    TextButton(onClick = { speech.stop(); model.finish() }, contentPadding = PaddingValues(0.dp)) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+    TextButton(onClick = { speech.stop(); model.finish() }, contentPadding = PaddingValues(0.dp)) { Text(if (kind == SessionKind.Placement) "Pause placement" else "Finish session") }
 }
 
 /** Time or progress through the running session, shown in the top bar. Extra blocks lead with "+". */
 @Composable
-private fun SessionProgress(model: LearningModel) {
+private fun SessionProgress(model: LearningModel, kind: SessionKind) {
     val block = model.block
     Text(when {
-        model.isPlacement -> model.placementProgress
+        kind == SessionKind.Placement -> model.placementProgress
         block.isExtra -> "+${block.minutesIn(model.spent)} / ${block.minutes} min"
         else -> "${model.spent / 60} / 15 min"
     }, modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
@@ -296,9 +298,9 @@ private fun SessionProgress(model: LearningModel) {
 
 /** The example with its answer blanked out, and an optional field to type the missing French. */
 @Composable
-private fun GapFill(example: Example, revealed: Boolean, typed: String, type: (String) -> Unit) {
+private fun GapFill(example: Example, card: ReviewCard, type: (String) -> Unit) {
     Text(example.cloze, style = MaterialTheme.typography.titleLarge)
-    if (!revealed) OutlinedTextField(value = typed, onValueChange = { type(it.take(200)) },
+    if (!card.revealed) OutlinedTextField(value = card.typed, onValueChange = type,
         label = { Text("Your answer (optional)") }, singleLine = true,
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
@@ -325,17 +327,16 @@ private fun ExtraBlockChoice(model: LearningModel, audio: Boolean) {
 
 /** A Gender card grades itself: choose un or une, see the answer, then go on. */
 @Composable
-private fun GenderControls(model: LearningModel, speech: FrenchSpeech, chosen: Gender?, choose: (Gender) -> Unit) {
-    val p = model.prompt ?: return
-    val gender = p.entry.gender ?: return
+private fun GenderControls(model: LearningModel, speech: FrenchSpeech, card: ReviewCard) {
+    val rating = card.ratingToConfirm
     Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
         Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (chosen == null) Gender.entries.forEach { option ->
-                OutlinedButton(onClick = { choose(option) }, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
+            if (!card.revealed) Gender.entries.forEach { option ->
+                OutlinedButton(onClick = { model.presentCard { it.choose(option) } }, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
                     Text(option.article, style = MaterialTheme.typography.titleLarge)
                 }
-            } else Button(onClick = { speech.stop(); model.rate(gender.grade(chosen), speech.available) },
+            } else Button(onClick = { speech.stop(); rating?.let { model.rate(it, speech.available) } },
                 modifier = Modifier.weight(1f).heightIn(min = 56.dp)) { Text("Next") }
         }
     }
@@ -343,22 +344,24 @@ private fun GenderControls(model: LearningModel, speech: FrenchSpeech, chosen: G
 
 /** Kept outside the scrolling card so every rating remains reachable without scrolling. */
 @Composable
-private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed: Boolean,
-                           canReveal: Boolean, reveal: () -> Unit, comparison: TypedAnswer?) {
-    val p = model.prompt ?: return
-    var selected by remember(p.key, model.sessionReviews, revealed) { mutableStateOf(comparison?.match?.suggested) }
+private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, card: ReviewCard) {
+    val p = card.prompt
+    val revealed = card.revealed
+    val comparison = card.comparison
+    val selected = card.ratingToConfirm
     Surface(tonalElevation = 3.dp, shadowElevation = 6.dp) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!revealed) {
-                Button(onClick = reveal, enabled = canReveal, modifier = Modifier.fillMaxWidth()) { Text("Reveal answer") }
+                Button(onClick = { model.presentCard { it.reveal(speech.available, speech.speaking) } },
+                    enabled = card.canReveal(speech.available, speech.speaking), modifier = Modifier.fillMaxWidth()) { Text("Reveal answer") }
             }
             listOf(listOf(Rating.AGAIN to "Again", Rating.HARD to "Hard"),
                 listOf(Rating.GOOD to "Good", Rating.EASY to "Easy")).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     row.forEach { (rating, label) ->
                         val interval = if (revealed) remember(p.key, model.sessionReviews, rating) { model.interval(rating) } else ""
-                        OutlinedButton(onClick = { if (comparison != null) selected = rating else { speech.stop(); model.rate(rating, speech.available) } },
+                        OutlinedButton(onClick = { if (comparison != null) model.presentCard { it.select(rating) } else { speech.stop(); model.rate(rating, speech.available) } },
                             colors = ButtonDefaults.outlinedButtonColors(containerColor = if (comparison != null && revealed && selected == rating) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface),
                             enabled = revealed, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
                             Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
@@ -388,11 +391,11 @@ private fun ContentSources() {
 
 /** Top-right status: local-only, syncing, synced, or the last sync failed (still works offline). */
 @Composable
-private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
+private fun SyncIndicator(sync: LearningSync, onClick: (() -> Unit)?) {
     val (label, color) = when {
-        !model.syncConfigured -> "OFFLINE" to MaterialTheme.colorScheme.primary
-        model.syncing -> "SYNCING…" to MaterialTheme.colorScheme.onSurfaceVariant
-        model.syncFailed -> "NOT SYNCED" to MaterialTheme.colorScheme.error
+        !sync.syncConfigured -> "OFFLINE" to MaterialTheme.colorScheme.primary
+        sync.syncing -> "SYNCING…" to MaterialTheme.colorScheme.onSurfaceVariant
+        sync.syncFailed -> "NOT SYNCED" to MaterialTheme.colorScheme.error
         else -> "SYNCED" to MaterialTheme.colorScheme.primary
     }
     val modifier = if (onClick != null) Modifier.clickable(onClickLabel = "Open cloud sync", onClick = onClick) else Modifier
@@ -401,7 +404,7 @@ private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
 
 @Composable
 private fun VocabularyPlacementScreen(model: LearningModel) {
-    val answers = remember(model.revision) { model.vocabularyAnswers }
+    val answers = remember(model.library.revision) { model.vocabularyAnswers }
     val test = model.vocabularyPlacement
     Text("Vocabulary starting check", style = MaterialTheme.typography.headlineMedium)
     if (answers.size < test.items.size) {
