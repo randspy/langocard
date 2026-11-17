@@ -123,7 +123,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
         val shown = if (model.screen == "home") destination else model.screen
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).then(if (shown == "library") Modifier else Modifier.verticalScroll(scroll)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     if (model.screen == "home") {
                         IconButton(onClick = { scope.launch { drawer.open() } },
@@ -133,6 +133,7 @@ private fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () ->
                     }
                     Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
+                if (model.screen == "review" && current != null) SessionProgress(model)
                 SyncIndicator(model, onClick = if (model.screen == "home") ({ destination = "sync" }) else null)
             }
             when (shown) {
@@ -224,70 +225,73 @@ private fun DrawerRow(label: String, selected: Boolean, badge: String?, onClick:
 private fun Review(model: LearningModel, speech: FrenchSpeech, revealed: Boolean, played: Boolean, chosen: Gender?, typed: String, type: (String) -> Unit, comparison: TypedAnswer?, play: () -> Unit) {
     val p = model.prompt ?: return
     DisposableEffect(p.key) { onDispose { speech.stop() } }
-    val block = model.block
-    Text(when {
-        model.isPlacement -> "STARTING CHECK · ${model.placementProgress}"
-        block.isExtra -> "EXTRA PRACTICE · ${block.minutesIn(model.spent)} / ${block.minutes} min"
-        else -> "DAILY PRACTICE · ${model.spent / 60} / 15 min"
-    }, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
     if (model.listeningMuted) Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         Text("Listening paused ·", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         TextButton(onClick = model::unmuteListening) { Text("Turn back on") }
     }
-    Text(p.skill.label, style = MaterialTheme.typography.headlineLarge)
-    ElevatedCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            when (p.skill) {
-                Skill.Reading -> {
-                    Text(p.entry.word, style = MaterialTheme.typography.headlineMedium)
-                    Text(p.example.text)
-                    Text("Recall the meaning before revealing.", style = MaterialTheme.typography.bodySmall)
-                }
-                Skill.Production -> {
-                    Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
-                    GapFill(p.example, revealed, typed, type)
-                    Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
-                }
-                Skill.Gender -> {
-                    Text(Gender.noun(p.entry.word), style = MaterialTheme.typography.headlineMedium)
-                    Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
-                    Text("Un or une?", style = MaterialTheme.typography.bodySmall)
-                }
-                Skill.Listening -> {
-                    Button(onClick = play, enabled = speech.available) {
-                        Text(if (played) "Play again" else "Play French sentence")
-                    }
-                    if (!speech.available) Text(speech.message)
-                    TextButton(onClick = model::muteListening) { Text("Can't listen now: skip listening this session") }
-                    GapFill(p.example, revealed, typed, type)
-                    Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            if (revealed) {
-                HorizontalDivider()
-                if (chosen != null && p.entry.gender != null) {
-                    val right = chosen == p.entry.gender
-                    Text(if (right) "✓ Right" else "✗ Not ${chosen.article}",
-                        color = if (right) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.titleMedium)
-                }
-                if (comparison != null) TypedAnswerFeedback(comparison)
-                Text(p.entry.labelledWord, style = MaterialTheme.typography.headlineMedium)
-                if (p.skill == Skill.Gender) {
-                    NounEndings.match(p.entry.word, p.entry.gender)?.let { hint ->
-                        Text(hint.feedback, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-                if (!p.example.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.example.answer}")
-                Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
-                Text(p.entry.definition)
-                model.memoryHook(p.entry.id).takeIf { it.isNotBlank() }?.let { Text("Memory hook: $it") }
+    Text(p.skill.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        when (p.skill) {
+            Skill.Reading -> {
+                Text(p.entry.word, style = MaterialTheme.typography.headlineMedium)
                 Text(p.example.text)
-                if (speech.available) OutlinedButton(onClick = { speech.say(p.example.text) }) { Text("Hear example") }
+                Text("Recall the meaning before revealing.", style = MaterialTheme.typography.bodySmall)
+            }
+            Skill.Production -> {
+                Text(p.entry.english, style = MaterialTheme.typography.headlineMedium)
+                GapFill(p.example, revealed, typed, type)
+                Text("Say the missing French aloud, or think it silently. Include the article for nouns and use the form that fits the sentence. Right word, wrong article? Rate Hard.", style = MaterialTheme.typography.bodySmall)
+            }
+            Skill.Gender -> {
+                Text(Gender.noun(p.entry.word), style = MaterialTheme.typography.headlineMedium)
+                Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
+                Text("Un or une?", style = MaterialTheme.typography.bodySmall)
+            }
+            Skill.Listening -> {
+                Button(onClick = play, enabled = speech.available) {
+                    Text(if (played) "Play again" else "Play French sentence")
+                }
+                if (!speech.available) Text(speech.message)
+                TextButton(onClick = model::muteListening) { Text("Can't listen now: skip listening this session") }
+                GapFill(p.example, revealed, typed, type)
+                Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
             }
         }
+        if (revealed) {
+            HorizontalDivider()
+            if (chosen != null && p.entry.gender != null) {
+                val right = chosen == p.entry.gender
+                Text(if (right) "✓ Right" else "✗ Not ${chosen.article}",
+                    color = if (right) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.titleMedium)
+            }
+            if (comparison != null) TypedAnswerFeedback(comparison)
+            Text(p.entry.labelledWord, style = MaterialTheme.typography.headlineMedium)
+            if (p.skill == Skill.Gender) {
+                NounEndings.match(p.entry.word, p.entry.gender)?.let { hint ->
+                    Text(hint.feedback, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+            if (!p.example.answer.equals(p.entry.word, ignoreCase = true)) Text("In this sentence: ${p.example.answer}")
+            Text(p.entry.english, style = MaterialTheme.typography.titleMedium)
+            Text(p.entry.definition)
+            model.memoryHook(p.entry.id).takeIf { it.isNotBlank() }?.let { Text("Memory hook: $it") }
+            Text(p.example.text)
+            if (speech.available) OutlinedButton(onClick = { speech.say(p.example.text) }) { Text("Hear example") }
+        }
     }
-    TextButton(onClick = { speech.stop(); model.finish() }) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+    TextButton(onClick = { speech.stop(); model.finish() }, contentPadding = PaddingValues(0.dp)) { Text(if (model.isPlacement) "Pause placement" else "Finish session") }
+}
+
+/** Time or progress through the running session, shown in the top bar. Extra blocks lead with "+". */
+@Composable
+private fun SessionProgress(model: LearningModel) {
+    val block = model.block
+    Text(when {
+        model.isPlacement -> model.placementProgress
+        block.isExtra -> "+${block.minutesIn(model.spent)} / ${block.minutes} min"
+        else -> "${model.spent / 60} / 15 min"
+    }, modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
 }
 
 /** The example with its answer blanked out, and an optional field to type the missing French. */
@@ -348,8 +352,6 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, revealed:
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (!revealed) {
                 Button(onClick = reveal, enabled = canReveal, modifier = Modifier.fillMaxWidth()) { Text("Reveal answer") }
-            } else {
-                Text("How well did you recall it?", style = MaterialTheme.typography.titleSmall)
             }
             listOf(listOf(Rating.AGAIN to "Again", Rating.HARD to "Hard"),
                 listOf(Rating.GOOD to "Good", Rating.EASY to "Easy")).forEach { row ->
