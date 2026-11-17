@@ -12,7 +12,8 @@ import java.time.Instant
  * failure streaks, pauses, today's counters, placement, preferences, memory hooks, fitted FSRS
  * settings and library additions. It reads and writes [document], the JSON kept in
  * `learning-v2.json`, so a restore swaps in another Learner. Sync and practice blocks use
- * [document] in their own formats; remote rows come in through [merge].
+ * [document] in their own formats; remote rows come in through [merge]. Answers must go
+ * through [answered] or [merge] so their running query indexes stay with the saved history.
  * Confined to its owner's thread. Persistence receives serialized copies, never this live state.
  */
 class Learner(val document: JSONObject) {
@@ -34,6 +35,45 @@ class Learner(val document: JSONObject) {
     var nextCardId = maxOf(document.optInt("nextCardId"), maxCardId() + 1); private set
     private fun maxCardId() = memory.values.maxOfOrNull { it.cardId } ?: -1
 
+    private class Answers {
+        var count = 0
+        var recalled = false
+        val recent = mutableListOf<Review>()
+    }
+    private val answers = mutableMapOf<String, Answers>()
+    private val reviewIds = mutableSetOf<String>()
+    init {
+        val rows = document.getJSONArray("reviews")
+        for (i in 0 until rows.length()) indexReview(rows.getJSONObject(i))
+    }
+
+    private fun indexReview(row: JSONObject) {
+        val review = Review(row)
+        val history = answers.getOrPut(review.key) { Answers() }
+        history.count++
+        history.recalled = history.recalled || review.rating != Rating.AGAIN
+        // Sorting is stable: later appends win ties, as in sortedBy(...).takeLast(4).
+        history.recent.add(review)
+        history.recent.sortBy { it.reviewedAt }
+        if (history.recent.size > 4) history.recent.removeAt(0)
+        runCatching { SyncData.reviewId(row) }.getOrNull()?.let(reviewIds::add)
+    }
+
+    private fun appendReview(row: JSONObject) {
+        document.getJSONArray("reviews").put(row)
+        indexReview(row)
+    }
+
+    /** All sentence-bearing answers for this meaning, including placement but excluding Gender. */
+    fun exposures(entry: Entry) = Skill.placement.sumOf { answers[entry.cardKey(it)]?.count ?: 0 }
+
+    /** Nonblank contexts among this card's last four answers, ordered by time then append order. */
+    fun recentExamples(key: String): List<String> = answers[key]?.recent.orEmpty()
+        .mapNotNull { it.example.takeIf(String::isNotBlank) }
+
+    /** Whether any saved answer recalled this card, even if a later answer failed or the card was reset. */
+    fun recalled(key: String) = answers[key]?.recalled == true
+
     fun card(key: String): MemoryCard? = memory[key]
     fun hasCard(key: String) = cards.has(key)
     /** Whether any skill of [entry] has a card, which makes it a started meaning rather than a new one. */
@@ -46,16 +86,23 @@ class Learner(val document: JSONObject) {
         cards.put(key, card.toJson())
         SyncData.markCard(document, key, card.lastReview?.toEpochMilli() ?: 0L)
         memory[key] = card
-        document.getJSONArray("reviews").put(JSONObject().put("key", key).put("placement", placement)
+        appendReview(JSONObject().put("key", key).put("placement", placement)
             .put("log", JSONObject(log.toJson()).put("example", example.marked).toString()))
     }
 
     /** Merges one page of synced rows; see [SyncData.apply]. Returns whether the library changed. */
     fun merge(table: String, rows: List<JSONObject>, entryIds: Set<String>): Boolean {
-        val applied = SyncData.apply(document, table, rows, entryIds)
+        val applied = if (table == "reviews") {
+            rows.forEach { row ->
+                if (reviewIds.add(row.getString("reviewId"))) appendReview(JSONObject().put("key", row.getString("key"))
+                    .put("placement", row.optBoolean("placement")).put("log", row.getString("log")))
+            }
+            SyncData.Applied()
+        } else SyncData.apply(document, table, rows, entryIds)
         memory.putAll(applied.cards)
         applied.resetCards.forEach(memory::remove)
-        nextCardId = maxOf(nextCardId, document.optInt("nextCardId"), maxCardId() + 1)
+        val mergedMaxId = applied.cards.keys.maxOfOrNull { memory[it]?.cardId ?: -1 } ?: -1
+        nextCardId = maxOf(nextCardId, document.optInt("nextCardId"), mergedMaxId + 1)
         document.put("nextCardId", nextCardId)
         return applied.library
     }

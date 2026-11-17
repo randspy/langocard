@@ -209,7 +209,7 @@ object SyncData {
     /** What a pulled page changed: whether the library must be rebuilt, and cards set or reset. */
     class Applied(val library: Boolean = false, val cards: Map<String, Card> = emptyMap(), val resetCards: Set<String> = emptySet())
 
-    /** Merges one page of remote rows into [data]. Invalid rows are skipped, not fatal. */
+    /** Merges non-review rows into [data]. [Learner.merge] owns review union and its query indexes. Invalid rows are skipped. */
     fun apply(data: JSONObject, table: String, rows: List<JSONObject>, entryIds: Set<String>): Applied {
         when (table) {
             "hooks" -> {
@@ -273,14 +273,6 @@ object SyncData {
                     }
                 }
                 return Applied(cards = changed, resetCards = reset)
-            }
-            "reviews" -> {
-                val logs = data.optJSONArray("reviews") ?: JSONArray().also { data.put("reviews", it) }
-                val known = (0 until logs.length()).mapNotNull { runCatching { reviewId(logs.getJSONObject(it)) }.getOrNull() }.toMutableSet()
-                rows.forEach { row ->
-                    if (known.add(row.getString("reviewId"))) logs.put(JSONObject().put("key", row.getString("key"))
-                        .put("placement", row.optBoolean("placement")).put("log", row.getString("log")))
-                }
             }
             "buried" -> {
                 val buried = data.optJSONObject("buried") ?: JSONObject().also { data.put("buried", it) }

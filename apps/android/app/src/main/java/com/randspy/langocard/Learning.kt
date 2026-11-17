@@ -115,8 +115,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     var readingPassageActive = false
     /** Reading recall history supplies vocabulary without mutating scheduling. */
     fun passageVocabulary(): PassageVocabulary {
-        val recalled = learner.reviews.filter { it.rating != Rating.AGAIN }.map { it.key }.toSet()
-        val known = library.entries.filter { it.cardKey(Skill.Reading).let { key -> key in recalled && learner.card(key) != null } }.take(100)
+        val known = studyRules.knownReadingVocabulary()
         val now = Instant.now()
         val due = studyRules.prompts(false, now).filter { it.skill == Skill.Reading && state(it)?.due?.isAfter(now) == false }.take(3).map { it.entry }
         return PassageVocabulary(known, due)

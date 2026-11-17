@@ -100,6 +100,12 @@ class LearnerTest {
         learner.merge("cards", listOf(cardRow(production, fromTablet, fromTablet.lastReview.toEpochMilli())), setOf(entry.id))
         assertEquals(21, learner.newCard().cardId)
         assertEquals(22, SyncData.settings(learner.document).getInt("nextCardId"))
+
+        val transient = reviewed(80, "2026-11-12T08:00:00Z").card()
+        learner.merge("cards", listOf(cardRow(production, transient, transient.lastReview.toEpochMilli()),
+            cardRow(production, null, transient.lastReview.toEpochMilli() + 1)), setOf(entry.id))
+        assertNull(learner.card(production))
+        assertEquals(22, learner.newCard().cardId)
     }
 
     @Test fun `a restore continues sync generations and pushes every restored card again`() {

@@ -145,4 +145,38 @@ class LearningOwnershipTest {
         assertEquals("une idée", model.library.entries.last().word)
         assertEquals("une idée", LearnerStore(directory).load().extraEntries.single().word)
     }
+
+    @Test fun passageVocabularyFollowsAnswersSyncRestoreAndReload() = withModel { model, directory ->
+        model.library.add("une idée")
+        val entry = model.library.entries.last()
+        val before = model.library.backup()
+        model.start(SessionKind.Practice, false)
+        assertEquals(entry.cardKey(Skill.Reading), model.review.card.prompt.key)
+        model.rate(Rating.GOOD, false)
+        assertEquals(listOf(entry.id), model.passageVocabulary().known.map { it.id })
+        val answered = model.library.backup()
+        val outbox = SyncData.outbox(model.library.learner.document, StudyPolicy.date(Instant.now()))
+
+        model.restore(before)
+        assertTrue(model.passageVocabulary().known.isEmpty())
+        val remote = client(pull = { table -> when (table) {
+            "cards" -> outbox.cards
+            "reviews" -> outbox.reviews + outbox.reviews
+            else -> emptyList()
+        } })
+        model.cloudSync.runSync(remote)
+        model.cloudSync.runSync(remote)
+        assertEquals(listOf(entry.id), model.passageVocabulary().known.map { it.id })
+        assertEquals(1, model.library.learner.exposures(entry))
+        assertEquals(1, model.library.learner.reviews.size)
+
+        model.restore(before)
+        assertTrue(model.passageVocabulary().known.isEmpty())
+        assertEquals(0, model.library.learner.exposures(entry))
+        model.restore(answered)
+        assertEquals(listOf(entry.id), model.passageVocabulary().known.map { it.id })
+        val reloaded = LearningModel(IsolatedApp(instrumentation.targetContext, directory))
+        assertEquals(listOf(entry.id), reloaded.passageVocabulary().known.map { it.id })
+        assertEquals(1, reloaded.library.learner.exposures(entry))
+    }
 }

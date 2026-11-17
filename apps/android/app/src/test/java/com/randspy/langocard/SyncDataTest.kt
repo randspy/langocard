@@ -25,10 +25,11 @@ class SyncDataTest {
         val entries = outbox.entries.map { JSONObject(it.toString()).put("origin", "personal").put("retired", false) }
         val rows = mapOf("hooks" to outbox.hooks, "cards" to outbox.cards, "reviews" to outbox.reviews, "entries" to entries,
             "sources" to outbox.sources, "buried" to outbox.buried, "settings" to listOf(outbox.settings))
+        val learner = Learner(to)
         SyncData.TABLES.forEach { table ->
             val local = to.getJSONArray("extraEntries").let { a -> (0 until a.length()).map { a.getJSONObject(it).getString("id") } }
             val remote = to.optJSONObject("remoteEntries")?.keys()?.asSequence()?.toList() ?: emptyList()
-            SyncData.apply(to, table, rows.getValue(table), setOf("base") + local + remote)
+            learner.merge(table, rows.getValue(table), setOf("base") + local + remote)
         }
         SyncData.markPushed(from, outbox)
     }

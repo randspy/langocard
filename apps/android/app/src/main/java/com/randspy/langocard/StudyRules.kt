@@ -20,6 +20,12 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
 
     fun dueCount(audio: Boolean, now: Instant): Int = prompts(audio, now).count { due(it, now) }
 
+    /** Up to 100 recalled reading cards in library order; resets remove them until studied again. */
+    fun knownReadingVocabulary(): List<Entry> = entries.asSequence().filter { entry ->
+        val key = entry.cardKey(Skill.Reading)
+        learner.recalled(key) && learner.card(key) != null
+    }.take(100).toList()
+
     private fun due(p: Prompt, now: Instant) = learner.card(p.key)?.due?.let { !it.isAfter(now) } == true
 
     /** Due cards precede new skills, then new meanings; cleanup can recall learning cards early. */
@@ -75,14 +81,11 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
 
     /** Rotate across sentence-bearing skills and devices; a paused card returns in a fresh context. */
     fun shown(p: Prompt, now: Instant): Prompt {
-        val shown = Skill.placement.map { p.entry.cardKey(it) }.toSet()
-        val count = learner.reviews.count { it.key in shown }
+        val count = learner.exposures(p.entry)
         val until = learner.pausedUntil(p.key)
         val returning = until > 0 && until <= now.toEpochMilli() &&
             (learner.card(p.key)?.lastReview?.toEpochMilli() ?: 0L) < until
-        val recent = if (returning) learner.reviews.filter { it.key == p.key }
-            .sortedBy { it.reviewedAt }.takeLast(4)
-            .mapNotNull { it.example.takeIf(String::isNotBlank) } else emptyList()
+        val recent = if (returning) learner.recentExamples(p.key) else emptyList()
         return p.copy(example = if (returning) StuckWords.returningExample(p.entry, count, recent) else p.entry.exampleAt(count))
     }
 }
