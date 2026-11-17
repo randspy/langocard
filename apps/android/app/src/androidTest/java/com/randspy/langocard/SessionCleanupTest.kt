@@ -25,10 +25,10 @@ class SessionCleanupTest {
                 val model = LearningModel(app)
                 model.skipPlacement()
                 // These session tests need eligible words from the bundled Frequent French pack.
-                model.setMinimumRank(1)
+                model.library.setMinimumRank(1)
                 model.start(SessionKind.Practice, false)
                 val key = model.review.card.prompt.key
-                val data = JSONObject(model.backup()).getJSONObject("data")
+                val data = JSONObject(model.library.backup()).getJSONObject("data")
                 data.put("seconds", StudyPolicy.DAILY_SECONDS - StudyPolicy.WIND_DOWN_SECONDS - 1)
                 model.restore(JSONObject().put("format", "langocard-backup").put("version", ContentFiles.BACKUP_VERSION).put("data", data).toString())
                 model.start(SessionKind.Practice, false)
@@ -42,7 +42,7 @@ class SessionCleanupTest {
                 assertTrue(model.state(model.review.card.prompt)!!.due.isAfter(Instant.now()))
                 model.rate(Rating.GOOD, false)
                 assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
-                val reviews = JSONObject(model.backup()).getJSONObject("data").getJSONArray("reviews")
+                val reviews = JSONObject(model.library.backup()).getJSONObject("data").getJSONArray("reviews")
                 assertEquals(2, reviews.length())
             }
         } finally { folder.deleteRecursively() }

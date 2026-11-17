@@ -35,7 +35,7 @@ class PresentationFlowTest {
         instrumentation.runOnMainSync {
             model = LearningModel(IsolatedApp(instrumentation.targetContext, folder))
             model.skipPlacement()
-            model.setMinimumRank(1)
+            model.library.setMinimumRank(1)
             speech = FrenchSpeech(instrumentation.targetContext)
         }
     }
@@ -49,8 +49,8 @@ class PresentationFlowTest {
 
     private fun start(skill: Skill, kind: SessionKind = SessionKind.Practice) {
         instrumentation.runOnMainSync {
-            val entry = model.entries.first { it.gender != null }
-            val backup = JSONObject(model.backup())
+            val entry = model.library.entries.first { it.gender != null }
+            val backup = JSONObject(model.library.backup())
             val card = Card.builder().cardId(1).state(State.REVIEW).stability(10.0).difficulty(5.0)
                 .due(Instant.now().minusSeconds(3600)).lastReview(Instant.now().minusSeconds(86400)).build()
             backup.getJSONObject("data").put("cards", JSONObject().put(entry.cardKey(skill), card.toJson()))

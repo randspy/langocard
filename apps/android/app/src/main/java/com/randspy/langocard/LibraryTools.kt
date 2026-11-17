@@ -35,14 +35,14 @@ fun LibraryTools(model: LearningModel, section: LibraryTool) {
     }
     val backup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) task {
-            val text = model.backup()
+            val text = model.library.backup()
             withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri, "wt")!!.bufferedWriter().use { it.write(text) } }
             "Backup saved"
         }
     }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/tab-separated-values")) { uri ->
         if (uri != null) task {
-            val text = model.ankiExport()
+            val text = model.library.ankiExport()
             withContext(Dispatchers.IO) { context.contentResolver.openOutputStream(uri, "wt")!!.bufferedWriter().use { it.write(text) } }
             "Anki file saved. Import as Basic cards with HTML enabled. Scheduling and synthetic audio are not exported."
         }
@@ -50,7 +50,7 @@ fun LibraryTools(model: LearningModel, section: LibraryTool) {
     val restore = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) task {
             val text = read(uri)
-            model.validateBackup(text)
+            model.library.validateBackup(text)
             pendingRestore = text
             "Backup ready to restore"
         }
@@ -59,13 +59,13 @@ fun LibraryTools(model: LearningModel, section: LibraryTool) {
         if (uri != null) task { model.importFittedSettings(read(uri)); "Fitted settings loaded" }
     }
     val pack = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) task { "Added ${model.importPack(read(uri))} meanings" }
+        if (uri != null) task { "Added ${model.library.importPack(read(uri))} meanings" }
     }
     if (message.isNotEmpty()) Text(message)
     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-    if (section == LibraryTool.Add) AddEntry(model)
+    if (section == LibraryTool.Add) AddEntry(model.library)
     if (section == LibraryTool.Packs) {
-        PackCatalogue(model)
+        PackCatalogue(model.library)
         HorizontalDivider(Modifier.padding(vertical = 12.dp))
         Text("Other packs", style = MaterialTheme.typography.titleMedium)
         Text("Import a prepared file, or use a direct HTTPS link.")
@@ -73,11 +73,11 @@ fun LibraryTools(model: LearningModel, section: LibraryTool) {
     OutlinedTextField(url, { url = it }, label = { Text("HTTPS vocabulary pack URL") }, modifier = Modifier.fillMaxWidth())
     OutlinedButton(onClick = { task {
         val text = withContext(Dispatchers.IO) { PackDownloads.fetch(url.trim()) }
-        "Downloaded ${model.importPack(text)} meanings; available offline"
+        "Downloaded ${model.library.importPack(text)} meanings; available offline"
     } }, enabled = !busy && url.isNotBlank()) { Text("Download pack") }
     }
     if (section == LibraryTool.Backup) {
-        val schedulingDescription = remember(model.revision) { model.schedulingDescription }
+        val schedulingDescription = remember(model.library.revision) { model.schedulingDescription }
         Text(schedulingDescription)
         OutlinedButton(onClick = { fitted.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Load fitted FSRS settings") }
         OutlinedButton(onClick = { model.resetFittedSettings() }, enabled = !busy) { Text("Reset FSRS to defaults") }
@@ -85,7 +85,7 @@ fun LibraryTools(model: LearningModel, section: LibraryTool) {
     OutlinedButton(onClick = { backup.launch("langocard-backup.json") }, enabled = !busy) { Text("Save backup") }
     OutlinedButton(onClick = { restore.launch(arrayOf("application/json", "text/plain")) }, enabled = !busy) { Text("Restore backup") }
     }
-    if (section == LibraryTool.Sync) CloudSyncSettings(model)
+    if (section == LibraryTool.Sync) CloudSyncSettings(model.cloudSync)
     if (section == LibraryTool.Export) {
         Text("Export reading and production cards for Anki. Review schedules and synthetic audio stay in Langocard.")
     OutlinedButton(onClick = { export.launch("langocard-anki.tsv") }, enabled = !busy) { Text("Export cards to Anki") }
@@ -97,9 +97,9 @@ fun LibraryTools(model: LearningModel, section: LibraryTool) {
 }
 
 @Composable
-private fun CloudSyncSettings(model: LearningModel) {
+private fun CloudSyncSettings(sync: LearningSync) {
     val context = LocalContext.current
-    val configured = model.syncConfigured
+    val configured = sync.syncConfigured
     var url by remember { mutableStateOf(SyncConfig.load(context)?.url ?: "") }
     var token by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
@@ -109,14 +109,14 @@ private fun CloudSyncSettings(model: LearningModel) {
         val last = SyncConfig.lastSynced(context)
         val lastText = if (last == 0L) "Not synced yet" else "Last synced " + java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(last))
         Text(lastText, style = MaterialTheme.typography.bodySmall)
-        if (model.syncStatus.isNotBlank()) Text(model.syncStatus)
-        if (model.syncing) LinearProgressIndicator(Modifier.fillMaxWidth())
-        Button(onClick = { model.sync(manual = true) }, enabled = !model.syncing) { Text("Sync now") }
-        OutlinedButton(onClick = { SyncConfig.clear(context); model.refreshSyncConfig(); token = "" }, enabled = !model.syncing) { Text("Disconnect this device") }
+        if (sync.syncStatus.isNotBlank()) Text(sync.syncStatus)
+        if (sync.syncing) LinearProgressIndicator(Modifier.fillMaxWidth())
+        Button(onClick = { sync.sync(manual = true) }, enabled = !sync.syncing) { Text("Sync now") }
+        OutlinedButton(onClick = { SyncConfig.clear(context); sync.refreshSyncConfig(); token = "" }, enabled = !sync.syncing) { Text("Disconnect this device") }
         Text("Disconnecting keeps your local progress and the cloud copy.", style = MaterialTheme.typography.bodySmall)
     } else {
         if (SyncConfig.builtIn != null) {
-            Button(onClick = { SyncConfig.useBuiltIn(context); url = SyncConfig.builtIn.url; model.sync(manual = true) }) {
+            Button(onClick = { SyncConfig.useBuiltIn(context); url = SyncConfig.builtIn.url; sync.sync(manual = true) }) {
                 Text("Connect with this build's settings")
             }
             Text("Or enter another deployment:", style = MaterialTheme.typography.bodySmall)
@@ -127,7 +127,7 @@ private fun CloudSyncSettings(model: LearningModel) {
         Text("Use the same value you set with: npx convex env set SYNC_TOKEN …", style = MaterialTheme.typography.bodySmall)
         if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error)
         Button(onClick = {
-            error = try { SyncConfig.save(context, url, token); url = SyncConfig.load(context)!!.url; model.sync(manual = true); "" }
+            error = try { SyncConfig.save(context, url, token); url = SyncConfig.load(context)!!.url; sync.sync(manual = true); "" }
             catch (e: IllegalArgumentException) { e.message ?: "Invalid settings" }
         }, enabled = url.isNotBlank() && token.isNotBlank()) { Text("Connect and sync") }
     }

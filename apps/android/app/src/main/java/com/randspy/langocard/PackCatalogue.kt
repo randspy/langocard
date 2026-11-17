@@ -63,7 +63,7 @@ object PackManifest {
 }
 
 @Composable
-fun PackCatalogue(model: LearningModel) {
+fun PackCatalogue(library: LearningLibrary) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var packs by remember { mutableStateOf(context.assets.open("catalogue.json").bufferedReader().use { PackManifest.parse(it.readText()) }) }
@@ -75,7 +75,7 @@ fun PackCatalogue(model: LearningModel) {
     Text("Choose a frequency starting point. Existing reviews and starter cards continue.", style = MaterialTheme.typography.bodySmall)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(1 to "All ranks", 2501 to "2,501+", 7001 to "7,001+").forEach { (rank, label) ->
-            FilterChip(selected = model.minimumRank == rank, onClick = { model.setMinimumRank(rank) }, label = { Text(label) })
+            FilterChip(selected = library.minimumRank == rank, onClick = { library.setMinimumRank(rank) }, label = { Text(label) })
         }
     }
     OutlinedButton(enabled = !busy, onClick = { scope.launch {
@@ -95,14 +95,14 @@ fun PackCatalogue(model: LearningModel) {
                 Text(pack.title, style = MaterialTheme.typography.titleMedium)
                 Text(pack.description)
                 Text("${pack.meanings} meanings · ${pack.lemmas} dictionary words")
-                val installed = model.installedPack(pack.id)
+                val installed = library.installedPack(pack.id)
                 Button(enabled = !busy && !installed, onClick = { scope.launch {
                     busy = true; activePack = pack.id; message = ""
                     try {
                         val text = withContext(Dispatchers.IO) {
                             PackDownloads.fetch(pack.url, pack.sha256).also { PackManifest.verifyPayload(it, pack) }
                         }
-                        message = "Added ${model.importPack(text)} meanings. Ready offline."
+                        message = "Added ${library.importPack(text)} meanings. Ready offline."
                     } catch (e: kotlinx.coroutines.CancellationException) { throw e }
                     catch (e: Exception) { message = e.message ?: "Could not install pack" }
                     finally { busy = false }

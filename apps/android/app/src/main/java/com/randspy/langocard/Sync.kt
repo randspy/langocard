@@ -366,10 +366,16 @@ data class SyncConfig(val url: String, val token: String) {
     }
 }
 
+/** The sync protocol's blocking transport, called off the learner's owning thread. */
+interface SyncClient {
+    fun query(path: String, args: JSONObject): JSONObject
+    fun mutation(path: String, args: JSONObject): JSONObject
+}
+
 /** Calls public Convex functions over the HTTP API (`/api/query`, `/api/mutation`). */
-class ConvexHttp(private val config: SyncConfig) {
-    fun query(path: String, args: JSONObject) = call("query", path, args)
-    fun mutation(path: String, args: JSONObject) = call("mutation", path, args)
+class ConvexHttp(private val config: SyncConfig) : SyncClient {
+    override fun query(path: String, args: JSONObject) = call("query", path, args)
+    override fun mutation(path: String, args: JSONObject) = call("mutation", path, args)
 
     private fun call(kind: String, path: String, args: JSONObject): JSONObject {
         val body = JSONObject().put("path", path).put("args", JSONObject(args.toString()).put("token", config.token)).put("format", "json")

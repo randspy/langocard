@@ -45,10 +45,10 @@ class MainActivity : ComponentActivity() {
     }
     override fun onStart() {
         super.onStart()
-        if (::model.isInitialized) { model.resumeClock(); model.sync() }
+        if (::model.isInitialized) { model.resumeClock(); model.cloudSync.sync() }
     }
     override fun onStop() {
-        if (::model.isInitialized) { model.tick(); model.persist() }
+        if (::model.isInitialized) { model.tick(); model.library.save() }
         if (::speech.isInitialized) speech.stop()
         super.onStop()
     }
@@ -69,7 +69,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
     val review = screen as? LearningScreen.Review
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val revision = model.revision
+    val revision = model.library.revision
     val scroll = rememberScrollState()
     LaunchedEffect(screen::class, destination, review?.card?.prompt?.key, model.sessionReviews) { scroll.scrollTo(0) }
     BackHandler(screen != LearningScreen.Home || destination != Destination.Study) {
@@ -100,7 +100,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
                             Text("MANAGE", modifier = Modifier.padding(start = 28.dp, bottom = 8.dp),
                                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        DrawerRow(item.label, selected = destination == item, badge = if (item == Destination.Library) model.entries.size.toString() else null) {
+                        DrawerRow(item.label, selected = destination == item, badge = if (item == Destination.Library) model.library.entries.size.toString() else null) {
                             if (item == Destination.Placement) model.openVocabularyPlacement() else destination = item; scope.launch { drawer.close() }
                         }
                     }
@@ -127,7 +127,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
                     Text("langocard", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 }
                 if (review != null) SessionProgress(model, review.kind)
-                SyncIndicator(model, onClick = if (screen == LearningScreen.Home) ({ destination = Destination.Sync }) else null)
+                SyncIndicator(model.cloudSync, onClick = if (screen == LearningScreen.Home) ({ destination = Destination.Sync }) else null)
             }
             when (screen) {
                 LearningScreen.VocabularyPlacement -> VocabularyPlacementScreen(model)
@@ -150,7 +150,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
                     Button(onClick = model::home, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
                 }
                 LearningScreen.Home -> when (destination) {
-                    Destination.Library -> VocabularyList(model.entries, speech, Modifier.weight(1f))
+                    Destination.Library -> VocabularyList(model.library.entries, speech, Modifier.weight(1f))
                     Destination.Add, Destination.Packs, Destination.Backup, Destination.Sync, Destination.Export -> {
                         Text(destination.label, style = MaterialTheme.typography.headlineMedium)
                         key(destination) { LibraryTools(model, requireNotNull(destination.tool)) }
@@ -168,7 +168,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
                                 Text("${model.spent / 60} / 15 minutes", style = MaterialTheme.typography.headlineMedium)
                                 LinearProgressIndicator(progress = { (model.spent / StudyPolicy.DAILY_SECONDS.toFloat()).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                                 if (model.spent >= StudyPolicy.DAILY_SECONDS) Text("Goal met", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.entries.size} meanings started")
+                                Text("${model.dueCount(speech.available)} due · ${model.studied} / ${model.library.entries.size} meanings started")
                                 if (!model.placementDone) Button(onClick = model::openVocabularyPlacement, modifier = Modifier.fillMaxWidth()) {
                                     Text("Find my starting point")
                                 } else when (model.nextPractice(speech.available)) {
@@ -188,7 +188,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
                         Text("Your interests", style = MaterialTheme.typography.titleMedium)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             listOf("daily" to "Daily life", "culture" to "Culture", "news" to "News").forEach { (id, label) ->
-                                FilterChip(selected = id in model.interests, onClick = { model.toggleInterest(id) }, label = { Text(label) })
+                                FilterChip(selected = id in model.library.interests, onClick = { model.library.toggleInterest(id) }, label = { Text(label) })
                             }
                         }
                         if (!speech.available) {
@@ -391,11 +391,11 @@ private fun ContentSources() {
 
 /** Top-right status: local-only, syncing, synced, or the last sync failed (still works offline). */
 @Composable
-private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
+private fun SyncIndicator(sync: LearningSync, onClick: (() -> Unit)?) {
     val (label, color) = when {
-        !model.syncConfigured -> "OFFLINE" to MaterialTheme.colorScheme.primary
-        model.syncing -> "SYNCING…" to MaterialTheme.colorScheme.onSurfaceVariant
-        model.syncFailed -> "NOT SYNCED" to MaterialTheme.colorScheme.error
+        !sync.syncConfigured -> "OFFLINE" to MaterialTheme.colorScheme.primary
+        sync.syncing -> "SYNCING…" to MaterialTheme.colorScheme.onSurfaceVariant
+        sync.syncFailed -> "NOT SYNCED" to MaterialTheme.colorScheme.error
         else -> "SYNCED" to MaterialTheme.colorScheme.primary
     }
     val modifier = if (onClick != null) Modifier.clickable(onClickLabel = "Open cloud sync", onClick = onClick) else Modifier
@@ -404,7 +404,7 @@ private fun SyncIndicator(model: LearningModel, onClick: (() -> Unit)?) {
 
 @Composable
 private fun VocabularyPlacementScreen(model: LearningModel) {
-    val answers = remember(model.revision) { model.vocabularyAnswers }
+    val answers = remember(model.library.revision) { model.vocabularyAnswers }
     val test = model.vocabularyPlacement
     Text("Vocabulary starting check", style = MaterialTheme.typography.headlineMedium)
     if (answers.size < test.items.size) {

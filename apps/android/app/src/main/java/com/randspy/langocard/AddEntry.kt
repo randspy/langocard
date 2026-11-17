@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  * replaces only the drafted ones.
  */
 @Composable
-fun AddEntry(model: LearningModel) {
+fun AddEntry(library: LearningLibrary) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val onDevice = remember { OnDeviceModel.get(context) }
@@ -70,7 +70,7 @@ fun AddEntry(model: LearningModel) {
     OutlinedTextField(english, { english = it }, label = { Text("English meaning") }, enabled = !busy, modifier = Modifier.fillMaxWidth())
     DraftedField(DraftField.Word, fields, drafted, !busy) { drafted = drafted - DraftField.Word }
     val existing = fields.getValue(DraftField.Word).trim().let { word ->
-        if (word.isEmpty()) emptyList() else model.entries.filter { it.word.equals(word, ignoreCase = true) }
+        if (word.isEmpty()) emptyList() else library.entries.filter { it.word.equals(word, ignoreCase = true) }
     }
     if (existing.isNotEmpty()) Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {
@@ -106,7 +106,7 @@ fun AddEntry(model: LearningModel) {
     }
     Button(onClick = {
         message = try {
-            model.addEntry(fields.getValue(DraftField.Word), english, fields.getValue(DraftField.Definition),
+            library.addEntry(fields.getValue(DraftField.Word), english, fields.getValue(DraftField.Definition),
                 // An example row left empty is unused, not an error.
                 examples.map { it.text }.filter { it.isNotBlank() }, effectiveGender(fields)?.let(::genderOf))
             english = ""; fields.keys.forEach { fields[it] = "" }; drafted = emptySet()

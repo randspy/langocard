@@ -32,7 +32,7 @@ fun ReadingPassagePage(model: LearningModel, speech: FrenchSpeech, visible: Bool
         onDispose {
             model.tick()
             model.readingPassageActive = false
-            model.persist()
+            model.library.save()
             speech.stop()
         }
     }
@@ -72,7 +72,7 @@ fun ReadingPassagePage(model: LearningModel, speech: FrenchSpeech, visible: Bool
         Text(speech.message, style = MaterialTheme.typography.bodySmall)
     }
     lookup?.let { token ->
-        val matches = PassageDrafter.meanings(token, model.entries)
+        val matches = PassageDrafter.meanings(token, model.library.entries)
         AlertDialog(onDismissRequest = { lookup = null }, title = { Text("Library matches for $token") },
             text = {
                 if (matches.isEmpty()) Text("No matching meaning in your library.")

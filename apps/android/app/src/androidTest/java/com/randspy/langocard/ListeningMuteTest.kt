@@ -28,8 +28,8 @@ class ListeningMuteTest {
             instrumentation.runOnMainSync {
                 val model = LearningModel(IsolatedApp(instrumentation.targetContext, folder))
                 model.skipPlacement()
-                model.setMinimumRank(1)
-                base = model.backup()
+                model.library.setMinimumRank(1)
+                base = model.library.backup()
                 test(model)
             }
         } finally { folder.deleteRecursively() }
@@ -61,15 +61,15 @@ class ListeningMuteTest {
         assertEquals(LearningScreen.Summary(SessionKind.Practice), screen)
     }
 
-    private fun LearningModel.scheduling() = JSONObject(backup()).getJSONObject("data").let { data ->
+    private fun LearningModel.scheduling() = JSONObject(library.backup()).getJSONObject("data").let { data ->
         listOf("cards", "reviews", "buried", "failures", "paused").associateWith { data.opt(it)?.toString() }
     }
 
     private fun reviewed(id: Int, due: Instant) = Card.builder().cardId(id).state(State.REVIEW).stability(10.0).difficulty(5.0)
         .due(due).lastReview(Instant.now().minusSeconds(86400)).build()
 
-    private val LearningModel.heard get() = entries.first()
-    private val LearningModel.read get() = entries.first { it.lexeme != heard.lexeme }
+    private val LearningModel.heard get() = library.entries.first()
+    private val LearningModel.read get() = library.entries.first { it.lexeme != heard.lexeme }
     private val LearningModel.listeningKey get() = "${heard.id}:Listening"
     private val LearningModel.readingKey get() = "${read.id}:Reading"
 
@@ -101,7 +101,7 @@ class ListeningMuteTest {
         assertEquals(model.listeningKey, (model.screen as? LearningScreen.Review)?.card?.prompt?.key)
         model.muteListening()
         assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
-        assertEquals(due.toJson(), JSONObject(model.backup()).getJSONObject("data").getJSONObject("cards").getString(model.listeningKey))
+        assertEquals(due.toJson(), JSONObject(model.library.backup()).getJSONObject("data").getJSONObject("cards").getString(model.listeningKey))
     }
 
     @Test fun mutedListeningStaysOutForTheRestOfTheSittingIncludingExtraBlocks() = withModel { model ->
