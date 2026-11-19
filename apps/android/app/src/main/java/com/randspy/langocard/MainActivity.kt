@@ -250,11 +250,13 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard,
                 Text("Un or une?", style = MaterialTheme.typography.bodySmall)
             }
             Skill.Listening -> {
-                Button(onClick = { val success = speech.say(p.example.text); model.presentCard { it.played(success) } }, enabled = speech.available) {
-                    Text(if (card.played) "Play again" else "Play French sentence")
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { val success = speech.say(p.example.text); model.presentCard { it.played(success) } }, enabled = speech.available) {
+                        Text(if (card.played) "Play again" else "Play French sentence")
+                    }
+                    TextButton(onClick = model::muteListening) { Text("Skip listening") }
                 }
                 if (!speech.available) Text(speech.message)
-                TextButton(onClick = model::muteListening) { Text("Can't listen now: skip listening this session") }
                 GapFill(p.example, card) { text -> model.presentCard { it.type(text) } }
                 Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
             }

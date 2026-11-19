@@ -117,7 +117,7 @@ class PresentationFlowTest {
         val before = model.state(prompt)!!.toJson()
         show()
         compose.onNodeWithText("Reveal answer").assertIsNotEnabled()
-        compose.onNodeWithText("Can't listen now: skip listening this session").performScrollTo().performClick()
+        compose.onNodeWithText("Skip listening").performScrollTo().performClick()
         compose.runOnIdle {
             assertTrue(model.listeningMuted)
             assertNotEquals(Skill.Listening, model.review.card.prompt.skill)
