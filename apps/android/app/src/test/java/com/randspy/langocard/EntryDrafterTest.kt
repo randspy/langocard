@@ -63,6 +63,27 @@ class EntryDrafterTest {
         assertTrue(draft.unfilled.isEmpty())
     }
 
+    @Test fun `retries examples that repeat an article around the answer`() = runBlocking {
+        val bad = """{"word":"le castor","gender":"masculine","definition":"Animal qui construit des barrages.","examples":["Le {le castor} construit des barrages dans la rivière.","Un {un castor} nage dans la rivière.","Les {les castors} construisent des barrages."]}"""
+        val good = bad.replace("Le {le castor}", "{Le castor}")
+            .replace("Un {un castor}", "{Un castor}").replace("Les {les castors}", "{Les castors}")
+        val model = FakeModel(bad, good)
+        val draft = EntryDrafter(model.generate).draft("beaver", kept = emptyMap())
+        assertEquals(2, model.prompts.size)
+        assertEquals(listOf("{Le castor} construit des barrages dans la rivière.",
+            "{Un castor} nage dans la rivière.", "{Les castors} construisent des barrages."), draft.examples)
+    }
+
+    @Test fun `leaves examples unfilled when both attempts repeat the article`() = runBlocking {
+        val bad = """{"word":"le castor","gender":"masculine","definition":"Animal qui construit des barrages.","examples":["Le {le castor} construit des barrages dans la rivière."]}"""
+        val model = FakeModel(bad, bad)
+        val draft = EntryDrafter(model.generate).draft("beaver", kept = emptyMap())
+        assertEquals(2, model.prompts.size)
+        assertTrue(draft.examples.isEmpty())
+        assertEquals(setOf(DraftField.Examples), draft.unfilled)
+        assertEquals("le castor", draft.filled[DraftField.Word])
+    }
+
     @Test fun `retries once when the reply is unusable`() = runBlocking {
         val model = FakeModel("Désolé, je ne peux pas.", complete)
         val draft = EntryDrafter(model.generate).draft("to realise", kept = emptyMap())
