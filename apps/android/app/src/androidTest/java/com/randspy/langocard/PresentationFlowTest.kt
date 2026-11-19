@@ -67,10 +67,10 @@ class PresentationFlowTest {
         compose.onNodeWithText("Your answer (optional)").performTextInput(answer)
         compose.onNodeWithText("Reveal answer").performClick()
         compose.onNodeWithText("Confirm rating").assertIsDisplayed()
-        compose.onNodeWithText("✓ Good").assertIsDisplayed()
+        compose.onNodeWithText("Good").assertIsSelected()
         compose.runOnIdle { assertEquals(0, model.sessionReviews) }
         compose.onNodeWithText("Easy").performClick()
-        compose.onNodeWithText("✓ Easy").assertIsDisplayed()
+        compose.onNodeWithText("Easy").assertIsSelected()
         compose.runOnIdle { assertEquals(Rating.EASY, model.review.card.ratingToConfirm) }
         compose.onNodeWithText("Confirm rating").performClick()
         compose.runOnIdle {

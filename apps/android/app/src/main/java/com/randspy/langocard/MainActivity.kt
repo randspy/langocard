@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 
 class MainActivity : ComponentActivity() {
     private lateinit var model: LearningModel
@@ -356,18 +358,19 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, card: Rev
                 Button(onClick = { model.presentCard { it.reveal(speech.available, speech.speaking) } },
                     enabled = card.canReveal(speech.available, speech.speaking), modifier = Modifier.fillMaxWidth()) { Text("Reveal answer") }
             }
-            listOf(listOf(Rating.AGAIN to "Again", Rating.HARD to "Hard"),
-                listOf(Rating.GOOD to "Good", Rating.EASY to "Easy")).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { (rating, label) ->
-                        val interval = if (revealed) remember(p.key, model.sessionReviews, rating) { model.interval(rating) } else ""
-                        OutlinedButton(onClick = { if (comparison != null) model.presentCard { it.select(rating) } else { speech.stop(); model.rate(rating, speech.available) } },
-                            colors = ButtonDefaults.outlinedButtonColors(containerColor = if (comparison != null && revealed && selected == rating) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface),
-                            enabled = revealed, modifier = Modifier.weight(1f).heightIn(min = 56.dp)) {
-                            Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                                Text(if (comparison != null && revealed && selected == rating) "✓ $label" else label, fontWeight = FontWeight.Bold)
-                                if (revealed) Text("~$interval", style = MaterialTheme.typography.labelSmall)
-                            }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                listOf(Rating.AGAIN to "Again", Rating.HARD to "Hard", Rating.GOOD to "Good", Rating.EASY to "Easy").forEach { (rating, label) ->
+                    val interval = if (revealed) remember(p.key, model.sessionReviews, rating) { model.interval(rating) } else ""
+                    val isSelected = comparison != null && revealed && selected == rating
+                    OutlinedButton(onClick = { if (comparison != null) model.presentCard { it.select(rating) } else { speech.stop(); model.rate(rating, speech.available) } },
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface),
+                        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else ButtonDefaults.outlinedButtonBorder(revealed),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                        enabled = revealed, modifier = Modifier.weight(1f).heightIn(min = 56.dp)
+                            .semantics { if (comparison != null && revealed) this.selected = isSelected }) {
+                        Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                            Text(label, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                            if (revealed) Text("~$interval", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
                         }
                     }
                 }
