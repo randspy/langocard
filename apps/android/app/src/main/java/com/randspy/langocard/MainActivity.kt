@@ -373,7 +373,6 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, card: Rev
                 }
             }
             if (revealed && comparison != null) {
-                Text("Suggested ${comparison.match.suggested.name.lowercase()}. Change it if needed.", style = MaterialTheme.typography.bodySmall)
                 Button(onClick = { selected?.let { speech.stop(); model.rate(it, speech.available) } },
                     modifier = Modifier.fillMaxWidth()) { Text("Confirm rating") }
             }
