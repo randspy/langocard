@@ -2,10 +2,15 @@ package com.randspy.langocard.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import com.randspy.langocard.R
 
 private val Navy = Color(0xFF44536A)
 private val DarkNavy = Color(0xFF2D3443)
@@ -56,7 +61,36 @@ private val DarkColors = darkColorScheme(
     errorContainer = Color(0xFF8C1D18), onErrorContainer = Color(0xFFFFDAD6),
 )
 
+private val Geist = FontFamily(
+    Font(R.font.geist_regular, FontWeight.Normal),
+    Font(R.font.geist_medium, FontWeight.Medium),
+    Font(R.font.geist_bold, FontWeight.Bold),
+)
+private val GeistTypography = with(Typography()) {
+    Typography(
+        displayLarge = displayLarge.copy(fontFamily = Geist),
+        displayMedium = displayMedium.copy(fontFamily = Geist),
+        displaySmall = displaySmall.copy(fontFamily = Geist),
+        headlineLarge = headlineLarge.copy(fontFamily = Geist),
+        headlineMedium = headlineMedium.copy(fontFamily = Geist),
+        headlineSmall = headlineSmall.copy(fontFamily = Geist),
+        titleLarge = titleLarge.copy(fontFamily = Geist),
+        titleMedium = titleMedium.copy(fontFamily = Geist),
+        titleSmall = titleSmall.copy(fontFamily = Geist),
+        bodyLarge = bodyLarge.copy(fontFamily = Geist),
+        bodyMedium = bodyMedium.copy(fontFamily = Geist),
+        bodySmall = bodySmall.copy(fontFamily = Geist),
+        labelLarge = labelLarge.copy(fontFamily = Geist),
+        labelMedium = labelMedium.copy(fontFamily = Geist),
+        labelSmall = labelSmall.copy(fontFamily = Geist),
+    )
+}
+
 @Composable
 fun LangocardTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors, content = content)
+    MaterialTheme(
+        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
+        typography = GeistTypography,
+        content = content,
+    )
 }
