@@ -19,10 +19,13 @@ version before syncing with a v2 deployment.
 | `reviews` | Review history | Union, deduplicated by card key and review time |
 | `sources` | Pack attribution | Union |
 | `buried` | Sibling skills hidden until the next day | Latest day wins |
-| `settings` | Placement, frequency band, interests, daily counters | Per field (see `convex/merge.ts`) |
+| `settings` | Placement, frequency band, interests, daily counters (study time, new meanings, new Gender cards), fitted FSRS settings | Per field (see `convex/merge.ts`); the fit follows its own clock, `fittedSettingsChangedAt` |
 
 Every rule is idempotent, so a failed or repeated sync is safe. On the same day on two
 devices, the daily study time keeps the larger value rather than the sum.
+
+`genderIntroduced` and the fit (`fittedSettings`, `fittedSettingsChangedAt`) are optional
+in `push`: an older APK that omits them keeps the stored values.
 
 - Devices may only **add** personal entries (`personal-…`). Bundled and pack entries
   come from the seed. `push` returns the IDs it refused (invalid content or an unknown

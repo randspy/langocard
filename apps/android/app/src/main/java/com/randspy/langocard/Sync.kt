@@ -111,14 +111,24 @@ object SyncData {
         .put("day", data.optString("day"))
         .put("seconds", data.optInt("seconds"))
         .put("introduced", data.optInt("introduced"))
+        .put("genderIntroduced", data.optInt("genderIntroduced"))
+        .put("fittedSettings", data.optJSONObject("fittedSettings")?.toString() ?: JSONObject.NULL)
+        // A fit imported before fits synced has no clock; 1 lets it win over untouched defaults only.
+        .put("fittedSettingsChangedAt", data.optLong("fittedSettingsChangedAt", if (data.has("fittedSettings")) 1L else 0L))
 
+    /**
+     * Mirrors `mergeSettings` in `apps/backend/convex/merge.ts`. [b] may omit the Gender count
+     * (counted as 0) and the fit (the stored one is kept), as older APKs' rows do.
+     */
     fun mergeSettings(a: JSONObject, b: JSONObject): JSONObject {
         val preferences = if (b.getLong("preferencesChangedAt") > a.getLong("preferencesChangedAt")) b else a
+        val fit = if (b.has("fittedSettings") && b.optLong("fittedSettingsChangedAt") > a.optLong("fittedSettingsChangedAt")) b else a
         val dayA = a.getString("day"); val dayB = b.getString("day")
         val daily = when {
             dayA == dayB -> JSONObject().put("day", dayA)
                 .put("seconds", maxOf(a.getInt("seconds"), b.getInt("seconds")))
                 .put("introduced", maxOf(a.getInt("introduced"), b.getInt("introduced")))
+                .put("genderIntroduced", maxOf(a.optInt("genderIntroduced"), b.optInt("genderIntroduced")))
             dayA > dayB -> a
             else -> b
         }
@@ -130,6 +140,9 @@ object SyncData {
             .put("interests", preferences.getString("interests"))
             .put("preferencesChangedAt", preferences.getLong("preferencesChangedAt"))
             .put("day", daily.getString("day")).put("seconds", daily.getInt("seconds")).put("introduced", daily.getInt("introduced"))
+            .put("genderIntroduced", daily.optInt("genderIntroduced"))
+            .put("fittedSettings", fit.opt("fittedSettings") ?: JSONObject.NULL)
+            .put("fittedSettingsChangedAt", fit.optLong("fittedSettingsChangedAt"))
     }
 
     class Outbox(val generation: Int, val cards: List<JSONObject>, val reviews: List<JSONObject>,
@@ -294,13 +307,26 @@ object SyncData {
                         .put("seconds", row.getDouble("seconds").toInt())
                         .put("introduced", row.getDouble("introduced").toInt())
                         .also { s ->
+                            if (row.has("genderIntroduced")) s.put("genderIntroduced", row.getDouble("genderIntroduced").toInt())
+                            // A fit this app can't use is ignored rather than replacing a valid one.
+                            if (row.has("fittedSettingsChangedAt") && row.has("fittedSettings") && (row.isNull("fittedSettings") ||
+                                    runCatching { FittedSettings.parse(row.getString("fittedSettings")) }.isSuccess)) {
+                                s.put("fittedSettings", row.opt("fittedSettings") ?: JSONObject.NULL)
+                                    .put("fittedSettingsChangedAt", row.getDouble("fittedSettingsChangedAt").toLong())
+                            }
+                        }
+                        .also { s ->
                             require(s.getInt("minimumRank") in listOf(1, 2501, 7001) && s.getInt("placementIndex") in 0..18)
                             require(s.getString("interests").split(',').all { it in setOf("daily", "culture", "news") })
-                            require(s.getInt("seconds") >= 0 && s.getInt("introduced") >= 0)
+                            require(s.getInt("seconds") >= 0 && s.getInt("introduced") >= 0 && s.optInt("genderIntroduced") >= 0)
                         }
                 }.getOrNull() ?: return@forEach
                 val merged = mergeSettings(settings(data), remote)
-                merged.keys().forEach { data.put(it, merged.get(it)) }
+                merged.keys().forEach { key ->
+                    if (key != "fittedSettings") data.put(key, merged.get(key))
+                    else if (merged.isNull(key)) data.remove(key)
+                    else data.put(key, JSONObject(merged.getString(key)))
+                }
             }
             else -> error("Unknown sync table $table")
         }

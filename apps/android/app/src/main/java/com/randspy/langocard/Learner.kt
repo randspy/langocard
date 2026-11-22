@@ -183,9 +183,17 @@ class Learner(val document: JSONObject) {
         hooks.put(entryId, JSONObject().put("entryId", entryId).put("text", text).put("editedAt", clock))
     }
 
+    /** Importing or resetting the fit is a change that sync spreads to every device; see [fittedSettingsChanged]. */
     var fittedSettings: FittedSettings?
         get() = document.optJSONObject("fittedSettings")?.let { FittedSettings.parse(it.toString()) }
-        set(value) { if (value == null) document.remove("fittedSettings") else document.put("fittedSettings", value.toJson()) }
+        set(value) {
+            if (value == null) document.remove("fittedSettings") else document.put("fittedSettings", value.toJson())
+            fittedSettingsChanged()
+        }
+    /** Advances the fit's sync clock, so this device's fit (or its absence) wins over older ones. */
+    private fun fittedSettingsChanged() {
+        document.put("fittedSettingsChangedAt", maxOf(System.currentTimeMillis(), document.optLong("fittedSettingsChangedAt") + 1))
+    }
 
     /** Entries added on this device: personal ones and imported packs. */
     var extraEntries: List<Entry>
@@ -211,5 +219,9 @@ class Learner(val document: JSONObject) {
     fun restoredFrom(backup: JSONObject): Learner = Learner(backup).also { restored ->
         restored.document.put("sync", document.optJSONObject("sync") ?: JSONObject())
         SyncData.reset(restored.document)
+        // The backup's fit (or its defaults) replaces the fit on every device.
+        restored.document.put("fittedSettingsChangedAt", maxOf(restored.document.optLong("fittedSettingsChangedAt"),
+            document.optLong("fittedSettingsChangedAt")))
+        restored.fittedSettingsChanged()
     }
 }

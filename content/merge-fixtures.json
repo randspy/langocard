@@ -1,5 +1,5 @@
 {
-  "description": "Merge cases shared by apps/backend/convex/merge.ts and Android Sync.kt. cards: mergeCard(stored, incoming) must equal expected (review fields follow lastReview, manual fields follow cardEditedAt; ties keep stored). entries: incomingWins is whether the incoming version replaces the stored one; deleted is whether the incoming version is a deletion.",
+  "description": "Merge cases shared by apps/backend/convex/merge.ts and Android Sync.kt. cards: mergeCard(stored, incoming) must equal expected (review fields follow lastReview, manual fields follow cardEditedAt; ties keep stored). entries: incomingWins is whether the incoming version replaces the stored one; deleted is whether the incoming version is a deletion. settings: mergeSettings(stored, incoming) must contain expected; an omitted genderIntroduced counts as 0 and an omitted fit keeps the stored one.",
   "suspendedIndefinitely": 253402300799999,
   "cards": [
     {
@@ -297,6 +297,341 @@
       },
       "incomingWins": true,
       "deleted": false
+    }
+  ],
+  "settings": [
+    {
+      "name": "same day keeps the larger Gender count",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 3,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 7,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "expected": {
+        "day": "2026-11-20",
+        "genderIntroduced": 7
+      }
+    },
+    {
+      "name": "a later day replaces the Gender count",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 9,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-21",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 1,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "expected": {
+        "day": "2026-11-21",
+        "genderIntroduced": 1
+      }
+    },
+    {
+      "name": "an earlier day leaves the Gender count",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-21",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 2,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 9,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "expected": {
+        "day": "2026-11-21",
+        "genderIntroduced": 2
+      }
+    },
+    {
+      "name": "a push without the Gender count keeps the stored one",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 4,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 0
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 60,
+        "introduced": 0
+      },
+      "expected": {
+        "genderIntroduced": 4,
+        "seconds": 60
+      }
+    },
+    {
+      "name": "a newer fit wins",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 10
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 20
+      },
+      "expected": {
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 20
+      }
+    },
+    {
+      "name": "an older fit loses",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 20
+      },
+      "expected": {
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      }
+    },
+    {
+      "name": "resetting to defaults is a change",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 40
+      },
+      "expected": {
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 40
+      }
+    },
+    {
+      "name": "a tie keeps the stored fit",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": null,
+        "fittedSettingsChangedAt": 30
+      },
+      "expected": {
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      }
+    },
+    {
+      "name": "a push without the fit keeps the stored one",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0
+      },
+      "expected": {
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      }
+    },
+    {
+      "name": "a newer clock without a fit can't clear it",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 3,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettingsChangedAt": 50
+      },
+      "expected": {
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      }
     }
   ]
 }

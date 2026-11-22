@@ -142,6 +142,25 @@ describe("sync", () => {
   });
 });
 
+test("a first push with a fit clock but no fit stores no reset", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettingsChangedAt: 90 } });
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 5 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 5 }]);
+});
+
+test("a push without the new settings fields keeps the stored fit and Gender count", async () => {
+  const t = convexTest(schema, modules);
+  const fit = { ...settings, genderIntroduced: 6, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 20 };
+  await t.mutation(api.sync.push, { token, ...empty, settings: fit });
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, seconds: 30 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ seconds: 30, genderIntroduced: 6, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 20 }]);
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: null, fittedSettingsChangedAt: 25 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: null, fittedSettingsChangedAt: 25 }]);
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettingsChangedAt: 30 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: null, fittedSettingsChangedAt: 25 }]);
+});
+
 describe("mergeSettings", () => {
   test("a newer day replaces the daily counters", () => {
     const merged = mergeSettings({ ...settings, day: "2026-11-11", seconds: 900 }, { ...settings, day: "2026-11-12", seconds: 60 });

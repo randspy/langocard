@@ -260,7 +260,8 @@ Copy `params.json` to your phone and choose Backup → Load fitted FSRS settings
 The page shows the active fit's review count, date and target recall. Reset FSRS
 to defaults restores the library's default weights and 90% target. Import and
 reset affect future reviews and rating-button previews; existing due dates are
-preserved. Settings persist locally and travel in backups, but are not cloud-synced.
+preserved. Settings persist locally, travel in backups and sync to your other devices:
+the most recent import, reset or restore wins on every phone.
 Restoring a backup without fitted settings restores defaults.
 
 ## Reading passages
