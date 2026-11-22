@@ -83,6 +83,46 @@ describe("study.next", () => {
   }, 120_000);
 });
 
+describe("study.next with many other due cards", () => {
+  test("other skills' due cards don't use up the walk", async () => {
+    const t = setup();
+    await t.run(async (ctx) => {
+      for (let i = 0; i < 2101; i++) {
+        const { entryId: _, origin, ...content } = shipped();
+        await ctx.db.insert("entries", { entryId: `frw-${i}`, ...content, origin, shipped: content, editedAt: null, deletedAt: null, upstreamChanged: false, retired: false, updatedAt: 1 });
+      }
+    });
+    const listening = Array.from({ length: 2100 }, (_, i) => cardRow(`frw-${i}:Listening`, reviewedCard(i, -2 * DAY - i * 1000)));
+    for (let i = 0; i < listening.length; i += 500) await push(t, { cards: listening.slice(i, i + 500) });
+    await push(t, { cards: [cardRow("frw-2100:Reading", reviewedCard(9000, -DAY))] });
+    expect((await withToken(t).query(api.study.next, clock))?.key).toBe("frw-2100:Reading");
+  }, 60_000);
+
+  test("the summary reports what it found when blocked cards exhaust the walk", async () => {
+    const t = setup();
+    await t.run(async (ctx) => {
+      for (let i = 0; i < 2101; i++) {
+        const { entryId: _, origin, ...content } = shipped();
+        await ctx.db.insert("entries", { entryId: `frw-${i}`, ...content, origin, shipped: content, editedAt: null, deletedAt: null, upstreamChanged: false, retired: false, updatedAt: 1 });
+      }
+    });
+    const cards = [cardRow("frw-2100:Reading", reviewedCard(9000, -3 * DAY)),
+      ...Array.from({ length: 2100 }, (_, i) => cardRow(`frw-${i}:Reading`, reviewedCard(i, -DAY - i * 1000), { pausedUntil: now + DAY }))];
+    for (let i = 0; i < cards.length; i += 500) await push(t, { cards: cards.slice(i, i + 500) });
+    const client = withToken(t);
+    expect((await client.query(api.study.next, clock))?.key).toBe("frw-2100:Reading");
+    expect(await client.query(api.study.summary, clock)).toEqual({ due: 1, dueCapped: false });
+  }, 60_000);
+
+  test("a card synced before its entry was seeded becomes studiable", async () => {
+    const t = setup();
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    expect(await withToken(t).query(api.study.next, clock)).toBeNull();
+    await seed(t, [shipped()]);
+    expect((await withToken(t).query(api.study.next, clock))?.key).toBe("frw-1:Reading");
+  });
+});
+
 describe("study.answer", () => {
   test("reschedules the card and logs the review as a phone would", async () => {
     const t = setup();

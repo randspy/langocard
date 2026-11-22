@@ -70,6 +70,8 @@ export const update = mutation({
     // Editing so that the content matches the shipped version again resolves any upstream flag.
     const upstreamChanged = entry.upstreamChanged && !(entry.shipped && sameContent(entry.shipped, content));
     await ctx.db.patch(entry._id, { ...contentOf(content), editedAt: nextClock(entry), upstreamChanged, updatedAt: Date.now() });
+    // Editing a deleted entry restores it (its edit clock passes the deletion).
+    await refreshEntryCards(ctx, entryId);
   },
 });
 
@@ -122,6 +124,8 @@ export const resolveUpstream = mutation({
       await ctx.db.patch(entry._id, { upstreamChanged: false, updatedAt: Date.now() });
     } else {
       await ctx.db.patch(entry._id, { ...contentOf(entry.shipped), editedAt: nextClock(entry), upstreamChanged: false, updatedAt: Date.now() });
+      // A newer edit clock can bring a deleted entry back.
+      await refreshEntryCards(ctx, entryId);
     }
   },
 });

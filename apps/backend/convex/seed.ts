@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import { contentOf, entryErrors } from "./entryRules";
 import { applyShipped } from "./merge";
+import { refreshEntryCards } from "./studyIndex";
 import { entryContent } from "./validators";
 
 /**
@@ -28,11 +29,14 @@ export const apply = internalMutation({
           entryId, ...shipped, origin, shipped, editedAt: null, deletedAt: null,
           upstreamChanged: false, retired: false, updatedAt,
         });
+        // Cards synced before their entry was seeded become studiable now.
+        await refreshEntryCards(ctx, entryId);
         inserted++;
       } else {
         const patch = applyShipped(stored, shipped, origin);
         if (patch) {
           await ctx.db.patch(stored._id, { ...patch, updatedAt });
+          if (patch.origin !== undefined) await refreshEntryCards(ctx, entryId);
           updated++;
         }
       }

@@ -20,7 +20,7 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_updated", ["updatedAt"])
-    .index("by_active_due", ["active", "due"]),
+    .index("by_active_skill_due", ["active", "skill", "due"]),
 
   // Append-only review history.
   reviews: defineTable({

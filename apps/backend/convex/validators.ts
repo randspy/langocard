@@ -73,6 +73,8 @@ export const derivedCardFields = {
   cardId: v.optional(v.union(v.number(), v.null())),
   entryId: v.optional(v.string()),
   skill: v.optional(v.string()),
+  /** The entry's pack, so study can skip uninstalled packs without loading the entry. */
+  packId: v.optional(v.union(v.string(), v.null())),
   /** False while the entry is deleted or missing, or the card is suspended indefinitely. */
   active: v.optional(v.boolean()),
 };

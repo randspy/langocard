@@ -22,36 +22,39 @@ const SENTENCE_SKILLS = ["Reading", "Listening", "Production"] as const;
 
 type Entry = Doc<"entries">;
 
-/** Whether the learner may study this card now; returns its entry if so. */
+/** Whether the learner may study this card now; returns its entry if so. Cheap checks come first. */
 async function studiable(ctx: QueryCtx, row: Doc<"cards">, now: number, day: string, installed = new Map<string, boolean>()): Promise<Entry | null> {
   if (!row.active || row.skill !== "Reading") return null;
   if (row.pausedUntil > now || row.suspendedUntil > now) return null;
+  if (row.packId) {
+    // Android studies only installed packs; installing one on any device installs it everywhere.
+    if (!installed.has(row.packId)) {
+      installed.set(row.packId, (await ctx.db.query("sources").withIndex("by_source", (q) => q.eq("sourceId", row.packId!)).first()) !== null);
+    }
+    if (!installed.get(row.packId)) return null;
+  }
   const buried = await ctx.db.query("buried").withIndex("by_key", (q) => q.eq("key", row.key)).unique();
   if (buried?.day === day) return null;
   const entry = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", row.entryId!)).unique();
-  if (!entry || isDeleted(entry)) return null;
-  if (entry.origin.startsWith("pack:")) {
-    // Android studies only installed packs; installing one on any device installs it everywhere.
-    const packId = entry.origin.slice("pack:".length);
-    if (!installed.has(packId)) {
-      installed.set(packId, (await ctx.db.query("sources").withIndex("by_source", (q) => q.eq("sourceId", packId)).first()) !== null);
-    }
-    if (!installed.get(packId)) return null;
-  }
-  return entry;
+  return entry && !isDeleted(entry) ? entry : null;
 }
 
 /**
- * Due cards the learner may study now, soonest first. Inactive cards (deleted entries,
- * indefinite suspensions) are outside the index range; the rest of `studiable` steps over
- * the few that are blocked, under `WALK_BUDGET`.
+ * Due Reading cards the learner may study now, soonest first. Inactive cards (deleted entries,
+ * indefinite suspensions) and other skills are outside the index range; `studiable` steps
+ * over the few that are blocked. Past `WALK_BUDGET` cards it throws, or with `stopAtBudget`
+ * simply ends.
  */
-async function* dueCards(ctx: QueryCtx, now: number, day: string): AsyncGenerator<{ row: Doc<"cards">; entry: Entry }> {
+async function* dueCards(ctx: QueryCtx, now: number, day: string, stopAtBudget = false): AsyncGenerator<{ row: Doc<"cards">; entry: Entry }> {
   const installed = new Map<string, boolean>();
   let walked = 0;
-  const range = ctx.db.query("cards").withIndex("by_active_due", (q) => q.eq("active", true).gte("due", 0).lte("due", now));
+  const range = ctx.db.query("cards")
+    .withIndex("by_active_skill_due", (q) => q.eq("active", true).eq("skill", "Reading").gte("due", 0).lte("due", now));
   for await (const row of range) {
-    if (++walked > WALK_BUDGET) throw new ConvexError("Too many blocked due cards to choose from; try again later");
+    if (++walked > WALK_BUDGET) {
+      if (stopAtBudget) return;
+      throw new ConvexError("Too many blocked due cards to choose from; try again later");
+    }
     const entry = await studiable(ctx, row, now, day, installed);
     if (entry) yield { row, entry };
   }
@@ -96,7 +99,8 @@ export const summary = query({
   handler: async (ctx, { token, day, now }) => {
     requireToken(token);
     let due = 0;
-    for await (const _ of dueCards(ctx, now, day)) if (++due >= DUE_DISPLAY_CAP) break;
+    // The count is for display; past the walk budget it reports what it found.
+    for await (const _ of dueCards(ctx, now, day, true)) if (++due >= DUE_DISPLAY_CAP) break;
     return { due, dueCapped: due >= DUE_DISPLAY_CAP };
   },
 });

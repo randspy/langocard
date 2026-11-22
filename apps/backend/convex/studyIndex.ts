@@ -5,16 +5,29 @@ import { isDeleted, SUSPENDED_INDEFINITELY } from "./merge";
 
 /**
  * Keeps the server-only scheduling columns of `cards` current (see `derivedCardFields`).
- * Every write to a card, or to whether its entry is deleted, must end with `refreshCard` or
- * `refreshEntryCards`; `migrations:deriveCards` rebuilds them.
+ * Every write to a card, or to its entry's deletion or origin, must end with `refreshCard`,
+ * `refreshEntryCards` or a write that includes `deriveCard`; `migrations:deriveCards`
+ * rebuilds them.
  */
 
-export const DERIVED_CARD_FIELDS = ["due", "fsrsState", "cardId", "entryId", "skill", "active"] as const;
+export const DERIVED_CARD_FIELDS = ["due", "fsrsState", "cardId", "entryId", "skill", "packId", "active"] as const;
 
 type Derived = Pick<Doc<"cards">, (typeof DERIVED_CARD_FIELDS)[number]>;
 
-function derive(row: Doc<"cards">, entryLive: boolean): Derived {
-  const split = row.key.lastIndexOf(":");
+/** What a card's derived columns need to know about its entry. */
+export type EntryState = { live: boolean; packId: string | null };
+
+export function entryStateOf(entry: Doc<"entries"> | null): EntryState {
+  return {
+    live: entry !== null && !isDeleted(entry),
+    packId: entry?.origin.startsWith("pack:") ? entry.origin.slice("pack:".length) : null,
+  };
+}
+
+export const entryIdOf = (key: string) => key.slice(0, key.lastIndexOf(":"));
+
+/** The derived columns of a card with these fields, whose entry is in `entry`'s state. */
+export function deriveCard(row: { key: string; card: string | null; suspendedUntil: number }, entry: EntryState): Derived {
   let card = null;
   try {
     card = row.card === null ? null : cardFromJson(row.card);
@@ -25,31 +38,30 @@ function derive(row: Doc<"cards">, entryLive: boolean): Derived {
     due: card?.due ?? null,
     fsrsState: card?.state ?? null,
     cardId: card?.cardId ?? null,
-    entryId: row.key.slice(0, split),
-    skill: row.key.slice(split + 1),
-    active: entryLive && row.suspendedUntil !== SUSPENDED_INDEFINITELY,
+    entryId: entryIdOf(row.key),
+    skill: row.key.slice(row.key.lastIndexOf(":") + 1),
+    packId: entry.packId,
+    active: entry.live && row.suspendedUntil !== SUSPENDED_INDEFINITELY,
   };
 }
 
-/** Whether `entryId` names an entry that isn't deleted. */
-export async function entryLive(ctx: QueryCtx, entryId: string): Promise<boolean> {
-  const entry = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique();
-  return entry !== null && !isDeleted(entry);
+export async function entryState(ctx: QueryCtx, entryId: string): Promise<EntryState> {
+  return entryStateOf(await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique());
 }
 
 /** Recomputes one card's derived columns after a write. */
-export async function refreshCard(ctx: MutationCtx, id: Id<"cards">, live?: boolean): Promise<void> {
+export async function refreshCard(ctx: MutationCtx, id: Id<"cards">, entry?: EntryState): Promise<void> {
   const row = await ctx.db.get(id);
   if (!row) return;
-  const derived = derive(row, live ?? await entryLive(ctx, row.key.slice(0, row.key.lastIndexOf(":"))));
+  const derived = deriveCard(row, entry ?? await entryState(ctx, entryIdOf(row.key)));
   if (DERIVED_CARD_FIELDS.some((field) => row[field] !== derived[field])) await ctx.db.patch(id, derived);
 }
 
-/** Recomputes the derived columns of every card of `entryId`, after its deletion state may have changed. */
-export async function refreshEntryCards(ctx: MutationCtx, entryId: string): Promise<void> {
-  const live = await entryLive(ctx, entryId);
+/** Recomputes the derived columns of every card of `entryId`, after its deletion or origin may have changed. */
+export async function refreshEntryCards(ctx: MutationCtx, entryId: string, entry?: EntryState): Promise<void> {
+  const state = entry ?? await entryState(ctx, entryId);
   for (const row of await ctx.db.query("cards").withIndex("by_key", (q) => q.gte("key", `${entryId}:`).lt("key", `${entryId};`)).collect()) {
-    await refreshCard(ctx, row._id, live);
+    await refreshCard(ctx, row._id, state);
   }
 }
 
