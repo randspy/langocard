@@ -149,6 +149,29 @@ due range whose first eligible card sits behind a page of blocked ones.
 6. Independent: Anki export and content sources (#81), AI drafting (#82), then reading
    passages (#83).
 
+## On-device AI on the web
+
+AI fill on the New entry page ports Android's `EntryDrafter` (prompt, one retry, partial fills,
+the article decides the gender) to `apps/web/src/lib/entryDrafter.ts`. WebLLM is confined to
+`apps/web/src/lib/onDeviceModel.ts`. "Enable AI fill" downloads the model once into the browser's
+cache storage. It works offline afterwards and can be removed. It's hidden without WebGPU and
+16-bit float shaders.
+
+**Model:** `gemma-2-2b-it-q4f16_1-MLC` from WebLLM's prebuilt list (about 1.5 GB to download,
+about 1.9 GB of GPU memory), chosen provisionally. It is the smallest prebuilt instruct model
+expected to write acceptable French. The smaller Qwen 2.5 0.5B/1.5B, Qwen 3 0.6B/1.7B and
+Llama 3.2 1B were passed over for weaker French.
+
+**Quality check: pending (maintainer).** Draft about 20 sample meanings (nouns of each gender,
+verbs, a pronominal verb, adverbs, an idiom) in a WebGPU browser, and record here, per
+meaning, whether the word, gender, definition and examples were usable. If more than a few
+fail, try `Qwen3-1.7B-q4f16_1-MLC` or `Phi-3.5-mini-instruct-q4f16_1-MLC` and change
+`MODEL_ID`.
+
+| Meaning | Word | Gender | Definition | Examples |
+| --- | --- | --- | --- | --- |
+| *(to be filled in)* | | | | |
+
 ## Risks and trade-offs
 
 - **Card-ID collisions.** An offline phone and the web may allocate the same card ID. IDs
