@@ -71,6 +71,12 @@ class EntryDrafterTest {
         assertEquals(2, model.prompts.size)
     }
 
+    @Test fun `never repeats a learner's example that lists alternatives`() = runBlocking {
+        val own = realise[0].replace("}", "|comprendre}")
+        val draft = EntryDrafter(FakeModel(complete).generate).draft("to realise", kept = emptyMap(), keptExamples = listOf(own))
+        assertEquals(realise.drop(1), draft.examples)
+    }
+
     @Test fun `drops drafted examples that list alternatives`() = runBlocking {
         val withAlternatives = """{"word":"se rendre compte","gender":"none","definition":"Comprendre soudain quelque chose.","examples":["Elle {se rend compte|comprend} du problème.","Il {se rend compte|} de tout."]}"""
         val draft = EntryDrafter(FakeModel(withAlternatives, withAlternatives).generate).draft("to realise", kept = emptyMap())
