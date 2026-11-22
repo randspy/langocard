@@ -96,7 +96,7 @@ class EntryDrafter(private val generate: suspend (prompt: String) -> String) {
         val array = json.optJSONArray("examples")
         val seen = ownExamples.toMutableSet()
         val examples = (0 until (array?.length() ?: 0)).mapNotNull { (array!!.opt(it) as? String)?.trim() }
-            .filter { ContentFiles.validText(it) && ContentFiles.validAnswer(it) && seen.add(it) }
+            .filter { ContentFiles.validText(it) && ContentFiles.validAnswer(it) && !REPEATED_ARTICLE.containsMatchIn(it) && seen.add(it) }
         val word = fields[DraftField.Word] ?: learner[DraftField.Word]
         val stated = word?.let(Gender::ofArticle) ?: return Reply(fields, examples)
         val gender = (learner[DraftField.Gender] ?: fields[DraftField.Gender])?.let(::genderOf) ?: return Reply(fields, examples)
@@ -118,6 +118,8 @@ class EntryDrafter(private val generate: suspend (prompt: String) -> String) {
     }
 
     private companion object {
+        // Reject a model copying the noun's article after the sentence's article: Le {le castor}.
+        val REPEATED_ARTICLE = Regex("""\b(le|la|les|un|une)\s+\{?\1\s+""", RegexOption.IGNORE_CASE)
         const val ATTEMPTS = 2
         /** A drafted entry has this many examples, the learner's included. */
         const val EXAMPLES_WANTED = 3
@@ -127,7 +129,7 @@ class EntryDrafter(private val generate: suspend (prompt: String) -> String) {
             - word: the French word or expression for the English meaning. Nouns take their article (une intrigue), verbs are infinitive, pronominal verbs keep "se" (se méfier).
             - gender: "masculine" or "feminine" for a noun, matching its article; "none" for anything else.
             - definition: one short line of simple French. Never use the word itself.
-            - examples: a list of 3 natural French sentences of 6 to 15 words, each using the word in a different situation. Vary the form when it is natural (conjugation, plural, elided article). In each sentence put the word, exactly as it appears there, inside one pair of {braces}. Use no other braces.
+            - examples: a list of 3 natural French sentences of 6 to 15 words, each using the word in a different situation. Vary the form when it is natural (conjugation, plural, elided article). In each sentence put the word, exactly as it appears there, inside one pair of {braces}. Use no other braces. For nouns, put the article inside the braces exactly once: "{Le castor} construit un barrage.", never "Le {le castor} construit un barrage."
             When a French word, gender, definition or examples are given, keep them unchanged and make the other fields agree with them. Write examples that differ from the given ones.
         """.trimIndent() + "\n"
         /** Entries from the built-in library, so drafts match its style. */
