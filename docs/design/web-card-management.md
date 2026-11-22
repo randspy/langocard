@@ -10,9 +10,9 @@ editable across devices.
 
 | # | Topic | Decision |
 | --- | --- | --- |
-| 1 | Scope | Browse, add, **edit** and **delete** entries; view, suspend/resume and reset cards. No web studying. |
+| 1 | Scope | Browse, add, **edit** and **delete** entries; view, suspend/resume and reset cards. Web studying was out of scope here; it's designed in [web practice](web-practice.md). |
 | 2 | Editable entries | All origins: bundled, pack and personal. |
-| 3 | Web role | Thin online client of Convex (live `useQuery`/`useMutation`); no local replica. Android stays offline-first and syncs. |
+| 3 | Web role | Thin online client of Convex (live `useQuery`/`useMutation`); no local replica. Android stays offline-first and syncs. Study pages fetch the next card imperatively; see [web practice](web-practice.md) decision 2. |
 | 4 | Library location | Convex holds the **full library** (seeded from the repo); the web only queries Convex. |
 | 5 | Re-seeding | Rows carry `origin`, a `shipped` content snapshot, `editedAt`. Unedited rows are overwritten; edited rows are kept and flagged `upstreamChanged`; entries removed upstream are marked `retired`, never deleted. |
 | 6 | Delete | Soft delete: `deletedAt` tombstone, synced to Android, restorable. Cards and review history are kept. Edit vs delete is last-write-wins. |
@@ -22,10 +22,10 @@ editable across devices.
 | 10 | Migration | None. Wipe/recreate the deployment, deploy v2, seed. Old APKs fail argument validation and can't write. |
 | 11 | Stack | Vite + React + TypeScript + TanStack Router + Tailwind + shadcn/ui in `apps/web`. Imports `apps/backend/convex/_generated` by relative path; no workspace. |
 | 12 | Hosting | Local only (`npm run dev`). A build embeds the token, so it is never hosted. `npm run link-web` writes `VITE_CONVEX_URL` and `VITE_SYNC_TOKEN` so web and Android target the same deployment. |
-| 13 | Screens | Library, Entry, New entry, Upstream changes. |
+| 13 | Screens | Library, Entry, New entry, Upstream changes. Study, Packs and the other practice pages are added by [web practice](web-practice.md). |
 | 14 | Rule parity | `convex/entryRules.ts` shared by Convex and web; Kotlin mirrors it. Shared fixtures `content/entry-rules-fixtures.json` and `content/merge-fixtures.json` run in Vitest and Android unit tests. |
 | 15 | Pauses | `pausedUntil` = automatic leech pause (review clock); `suspendedUntil` = manual pause (edit clock). Field-level card merge. Android only honours web changes in v1. |
-| 16 | Order | Backend v2 → Android v2 sync → web skeleton + auth + Library → entry editing → card management → upstream changes. |
+| 16 | Order | Backend v2 → Android v2 sync → web skeleton + auth + Library → entry editing → card management → upstream changes. Web practice follows; see [web practice](web-practice.md) *Delivery*. |
 | 17 | Packs on Android | Packs stay opt-in downloads. Convex holds every pack entry so the web can manage them, but Android only studies entries from installed packs (see below). |
 
 ## Data model (protocol v2)
