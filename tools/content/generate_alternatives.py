@@ -136,13 +136,16 @@ def alternatives_for(row, generate):
         listing = ''.join(f'{i}. {c}: {cloze.replace(GAP, c)}\n' for i, c in enumerate(candidates, 1))
         reply = generate(CHECK.format(english=row['english'], sentence=example.replace('{', '').replace('}', ''),
                                       target=target, candidates=listing)).get('verdicts')
-        verdicts = {folded(v['candidate'].strip()): v for v in reply if isinstance(v, dict) and isinstance(v.get('candidate'), str)} \
-            if isinstance(reply, list) else {}
-        if any(folded(c) not in verdicts for c in candidates):
-            raise UnusableReply(f"{row['id']}: no verdict for every candidate")
+        judged = [v for v in reply if isinstance(v, dict) and isinstance(v.get('candidate'), str)
+                  and isinstance(v.get('grammatical'), bool) and isinstance(v.get('same_meaning'), bool)] \
+            if isinstance(reply, list) else []
+        verdicts = {folded(v['candidate'].strip()): v for v in judged}
+        # Exactly one complete verdict per candidate, or the reply can't be trusted.
+        if len(verdicts) != len(judged) or set(verdicts) != {folded(c) for c in candidates}:
+            raise UnusableReply(f"{row['id']}: no single complete verdict for every candidate")
         for c in candidates:
             v = verdicts[folded(c)]
-            if v.get('grammatical') is True and v.get('same_meaning') is True and len(accepted) < MAX_ALTERNATIVES:
+            if v['grammatical'] and v['same_meaning'] and len(accepted) < MAX_ALTERNATIVES:
                 accepted.append(c)
             else:
                 rejected.append({'candidate': c, 'reason': f"checker: {v.get('reason', '')}".strip()})

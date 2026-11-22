@@ -54,7 +54,10 @@ class GenerateTests(unittest.TestCase):
         for proposal, check in [({}, None), ({'alternatives': 'parvenir'}, None),
                                 ({'alternatives': ['parvenir', 'atteindre']}, {'verdicts': [verdict('parvenir')]}),
                                 ({'alternatives': ['parvenir']}, {}),
-                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('dérailler')]})]:
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('dérailler')]}),
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir', False), verdict('Parvenir')]}),
+                                ({'alternatives': ['parvenir']}, {'verdicts': [{'candidate': 'parvenir'}]}),
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir') | {'same_meaning': 'yes'}]})]:
             model = FakeModel(*[r for r in (proposal, check) if r is not None])
             with self.subTest(proposal), self.assertRaises(UnusableReply):
                 alternatives_for(ROW, model)
