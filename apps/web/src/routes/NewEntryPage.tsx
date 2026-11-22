@@ -3,6 +3,10 @@ import { api } from "@backend/_generated/api";
 import type { EntryContent } from "@backend/entryRules";
 import { EntryForm } from "@/components/EntryForm";
 import { useTokenMutation } from "@/lib/convex";
+import { WebLlmModel } from "@/lib/onDeviceModel";
+
+/** One per page load, so the loaded model survives re-renders. */
+const onDeviceModel = new WebLlmModel();
 
 const EMPTY: EntryContent = {
   word: "", english: "", definition: "", examples: [""], topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null,
@@ -20,6 +24,7 @@ export function NewEntryPage() {
         entryId="personal-new"
         initial={EMPTY}
         submitLabel="Add entry"
+        ai={onDeviceModel}
         onSubmit={async (content) => {
           const entryId = await create(content);
           await navigate({ to: "/entries/$entryId", params: { entryId } });
