@@ -1,0 +1,82 @@
+{
+  "description": "Anki export cases shared by apps/web/src/lib/anki.ts and Android ContentFiles.anki: entries (Android entry JSON) and credits (source and licence, in order; duplicates appear once) must export to expected. Credits avoid '/', which Android's runtime org.json escapes but the JVM test library doesn't.",
+  "entries": [
+    {
+      "id": "frw-1",
+      "word": "une rencontre",
+      "english": "a meeting",
+      "definition": "Fait de se trouver en présence de quelqu'un.",
+      "examples": [
+        "Elle prépare {une rencontre}.",
+        "Nous fêtons {la rencontre|l'entrevue} ce soir."
+      ],
+      "topic": "daily",
+      "lemma": "rencontre",
+      "rank": 812,
+      "sourceUrl": "https://fr.wiktionary.org/wiki/rencontre#fr",
+      "license": "CC BY-SA 4.0",
+      "gender": "feminine"
+    },
+    {
+      "id": "frw-2",
+      "word": "pourtant",
+      "english": "however & yet",
+      "definition": "Marque une opposition <forte>.",
+      "examples": [
+        "Il pleut, {pourtant} elle sort."
+      ],
+      "topic": "daily",
+      "lemma": "pourtant",
+      "rank": 300,
+      "sourceUrl": "https://fr.wiktionary.org/wiki/pourtant#fr",
+      "license": "CC BY-SA 4.0",
+      "gender": null
+    },
+    {
+      "id": "frw-3",
+      "word": "l'arbre",
+      "english": "the \"tree\"",
+      "definition": "Grande plante ligneuse.",
+      "examples": [
+        "{L'arbre} perd ses feuilles.",
+        "Le chat grimpe dans {l'arbre}."
+      ],
+      "topic": "culture",
+      "lemma": "arbre",
+      "rank": 1500,
+      "sourceUrl": "https://fr.wiktionary.org/wiki/arbre#fr",
+      "license": "CC BY-SA 4.0",
+      "gender": "masculine"
+    },
+    {
+      "id": "personal-1b2c",
+      "word": "un truc",
+      "english": "a thing",
+      "definition": "Objet quelconque.",
+      "examples": [
+        "Passe-moi {le truc}."
+      ],
+      "topic": "daily",
+      "lemma": "",
+      "rank": 2147483647,
+      "sourceUrl": "",
+      "license": "",
+      "gender": "masculine"
+    }
+  ],
+  "credits": [
+    {
+      "source": "Bundled starter content",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "source": "Everyday pack",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "source": "Bundled starter content",
+      "license": "CC BY-SA 4.0"
+    }
+  ],
+  "expected": "#separator:Tab\n#html:true\n#columns:Front\tBack\tTags\nune rencontre<br>Elle prépare une rencontre.\ta meeting<br>Fait de se trouver en présence de quelqu'un.<br>Elle prépare une rencontre.<br>Nous fêtons la rencontre ce soir.<br>https://fr.wiktionary.org/wiki/rencontre#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard reading\na meeting<br>Elle prépare ________.\tune rencontre<br>Elle prépare une rencontre.<br>Nous fêtons la rencontre ce soir.<br>https://fr.wiktionary.org/wiki/rencontre#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard production\nrencontre<br>a meeting\tune rencontre<br>Elle prépare une rencontre.<br>Nous fêtons la rencontre ce soir.<br>https://fr.wiktionary.org/wiki/rencontre#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard gender\npourtant<br>Il pleut, pourtant elle sort.\thowever &amp; yet<br>Marque une opposition &lt;forte&gt;.<br>Il pleut, pourtant elle sort.<br>https://fr.wiktionary.org/wiki/pourtant#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard reading\nhowever &amp; yet<br>Il pleut, ________ elle sort.\tpourtant<br>Il pleut, pourtant elle sort.<br>https://fr.wiktionary.org/wiki/pourtant#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard production\nl'arbre<br>L'arbre perd ses feuilles.\tthe &quot;tree&quot;<br>Grande plante ligneuse.<br>L'arbre perd ses feuilles.<br>Le chat grimpe dans l'arbre.<br>https://fr.wiktionary.org/wiki/arbre#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard reading\nthe &quot;tree&quot;<br>________ perd ses feuilles.\tl'arbre<br>L'arbre perd ses feuilles.<br>Le chat grimpe dans l'arbre.<br>https://fr.wiktionary.org/wiki/arbre#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard production\narbre<br>the &quot;tree&quot;\tun arbre<br>L'arbre perd ses feuilles.<br>Le chat grimpe dans l'arbre.<br>https://fr.wiktionary.org/wiki/arbre#fr CC BY-SA 4.0<br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard gender\nun truc<br>Passe-moi le truc.\ta thing<br>Objet quelconque.<br>Passe-moi le truc.<br> <br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard reading\na thing<br>Passe-moi ________.\tun truc<br>Passe-moi le truc.<br> <br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard production\ntruc<br>a thing\tun truc<br>Passe-moi le truc.<br> <br>[{&quot;source&quot;:&quot;Bundled starter content&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;},{&quot;source&quot;:&quot;Everyday pack&quot;,&quot;license&quot;:&quot;CC BY-SA 4.0&quot;}]\tlangocard gender\n"
+}

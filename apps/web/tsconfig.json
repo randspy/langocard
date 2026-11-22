@@ -15,7 +15,9 @@
     "types": ["vite/client", "node", "@testing-library/jest-dom/vitest"],
     "paths": {
       "@/*": ["./src/*"],
-      "@backend/*": ["../backend/convex/*"]
+      "@backend/*": ["../backend/convex/*"],
+      "@content/*": ["../../content/*"],
+      "@bundled-pack": ["../android/app/src/main/assets/frequent-pack.json"]
     }
   },
   "include": ["src", "vite.config.ts"]
