@@ -57,14 +57,14 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
   // Drafted values stay "drafted" until the learner edits them; regenerating replaces only those.
   const [drafted, setDrafted] = useState<Set<SingleField>>(new Set());
   const [draftedExamples, setDraftedExamples] = useState<Set<string>>(new Set());
+  const [draftedGender, setDraftedGender] = useState<Gender | null>(null);
   const set = (field: TextField, value: string) => {
     const next = field === "gender" ? { ...content, gender: (value || null) as Gender | null } : { ...content, [field]: value };
     if (field === "gender") setGenderChosen(true);
     if (drafted.has(field as SingleField)) setDrafted(new Set([...drafted].filter((f) => f !== field)));
     if (field === "word" && !genderChosen) {
-      // A typed article decides; without one, a drafted gender stays (as for "l'intrigue").
-      const stated = articleGender(value);
-      if (stated !== null || !drafted.has("gender")) next.gender = stated;
+      // A typed article decides; without one, the drafted gender applies (as for "l'intrigue").
+      next.gender = articleGender(value) ?? (drafted.has("gender") ? draftedGender : null);
     }
     change(next);
   };
@@ -94,7 +94,10 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
     const draft = await drafter.draft(content.english, kept, own);
     const next = { ...content };
     const apply = (field: SingleField, value: string | undefined) => {
-      if (field === "gender") next.gender = value === undefined ? null : genderOf(value);
+      if (field === "gender") {
+        next.gender = value === undefined ? null : genderOf(value);
+        setDraftedGender(next.gender);
+      }
       else next[field] = value ?? "";
     };
     for (const field of SINGLE_FIELDS) {

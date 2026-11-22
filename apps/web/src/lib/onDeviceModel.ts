@@ -33,11 +33,14 @@ type GpuNavigator = Navigator & { gpu?: { requestAdapter(): Promise<{ features: 
 
 export class WebLlmModel implements OnDeviceModel {
   private engine: Promise<MLCEngine> | null = null;
+  /** A removal in progress; checks and loads wait for it, even from a remounted page. */
+  private removal: Promise<void> | null = null;
 
   async availability(): Promise<Availability> {
     const gpu = (navigator as GpuNavigator).gpu;
     const adapter = gpu ? await gpu.requestAdapter().catch(() => null) : null;
     if (!adapter?.features.has("shader-f16")) return { kind: "unavailable" };
+    await this.removal?.catch(() => {});
     const { hasModelInCache } = await import("@mlc-ai/web-llm");
     return (await hasModelInCache(MODEL_ID)) ? { kind: "available" } : { kind: "downloadable" };
   }
@@ -52,17 +55,22 @@ export class WebLlmModel implements OnDeviceModel {
     return reply.choices[0]?.message.content ?? "";
   }
 
-  async remove(): Promise<void> {
+  remove(): Promise<void> {
+    if (this.removal) return this.removal;
     const engine = this.engine;
     this.engine = null;
-    await engine?.then((e) => e.unload()).catch(() => {});
-    const { deleteModelAllInfoInCache } = await import("@mlc-ai/web-llm");
-    await deleteModelAllInfoInCache(MODEL_ID);
+    this.removal = (async () => {
+      await engine?.then((e) => e.unload()).catch(() => {});
+      const { deleteModelAllInfoInCache } = await import("@mlc-ai/web-llm");
+      await deleteModelAllInfoInCache(MODEL_ID);
+    })().finally(() => { this.removal = null; });
+    return this.removal;
   }
 
   private load(onProgress: (progress: number) => void): Promise<MLCEngine> {
     if (!this.engine) {
-      this.engine = import("@mlc-ai/web-llm").then(({ CreateMLCEngine }) =>
+      const removal = this.removal?.catch(() => {}) ?? Promise.resolve();
+      this.engine = removal.then(() => import("@mlc-ai/web-llm")).then(({ CreateMLCEngine }) =>
         CreateMLCEngine(MODEL_ID, { initProgressCallback: (report) => onProgress(report.progress) }));
       this.engine.catch(() => { this.engine = null; });
     }

@@ -97,5 +97,8 @@ describe("AI fill", () => {
     await userEvent.clear(word);
     await userEvent.type(word, "un récit");
     expect(screen.getByLabelText("Gender")).toHaveValue("masculine");
+    await userEvent.clear(word);
+    await userEvent.type(word, "l'intrigue");
+    expect(screen.getByLabelText("Gender")).toHaveValue("feminine");
   });
 });
