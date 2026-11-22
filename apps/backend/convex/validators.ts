@@ -60,3 +60,19 @@ export const settingsFields = {
   /** When the fit was last imported, reset or restored; the newer change wins. */
   fittedSettingsChangedAt: v.optional(v.number()),
 };
+
+/**
+ * Columns derived from a card row and its entry, kept current by `studyIndex.ts` so study
+ * functions can find due cards through an index. Optional until `migrations:deriveCards` has
+ * run over rows written before they existed.
+ */
+export const derivedCardFields = {
+  /** FSRS due time; null for a new or reset card. */
+  due: v.optional(v.union(v.number(), v.null())),
+  fsrsState: v.optional(v.union(v.string(), v.null())),
+  cardId: v.optional(v.union(v.number(), v.null())),
+  entryId: v.optional(v.string()),
+  skill: v.optional(v.string()),
+  /** False while the entry is deleted or missing, or the card is suspended indefinitely. */
+  active: v.optional(v.boolean()),
+};

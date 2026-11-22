@@ -1,4 +1,6 @@
+import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
+import { refreshCard } from "./studyIndex";
 import { contentOf } from "./entryRules";
 
 const BATCH = 500;
@@ -25,5 +27,18 @@ export const fillGender = internalMutation({
       updated++;
     }
     return { updated };
+  },
+});
+
+/**
+ * Fills (or rebuilds) the derived scheduling columns of every card for web study. Pass the
+ * returned `cursor` back until `isDone`: `npx convex run migrations:deriveCards '{"cursor":null}'`.
+ */
+export const deriveCards = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db.query("cards").paginate({ cursor, numItems: BATCH });
+    for (const row of page.page) await refreshCard(ctx, row._id);
+    return { cursor: page.continueCursor, isDone: page.isDone };
   },
 });

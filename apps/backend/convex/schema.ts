@@ -1,6 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { cardFields, entryClocks, settingsFields, storedEntryContent } from "./validators";
+import { cardFields, derivedCardFields, entryClocks, settingsFields, storedEntryContent } from "./validators";
 
 /**
  * Cloud copy of one learner's study data (sync protocol v2). Each row carries
@@ -15,9 +15,12 @@ export default defineSchema({
     key: v.string(),
     ...cardFields,
     updatedAt: v.number(),
+    // Server-only scheduling columns for web study (see studyIndex.ts); never pulled.
+    ...derivedCardFields,
   })
     .index("by_key", ["key"])
-    .index("by_updated", ["updatedAt"]),
+    .index("by_updated", ["updatedAt"])
+    .index("by_active_due", ["active", "due"]),
 
   // Append-only review history.
   reviews: defineTable({

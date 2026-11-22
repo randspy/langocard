@@ -4,6 +4,7 @@ import { requireToken } from "./access";
 import type { DataModel } from "./_generated/dataModel";
 import { contentOf, entryErrors } from "./entryRules";
 import { entryWins, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
+import { refreshCard, refreshEntryCards, withoutDerived } from "./studyIndex";
 import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
 
 /**
@@ -35,10 +36,13 @@ export const push = mutation({
 
     for (const { key, ...incoming } of args.cards) {
       const stored = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
-      if (!stored) await ctx.db.insert("cards", { key, ...incoming, updatedAt });
+      if (!stored) await refreshCard(ctx, await ctx.db.insert("cards", { key, ...incoming, updatedAt }));
       else {
         const merged = mergeCard(stored, incoming);
-        if (!sameCard(merged, stored)) await ctx.db.patch(stored._id, { ...merged, updatedAt });
+        if (!sameCard(merged, stored)) {
+          await ctx.db.patch(stored._id, { ...merged, updatedAt });
+          await refreshCard(ctx, stored._id);
+        }
       }
     }
     for (const hook of args.hooks ?? []) {
@@ -65,9 +69,11 @@ export const push = mutation({
             entryId, ...contentOf(content), editedAt, deletedAt,
             origin: "personal", shipped: null, upstreamChanged: false, retired: false, updatedAt,
           });
+          await refreshEntryCards(ctx, entryId);
         }
       } else if (entryWins({ editedAt, deletedAt }, stored)) {
         await ctx.db.patch(stored._id, { ...contentOf(content), editedAt, deletedAt, updatedAt });
+        await refreshEntryCards(ctx, entryId);
       }
     }
     for (const source of args.sources) {
@@ -126,7 +132,7 @@ export const pull = query({
           const { shipped: _, ...entry } = row;
           return { ...entry, ...contentOf(entry) };
         }
-        return row;
+        return table === "cards" ? withoutDerived(row) : row;
       }),
       isDone: result.isDone,
       continueCursor: result.continueCursor,

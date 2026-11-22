@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import { contentOf, entryErrors, sameContent, type EntryContent } from "./entryRules";
 import { requireToken } from "./access";
+import { refreshEntryCards } from "./studyIndex";
 import { entryVersion, isDeleted } from "./merge";
 import { entryContent } from "./validators";
 
@@ -79,6 +80,7 @@ export const remove = mutation({
     const entry = await load(ctx, entryId);
     if (isDeleted(entry)) return;
     await ctx.db.patch(entry._id, { deletedAt: nextClock(entry), updatedAt: Date.now() });
+    await refreshEntryCards(ctx, entryId);
   },
 });
 
@@ -89,6 +91,7 @@ export const restore = mutation({
     const entry = await load(ctx, entryId);
     if (!isDeleted(entry)) return;
     await ctx.db.patch(entry._id, { editedAt: nextClock(entry), updatedAt: Date.now() });
+    await refreshEntryCards(ctx, entryId);
   },
 });
 

@@ -68,6 +68,18 @@ article ("une intrigue" → feminine). Deployments with entries stored before ge
 existed need `npx convex run migrations:fillGender` once after deploying (repeat until it
 reports `updated: 0`); see `../../docs/design/noun-gender.md`.
 
+## Web study
+
+The web app's Study page reviews due cards through `convex/study.ts` (`next`, `answer`,
+`summary`); see [`docs/design/web-practice.md`](../../docs/design/web-practice.md). Cards
+carry server-only scheduling columns (`due`, `active`, …) kept current on every write and
+stripped from `sync:pull`, so Android sees the same rows as before. After deploying this
+version to a deployment that already holds cards, fill them once:
+
+```sh
+npx convex run migrations:deriveCards '{"cursor":null}'   # repeat with the returned cursor until isDone
+```
+
 ## Access
 
 Every public function checks a shared secret against the `SYNC_TOKEN` environment
