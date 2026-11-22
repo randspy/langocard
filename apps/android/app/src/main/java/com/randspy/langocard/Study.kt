@@ -75,6 +75,11 @@ object StudyPolicy {
     /** Whether a session may show another card; checked between cards, so the card on screen is always finished. */
     fun sessionOpen(placement: Boolean, seconds: Int, limit: Int, cleanup: Boolean = false) =
         placement || seconds < limit + (if (cleanup) CLEANUP_SECONDS else 0)
+    /** How long until [due], as a rating button shows it: "10m", "3h", "4d". Mirrors `intervalLabel` in `apps/backend/convex/fsrs.ts`. */
+    fun interval(now: Instant, due: Instant): String {
+        val minutes = ((java.time.Duration.between(now, due).seconds + 59) / 60).coerceAtLeast(1)
+        return if (minutes < 60) "${minutes}m" else if (minutes < 1440) "${minutes / 60}h" else "${minutes / 1440}d"
+    }
     fun date(now: Instant): String = now.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()
 }
 
