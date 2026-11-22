@@ -5,14 +5,27 @@ import java.time.Instant
 /**
  * A French sentence that uses a meaning, with exactly one marked answer: "Il pleut, {pourtant} elle sort."
  * The answer is the word as this sentence uses it, so it may be an inflected form.
- * Mirrors `answerOf`, `textOf` and `clozeOf` in `apps/backend/convex/entryRules.ts`.
+ * The marks may also list alternatives after the answer: "Le train devrait {arriver|parvenir} à la gare."
+ * Mirrors `answerOf`, `alternativesOf`, `textOf` and `clozeOf` in `apps/backend/convex/entryRules.ts`.
  */
 data class Example(val marked: String) {
-    val answer get() = marked.substringAfter("{").substringBefore("}")
-    /** The sentence as read or spoken, without the answer marks. */
-    val text get() = marked.replace("{", "").replace("}", "")
+    private val open = marked.indexOf('{')
+    private val close = marked.indexOf('}', open + 1)
+    /** The target, then its alternatives. A lone answer is kept as written; listed parts are trimmed. */
+    val parts: List<String> = (if (open < 0 || close < 0) "" else marked.substring(open + 1, close))
+        .let { inner -> if ('|' in inner) inner.split('|').map(String::trim) else listOf(inner) }
+    /** The target: the word this example trains. */
+    val answer get() = parts.first()
+    /** Other words the gap accepts in Production. */
+    val alternatives get() = parts.drop(1)
+    /** The sentence as read or spoken, without the answer marks or alternatives. */
+    val text get() = replaceAnswer(answer)
     /** The sentence with the answer replaced by a gap, as Production shows it. */
-    val cloze get() = marked.replace("{$answer}", "________")
+    val cloze get() = replaceAnswer("________")
+    /** The marked sentence without alternatives: the sentence its alternatives belong to. */
+    val withoutAlternatives get() = replaceAnswer("{$answer}")
+    private fun replaceAnswer(replacement: String) =
+        if (open < 0 || close < 0) marked else marked.substring(0, open) + replacement + marked.substring(close + 1)
     override fun toString() = marked
 }
 

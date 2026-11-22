@@ -6,7 +6,7 @@ import { filterLibrary, originLabel, skillStatus, validateSearch } from "./libra
 const entries = [
   libraryEntry({ entryId: "a", word: "élève", english: "pupil", rank: 900, topic: "culture" }),
   libraryEntry({ entryId: "b", word: "un enjeu", english: "stake", rank: 3000, edited: true, gender: "masculine",
-    examples: ["Voici {un enjeu}.", "Quel est {l'enjeu} du débat ?"] }),
+    examples: ["Voici {un enjeu|une mise}.", "Quel est {l'enjeu} du débat ?"] }),
   libraryEntry({ entryId: "c", word: "fiable", english: "reliable", rank: 8000, origin: "pack:fr-core-extended-2026-11-v1", installed: false }),
   libraryEntry({ entryId: "d", word: "ma trouvaille", english: "my find", rank: null, origin: "personal", deleted: true }),
   libraryEntry({ entryId: "e", word: "pourtant", english: "however", rank: 20, skills: { Listening: { due: null, state: null, pausedUntil: 0, suspendedUntil: NOW + DAY } } }),
@@ -25,6 +25,11 @@ describe("filterLibrary", () => {
 
   test("searches every example's text, ignoring the answer marks", () => {
     expect(ids({ q: "l'enjeu du debat" })).toEqual(["b"]);
+    expect(ids({ q: "voici un enjeu." })).toEqual(["b"]);
+  });
+
+  test("searches the alternatives an answer accepts", () => {
+    expect(ids({ q: "une mise" })).toEqual(["b"]);
   });
 
   test("filters by origin, pack installation, topic and rank band", () => {

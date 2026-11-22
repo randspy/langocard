@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { GENDERS, MAX_EXAMPLES, TOPICS, answerOf, articleGender, clozeOf, entryErrors, sameContent, type EntryContent, type Gender, type RuleError } from "@backend/entryRules";
+import { GENDERS, MAX_EXAMPLES, TOPICS, alternativesOf, answerOf, articleGender, clozeOf, entryErrors, sameContent, type EntryContent, type Gender, type RuleError } from "@backend/entryRules";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { GENDER_LABELS } from "@/lib/library";
@@ -15,7 +15,7 @@ const FIELDS: { field: Field; label: string; hint?: string; control: "input" | "
   { field: "definition", label: "Definition", control: "textarea" },
   {
     field: "examples", label: "Examples", control: "examples",
-    hint: `1 to ${MAX_EXAMPLES} sentences, each with the answer in {braces}: “Il pleut, {pourtant} elle sort.” Practice shows them in turn, starting with the first.`,
+    hint: `1 to ${MAX_EXAMPLES} sentences, each with the answer in {braces}: “Il pleut, {pourtant} elle sort.” Add other words the gap accepts after a bar: “{pourtant|cependant}”. Practice shows them in turn, starting with the first.`,
   },
   { field: "lemma", label: "Lemma", hint: "Dictionary form, used to group related meanings. Optional.", control: "input" },
   { field: "topic", label: "Topic", control: "topic" },
@@ -183,6 +183,9 @@ function Preview({ examples }: { examples: string[] }) {
           <li key={index}>
             <p className="font-semibold text-base">{clozeOf(example)}</p>
             <p className="mt-1 text-muted">Answer: <span className="font-medium text-ink">{answerOf(example)}</span></p>
+            {alternativesOf(example).length > 0 && (
+              <p className="text-muted">Also accepted: <span className="font-medium text-ink">{alternativesOf(example).join(", ")}</span></p>
+            )}
           </li>
         ))}
       </ol>

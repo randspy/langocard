@@ -94,9 +94,11 @@ class EntryDrafter(private val generate: suspend (prompt: String) -> String) {
             if (ok) field to value else null
         }.toMap()
         val array = json.optJSONArray("examples")
-        val seen = ownExamples.toMutableSet()
+        // Examples are the same sentence whatever alternatives they list.
+        val seen = ownExamples.map { Example(it).withoutAlternatives }.toMutableSet()
         val examples = (0 until (array?.length() ?: 0)).mapNotNull { (array!!.opt(it) as? String)?.trim() }
-            .filter { ContentFiles.validText(it) && ContentFiles.validAnswer(it) && seen.add(it) }
+            // The learner writes alternatives; a drafted example has none.
+            .filter { ContentFiles.validText(it) && ContentFiles.validAnswer(it) && Example(it).alternatives.isEmpty() && seen.add(Example(it).withoutAlternatives) }
         val word = fields[DraftField.Word] ?: learner[DraftField.Word]
         val stated = word?.let(Gender::ofArticle) ?: return Reply(fields, examples)
         val gender = (learner[DraftField.Gender] ?: fields[DraftField.Gender])?.let(::genderOf) ?: return Reply(fields, examples)

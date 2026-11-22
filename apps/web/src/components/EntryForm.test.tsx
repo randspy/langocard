@@ -45,6 +45,17 @@ describe("EntryForm", () => {
     expect(screen.getByLabelText("Speaking practice preview")).toHaveTextContent("Answer: pourtant");
   });
 
+  test("previews the alternatives an answer accepts", async () => {
+    renderForm();
+    const example = screen.getByLabelText("Example 1");
+    await userEvent.clear(example);
+    await userEvent.type(example, "Il pleut, {{pourtant|cependant} elle sort.");
+    const preview = screen.getByLabelText("Speaking practice preview");
+    expect(preview).toHaveTextContent("Il pleut, ________ elle sort.");
+    expect(preview).toHaveTextContent("Answer: pourtant");
+    expect(preview).toHaveTextContent("Also accepted: cependant");
+  });
+
   test("adds, reorders and removes examples", async () => {
     const onSubmit = renderForm();
     await userEvent.click(screen.getByRole("button", { name: "Add example" }));

@@ -77,3 +77,40 @@ describe("seed", () => {
     await expect(t.mutation(internal.seed.apply, { entries: [shipped({ word: "" })] })).rejects.toThrow(/Fill every field/);
   });
 });
+
+describe("seed with answer alternatives", () => {
+  const withExamples = (examples: string[], definition = "Posséder.") => ({ ...shipped({ definition }), examples });
+  async function editExamples(t: ReturnType<typeof convexTest>, examples: string[], editedAt: number) {
+    const { origin: _, ...content } = withExamples(examples, "Ma définition.");
+    await t.mutation(api.sync.push, { token, ...empty, entries: [{ ...content, editedAt, deletedAt: null }] });
+  }
+
+  test("an edited entry gains new shipped alternatives without an upstream flag", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir} faim.", "Il faut {avoir} de la force."])] });
+    await editExamples(t, ["Je vais {avoir|ressentir} faim.", "Il faut {avoir} de la force."], 100);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir|éprouver} faim.", "Il faut {avoir|posséder} de la force."])] });
+    expect(await entries(t)).toMatchObject([{
+      definition: "Ma définition.", editedAt: 100, upstreamChanged: false,
+      examples: ["Je vais {avoir|ressentir|éprouver} faim.", "Il faut {avoir|posséder} de la force."],
+    }]);
+  });
+
+  test("a rewritten sentence gains nothing, and a wording change is still flagged", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir} faim."])] });
+    await editExamples(t, ["Je vais {avoir} très faim."], 100);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir|éprouver} faim."])] });
+    expect(await entries(t)).toMatchObject([{ examples: ["Je vais {avoir} très faim."], upstreamChanged: false }]);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir|éprouver} faim."], "Détenir.")] });
+    expect(await entries(t)).toMatchObject([{ examples: ["Je vais {avoir} très faim."], upstreamChanged: true }]);
+  });
+
+  test("an alternative the learner removed isn't added back", async () => {
+    const t = convexTest(schema, modules);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir|éprouver} faim."])] });
+    await editExamples(t, ["Je vais {avoir} faim."], 100);
+    await t.mutation(internal.seed.apply, { entries: [withExamples(["Je vais {avoir|éprouver|ressentir} faim."])] });
+    expect(await entries(t)).toMatchObject([{ examples: ["Je vais {avoir|ressentir} faim."], upstreamChanged: false }]);
+  });
+});

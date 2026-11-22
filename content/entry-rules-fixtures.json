@@ -1,5 +1,5 @@
 {
-  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, examples, metadata, sourceUrl, topic, gender). examples holds 1 to 5 distinct sentences, each with one {answer}. gender absent means the gender the word's article states (content written before gender existed).",
+  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, alternatives, examples, metadata, sourceUrl, topic, gender). examples holds 1 to 5 sentences, distinct ignoring alternatives, each with one {answer}; the answer may list up to 5 alternatives after the target, {target|alt}, all non-blank and different ignoring case and accents (rule alternatives). gender absent means the gender the word's article states (content written before gender existed).",
   "cases": [
     {
       "name": "minimal personal entry",
@@ -546,6 +546,161 @@
         ]
       },
       "rule": null
+    },
+    {
+      "name": "answer with alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Le train devrait {arriver|parvenir} à la gare."
+        ]
+      },
+      "rule": null
+    },
+    {
+      "name": "spaces around alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Le train devrait {arriver | parvenir} à la gare."
+        ]
+      },
+      "rule": null
+    },
+    {
+      "name": "five alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Il est {content|heureux|ravi|satisfait|enchanté|joyeux}."
+        ]
+      },
+      "rule": null
+    },
+    {
+      "name": "a bar outside the answer is text",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Choisis A | B : {arriver}."
+        ]
+      },
+      "rule": null
+    },
+    {
+      "name": "blank alternative",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Le train devrait {arriver|} à la gare."
+        ]
+      },
+      "rule": "alternatives"
+    },
+    {
+      "name": "whitespace alternative",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Le train devrait {arriver|  |parvenir} à la gare."
+        ]
+      },
+      "rule": "alternatives"
+    },
+    {
+      "name": "six alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Il est {content|heureux|ravi|satisfait|enchanté|joyeux|gai}."
+        ]
+      },
+      "rule": "alternatives"
+    },
+    {
+      "name": "alternative repeats the target",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Le train devrait {arriver|Arriver} à la gare."
+        ]
+      },
+      "rule": "alternatives"
+    },
+    {
+      "name": "alternatives differ only in accents",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Il est {content|ravi|râvi}."
+        ]
+      },
+      "rule": "alternatives"
+    },
+    {
+      "name": "blank target before alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Le train devrait {|parvenir} à la gare."
+        ]
+      },
+      "rule": "answer"
+    },
+    {
+      "name": "examples differing only in alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Il va {arriver}.",
+          "Il va {arriver|parvenir}."
+        ]
+      },
+      "rule": "examples"
     }
   ]
 }
