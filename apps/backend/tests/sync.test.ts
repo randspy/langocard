@@ -142,6 +142,13 @@ describe("sync", () => {
   });
 });
 
+test("a first push with a fit clock but no fit stores no reset", async () => {
+  const t = convexTest(schema, modules);
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettingsChangedAt: 90 } });
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 5 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 5 }]);
+});
+
 test("a push without the new settings fields keeps the stored fit and Gender count", async () => {
   const t = convexTest(schema, modules);
   const fit = { ...settings, genderIntroduced: 6, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 20 };

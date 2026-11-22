@@ -28,8 +28,11 @@ export type Settings = {
 
 export function mergeSettings(a: Settings, b: Settings): Settings {
   const preferences = b.preferencesChangedAt > a.preferencesChangedAt ? b : a;
-  // The fit and its clock travel together; a push without the fit can't clear it.
-  const fit = b.fittedSettings !== undefined && (b.fittedSettingsChangedAt ?? 0) > (a.fittedSettingsChangedAt ?? 0) ? b : a;
+  // The fit and its clock travel together: a clock without a fit counts as no change.
+  const fitOf = (s: Settings) => s.fittedSettings === undefined
+    ? { fittedSettings: null, fittedSettingsChangedAt: 0 }
+    : { fittedSettings: s.fittedSettings, fittedSettingsChangedAt: s.fittedSettingsChangedAt ?? 0 };
+  const fit = fitOf(b).fittedSettingsChangedAt > fitOf(a).fittedSettingsChangedAt ? fitOf(b) : fitOf(a);
   // Daily counters belong to the most recent local day. On the same day the
   // larger value is kept: it undercounts study split across two devices, but
   // never lets resent data inflate the daily target.
@@ -49,8 +52,7 @@ export function mergeSettings(a: Settings, b: Settings): Settings {
     interests: preferences.interests,
     preferencesChangedAt: preferences.preferencesChangedAt,
     ...daily,
-    fittedSettings: fit.fittedSettings ?? null,
-    fittedSettingsChangedAt: fit.fittedSettingsChangedAt ?? 0,
+    ...fit,
   };
 }
 

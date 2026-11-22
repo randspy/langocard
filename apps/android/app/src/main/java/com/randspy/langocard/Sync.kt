@@ -309,7 +309,7 @@ object SyncData {
                         .also { s ->
                             if (row.has("genderIntroduced")) s.put("genderIntroduced", row.getDouble("genderIntroduced").toInt())
                             // A fit this app can't use is ignored rather than replacing a valid one.
-                            if (row.has("fittedSettingsChangedAt") && (row.isNull("fittedSettings") ||
+                            if (row.has("fittedSettingsChangedAt") && row.has("fittedSettings") && (row.isNull("fittedSettings") ||
                                     runCatching { FittedSettings.parse(row.getString("fittedSettings")) }.isSuccess)) {
                                 s.put("fittedSettings", row.opt("fittedSettings") ?: JSONObject.NULL)
                                     .put("fittedSettingsChangedAt", row.getDouble("fittedSettingsChangedAt").toLong())

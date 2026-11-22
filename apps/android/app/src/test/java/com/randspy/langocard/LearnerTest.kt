@@ -255,6 +255,9 @@ class LearnerTest {
         learner.merge("settings", listOf(old), emptySet())
         assertEquals(4, learner.genderIntroduced)
         assertEquals(0.85, learner.fittedSettings!!.retention, 0.0)
+        // A clock without a fit isn't a reset.
+        learner.merge("settings", listOf(JSONObject(old.toString()).put("fittedSettingsChangedAt", 9e12)), emptySet())
+        assertEquals(0.85, learner.fittedSettings!!.retention, 0.0)
         // An unusable fit from another device is ignored.
         learner.merge("settings", listOf(JSONObject(old.toString()).put("fittedSettings", "{}").put("fittedSettingsChangedAt", 9e12)), emptySet())
         assertEquals(0.85, learner.fittedSettings!!.retention, 0.0)
