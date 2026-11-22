@@ -13,7 +13,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
     : "This app's sync token doesn't match the deployment. Run `npm run link-web` in apps/backend and restart `npm run dev`.";
   return (
     <Centered>
-      <h1 className="font-serif text-2xl">No access</h1>
+      <h1 className="font-semibold text-2xl">No access</h1>
       <p className="max-w-md text-muted">{message}</p>
     </Centered>
   );

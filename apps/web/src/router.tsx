@@ -13,7 +13,7 @@ function Layout() {
     <AccessGate>
       <header className="border-b border-line bg-surface">
         <nav className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3">
-          <Link to="/" className="font-serif text-xl">Langocard</Link>
+          <Link to="/" className="font-semibold text-xl">Langocard</Link>
           <Link to="/" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium" activeOptions={{ exact: true, includeSearch: false }}>Library</Link>
           <Link to="/entries/new" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">New entry</Link>
           <Link to="/conflicts" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Upstream changes</Link>

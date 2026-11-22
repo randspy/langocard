@@ -35,7 +35,7 @@ export function EntryPage() {
         <BackLink />
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className={entry.deleted ? "font-serif text-3xl text-muted line-through" : "font-serif text-3xl"}>{entry.word}</h1>
+            <h1 className={entry.deleted ? "font-semibold text-3xl text-muted line-through" : "font-semibold text-3xl"}>{entry.word}</h1>
             <EntryFlags entry={entry} />
           </div>
           <p className="text-sm text-muted">
@@ -90,7 +90,7 @@ function NotFound() {
   return (
     <div className="space-y-4">
       <BackLink />
-      <h1 className="font-serif text-3xl">Entry not found</h1>
+      <h1 className="font-semibold text-3xl">Entry not found</h1>
     </div>
   );
 }

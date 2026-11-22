@@ -12,7 +12,7 @@ export function LibraryPage() {
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-serif text-3xl">Library</h1>
+        <h1 className="font-semibold text-3xl">Library</h1>
         <Link to="/entries/new" className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/85">New entry</Link>
       </div>
       {library === undefined

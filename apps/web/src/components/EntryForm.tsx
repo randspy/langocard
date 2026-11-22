@@ -181,7 +181,7 @@ function Preview({ examples }: { examples: string[] }) {
       <ol className="space-y-2">
         {marked.map((example, index) => (
           <li key={index}>
-            <p className="font-serif text-base">{clozeOf(example)}</p>
+            <p className="font-semibold text-base">{clozeOf(example)}</p>
             <p className="mt-1 text-muted">Answer: <span className="font-medium text-ink">{answerOf(example)}</span></p>
           </li>
         ))}

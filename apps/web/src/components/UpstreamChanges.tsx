@@ -37,7 +37,7 @@ function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (ent
   return (
     <article className="rounded-lg border border-line bg-surface" aria-label={change.mine.word}>
       <header className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
-        <Link to="/entries/$entryId" params={{ entryId: change.entryId }} className="font-serif text-xl hover:underline">{change.mine.word}</Link>
+        <Link to="/entries/$entryId" params={{ entryId: change.entryId }} className="font-semibold text-xl hover:underline">{change.mine.word}</Link>
         <span className="text-sm text-muted">{originLabel(change.origin)}</span>
         <div className="ml-auto flex gap-2">
           <Button size="sm" variant="outline" disabled={busy} onClick={() => void resolve("keepMine")}>Keep mine</Button>
