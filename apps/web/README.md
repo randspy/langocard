@@ -3,12 +3,16 @@
 A local React app for managing the vocabulary library and FSRS cards stored in your
 Convex deployment: browse and filter every entry, edit or delete entries, add
 personal ones, and suspend or reset cards. Android picks the changes up on its next
-sync. Studying stays on the phone. The design is in
+sync. **Export** downloads the active library as an Anki import file in the phone's
+format, and **Content sources** shows the content notice and licences. Studying stays
+on the phone. The design is in
 [`docs/design/web-card-management.md`](../../docs/design/web-card-management.md).
 
 Stack: Vite, React, TypeScript, TanStack Router, Tailwind CSS. It talks to Convex
 directly, importing the backend's generated API and shared rules from
-`../backend/convex` (alias `@backend`). There is no workspace, so install both apps.
+`../backend/convex` (alias `@backend`). Shared content files come from `../../content`
+(alias `@content`); the export credits the APK's built-in pack from its
+`frequent-pack.json` (alias `@bundled-pack`, only its source and licence are bundled). There is no workspace, so install both apps.
 
 ## Setup
 

@@ -45,6 +45,27 @@ class SharedFixturesTest {
         }
     }
 
+    @Test fun `Anki export matches the web app`() {
+        val case = fixtures("anki-fixtures.json")
+        val entries = ContentFiles.readEntries(case.getJSONArray("entries"))
+        // The Android export credits each source once, as LearningLibrary.ankiExport collects them.
+        val credits = linkedSetOf<String>()
+        val raw = case.getJSONArray("credits")
+        for (i in 0 until raw.length()) raw.getJSONObject(i).let {
+            credits.add(JSONObject().put("source", it.getString("source")).put("license", it.getString("license")).toString())
+        }
+        val sources = JSONArray().also { array -> credits.forEach { array.put(JSONObject(it)) } }
+        // Android's org.json keeps insertion order ("source", then "license"); the JVM test
+        // library orders keys by hash, so only the credits' key order may differ here.
+        fun html(s: String) = s.replace("&", "&amp;").replace("\"", "&quot;")
+        val deviceOrder = (0 until sources.length()).joinToString(",", "[", "]") { i ->
+            val o = sources.getJSONObject(i)
+            "{\"source\":${JSONObject.quote(o.getString("source"))},\"license\":${JSONObject.quote(o.getString("license"))}}"
+        }
+        val expected = case.getString("expected").replace(html(deviceOrder), html(sources.toString()))
+        assertEquals(expected, ContentFiles.anki(entries, sources))
+    }
+
     @Test fun `entry merges match the backend`() {
         val cases = fixtures("merge-fixtures.json").getJSONArray("entries")
         for (i in 0 until cases.length()) {

@@ -1,6 +1,6 @@
-import { useMutation, useQuery } from "convex/react";
+import { useConvex, useMutation, useQuery } from "convex/react";
 import type { FunctionArgs, FunctionReference, FunctionReturnType } from "convex/server";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 /**
  * The deployment's shared `SYNC_TOKEN`, written to `.env.local` by `npm run link-web`.
@@ -24,4 +24,14 @@ export function useTokenMutation<M extends Gated<"mutation">>(mutation: M): (arg
     (args: ArgsWithoutToken<M>) => run({ ...args, token: syncToken }) as Promise<FunctionReturnType<M>>,
     [run],
   );
+}
+
+/**
+ * Runs a query once, with the sync token added, instead of subscribing to it: for reads
+ * the page drives itself, such as paging through the library.
+ */
+export function useTokenFetch() {
+  const convex = useConvex();
+  return useMemo(() => <Q extends Gated<"query">>(query: Q, args: ArgsWithoutToken<Q>): Promise<FunctionReturnType<Q>> =>
+    convex.query(query as Gated<"query">, { ...args, token: syncToken }) as Promise<FunctionReturnType<Q>>, [convex]);
 }

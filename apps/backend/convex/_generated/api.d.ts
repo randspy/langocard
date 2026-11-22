@@ -9,6 +9,7 @@
  */
 
 import type * as access from "../access.js";
+import type * as anki from "../anki.js";
 import type * as cardState from "../cardState.js";
 import type * as cards from "../cards.js";
 import type * as entries from "../entries.js";
@@ -29,6 +30,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   access: typeof access;
+  anki: typeof anki;
   cardState: typeof cardState;
   cards: typeof cards;
   entries: typeof entries;

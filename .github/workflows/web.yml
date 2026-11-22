@@ -5,11 +5,15 @@ on:
     paths:
       - "apps/web/**"
       - "apps/backend/convex/**"
+      - "content/**"
+      - "apps/android/app/src/main/assets/frequent-pack.json"
       - ".github/workflows/web.yml"
   pull_request:
     paths:
       - "apps/web/**"
       - "apps/backend/convex/**"
+      - "content/**"
+      - "apps/android/app/src/main/assets/frequent-pack.json"
       - ".github/workflows/web.yml"
   workflow_dispatch:
 
