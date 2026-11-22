@@ -72,7 +72,7 @@ edits, resets, pack installs), plus backfill migrations that can also rebuild th
   and `entryId`. `sync.pull` strips the derived columns, so Android's wire format is unchanged.
 - **Entries** get derived `lexeme` (Android's `Entry.lexeme`) and `introducible` (not started,
   not retired, not deleted, bundled/personal or from an installed pack). Indexes: `lexeme`,
-  and `[introducible, origin, rank]`.
+  `[introducible, origin]` and `[introducible, rank]`.
 - **Entry progress** (`progress` table): one row per started entry with the skills still
   without a card, `nounKey` (bare noun + gender), `rank`, the lowest started card ID, whether
   it has a Gender card, and its **exposure count** (sentence-bearing answers, placement
@@ -93,9 +93,9 @@ How each choice keeps Android's order without unbounded reads:
 - **Sibling skills.** From progress rows that are started but incomplete (bounded by the
   meanings in progress), the same rules as `StudyRules.choose`.
 - **New meanings.** Read `[introducible, origin="personal"]` first. Then walk
-  `[introducible, origin, rank ≥ minimumRank]` one band of 100 ranks at a time across the
-  bundled and installed-pack origins, and pick the first entry in the band whose topic is
-  preferred, else the band's first. A band only holds unstarted entries, so the walk ends at
+  `[introducible, rank ≥ minimumRank]` one band of 100 ranks at a time, and pick the first
+  entry in the band whose topic is preferred, else the band's first, with ties in Android's
+  library order. A band only holds unstarted entries, so the walk ends at
   the first non-empty band.
 - **Burials.** Siblings come from the `lexeme` index, which covers unstarted meanings too.
 - **Shown example.** Rotation uses the progress row's exposure count. A returning paused card
