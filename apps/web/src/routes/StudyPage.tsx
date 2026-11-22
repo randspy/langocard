@@ -10,8 +10,9 @@ export function StudyPage() {
   const submit = useTokenMutation(api.study.answer);
   const tick = useTokenMutation(api.study.tick);
   const now = useNow(1000);
+  const dueNow = useNow();
   const progress = useTokenQuery(api.study.progress, { day: localDay(now) });
-  const summary = useTokenQuery(api.study.summary, { day: localDay(now), now });
+  const summary = useTokenQuery(api.study.summary, { day: localDay(now), now: dueNow });
   // Fetched once per card rather than subscribed, so a phone sync can't swap the card mid-answer.
   const fetchNext = useCallback((pending: string[]) => {
     const at = Date.now();

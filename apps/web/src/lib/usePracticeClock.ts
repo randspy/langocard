@@ -6,13 +6,19 @@ type Tick = (checkpoint: { day: string; seconds: number }) => Promise<unknown>;
 /** Counts only a visible card, checkpoints every ten seconds, and drains before selecting another. */
 export function usePracticeClock(active: boolean, tick: Tick, wall: () => number) {
   const timer = useRef(new PracticeClock());
+  const stopped = useRef(false);
   const writes = useRef(Promise.resolve());
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const sample = useCallback(() => {
-    timer.current.sample(wall(), performance.now(), active && document.visibilityState === "visible");
+    timer.current.sample(wall(), performance.now(), !stopped.current && active && document.visibilityState === "visible");
     setSeconds(timer.current.seconds);
   }, [active, wall]);
+  const stop = useCallback(() => {
+    stopped.current = true;
+    timer.current.sample(wall(), performance.now(), false);
+    setSeconds(timer.current.seconds);
+  }, [wall]);
   const checkpoint = useCallback(() => {
     const next = writes.current.catch(() => {}).then(async () => {
       for (const checkpoint of timer.current.checkpoints()) {
@@ -45,5 +51,5 @@ export function usePracticeClock(active: boolean, tick: Tick, wall: () => number
       void checkpoint().catch(() => {});
     };
   }, [sample, flush, wall, checkpoint]);
-  return { seconds, flush, error };
+  return { seconds, flush, stop, error };
 }

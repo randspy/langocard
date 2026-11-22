@@ -20,8 +20,9 @@ type Props = {
 type State =
   | { kind: "loading" }
   | { kind: "card"; card: StudyCard; revealed: boolean; saving: boolean }
+  | { kind: "ending" }
   | { kind: "done" }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; retry: "load" | "finish" };
 
 /**
  * One sitting of review: show a due card, reveal it, rate it, then fetch the next one.
@@ -34,7 +35,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
   const pending = useRef(new Set<string>());
   const [reviews, setReviews] = useState(0);
   const [recalled, setRecalled] = useState(0);
-  const { seconds, flush, error: timeError } = usePracticeClock(state.kind === "card", tick, clock);
+  const { seconds, flush, stop, error: timeError } = usePracticeClock(state.kind === "card", tick, clock);
   const load = useCallback(async () => {
     setState({ kind: "loading" });
     try {
@@ -42,14 +43,25 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
       const card = await fetchNext([...pending.current]);
       setState(card ? { kind: "card", card, revealed: false, saving: false } : { kind: "done" });
     } catch (e) {
-      setState({ kind: "error", message: errorMessage(e) });
+      setState({ kind: "error", message: errorMessage(e), retry: "load" });
     }
   }, [fetchNext, flush]);
+  const finish = async () => {
+    stop();
+    setState({ kind: "ending" });
+    try {
+      await flush();
+      setState({ kind: "done" });
+    } catch (e) {
+      setState({ kind: "error", message: errorMessage(e), retry: "finish" });
+    }
+  };
   // Start once per mounted sitting; timer state changes must not replace the shown card.
   const start = useRef(load);
   useEffect(() => { void start.current(); }, []);
 
   if (state.kind === "loading") return <p className="text-muted">Loading…</p>;
+  if (state.kind === "ending") return <p className="text-muted">Saving practice time…</p>;
   if (state.kind === "done") return (
     <div role="status" className="space-y-2">
       <p className="text-lg">Session complete.</p>
@@ -61,7 +73,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
     return (
       <div className="space-y-3">
         <p role="alert" className="text-danger">{state.message}</p>
-        <Button variant="outline" onClick={() => void load()}>Try again</Button>
+        <Button variant="outline" onClick={() => void (state.retry === "finish" ? finish() : load())}>Try again</Button>
       </div>
     );
   }
@@ -81,7 +93,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
       }
       await load();
     } catch (e) {
-      setState({ kind: "error", message: errorMessage(e) });
+      setState({ kind: "error", message: errorMessage(e), retry: "load" });
     }
   };
   const previews = revealed ? intervals(card.card, clock()) : null;
@@ -89,10 +101,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
   return (
     <article className="max-w-2xl space-y-6" aria-label="Study card">
       {timeError && <p role="alert">{timeError}</p>}
-      <Button variant="outline" disabled={saving} onClick={() => {
-        setState({ ...state, saving: true });
-        void flush().then(() => setState({ kind: "done" })).catch((e) => setState({ kind: "error", message: errorMessage(e) }));
-      }}>End session</Button>
+      <Button variant="outline" disabled={saving} onClick={() => void finish()}>End session</Button>
       <p className="text-sm uppercase tracking-wide text-muted">Read</p>
       <div className="space-y-3">
         <p className="font-semibold text-3xl">{entry.word}</p>
