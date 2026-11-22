@@ -54,7 +54,7 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
         {matches.length.toLocaleString("en-GB")} of {entries.length.toLocaleString("en-GB")} entries
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-white">
+      <div className="overflow-x-auto rounded-lg border border-line bg-surface">
         <table className="w-full text-sm">
           <thead className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
             <tr>

@@ -11,7 +11,7 @@ const rootRoute = createRootRoute({ component: Layout });
 function Layout() {
   return (
     <AccessGate>
-      <header className="border-b border-line bg-white">
+      <header className="border-b border-line bg-surface">
         <nav className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3">
           <Link to="/" className="font-serif text-xl">Langocard</Link>
           <Link to="/" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium" activeOptions={{ exact: true, includeSearch: false }}>Library</Link>

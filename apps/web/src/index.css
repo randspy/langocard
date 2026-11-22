@@ -3,12 +3,33 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --color-paper: #f7f4ee;
-  --color-ink: #1f1d1a;
-  --color-muted: #6b665d;
-  --color-line: #e2ddd2;
-  --color-accent: #1d4ed8;
-  --color-danger: #b42318;
+  --color-paper: #fcfcfc;
+  --color-surface: #ffffff;
+  --color-ink: #1e1e1e;
+  --color-muted: oklch(0.35 0.01 250);
+  --color-line: oklch(0.93 0.004 250);
+  --color-accent: #adb7e6;
+  --color-danger: #f02821;
+  --color-primary: #44536a;
+  --color-primary-foreground: #fcfcfc;
+  --color-highlight: #f17463;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: #1e1e1e;
+    --color-surface: #2d3443;
+    --color-ink: #eeeeee;
+    --color-muted: oklch(0.81 0.008 250);
+    --color-line: oklch(0.45 0.01 250);
+    --color-accent: #9aa3c9;
+    --color-primary: #adb7e6;
+    --color-primary-foreground: #1e1e1e;
+  }
 }
 
 body {

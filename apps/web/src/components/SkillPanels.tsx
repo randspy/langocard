@@ -53,7 +53,7 @@ function SkillPanel({ card, now, actions, run }: {
   const id = `suspend-until-${card.skill}`;
 
   return (
-    <article className="space-y-3 rounded-lg border border-line bg-white p-4" aria-label={`${label} card`}>
+    <article className="space-y-3 rounded-lg border border-line bg-surface p-4" aria-label={`${label} card`}>
       <header className="flex items-center gap-3">
         <h3 className="font-medium">{label}</h3>
         <SkillBadge status={status} label={label} />

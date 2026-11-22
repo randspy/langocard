@@ -35,7 +35,7 @@ function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (ent
   const resolve = (choice: Choice) => run(() => onResolve(change.entryId, choice));
 
   return (
-    <article className="rounded-lg border border-line bg-white" aria-label={change.mine.word}>
+    <article className="rounded-lg border border-line bg-surface" aria-label={change.mine.word}>
       <header className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
         <Link to="/entries/$entryId" params={{ entryId: change.entryId }} className="font-serif text-xl hover:underline">{change.mine.word}</Link>
         <span className="text-sm text-muted">{originLabel(change.origin)}</span>
@@ -56,8 +56,8 @@ function Change({ change, onResolve }: { change: UpstreamChange; onResolve: (ent
           {fields.map((field) => (
             <tr key={field} className="border-t border-line/60 align-top">
               <th scope="row" className="px-4 py-2 text-left font-medium">{FIELD_LABELS[field]}</th>
-              <td className="px-4 py-2 bg-amber-50/60"><Value content={change.mine} field={field} /></td>
-              <td className="px-4 py-2 bg-emerald-50/60"><Value content={change.theirs} field={field} /></td>
+              <td className="px-4 py-2 bg-amber-50/60 dark:bg-amber-400/10"><Value content={change.mine} field={field} /></td>
+              <td className="px-4 py-2 bg-emerald-50/60 dark:bg-emerald-400/10"><Value content={change.theirs} field={field} /></td>
             </tr>
           ))}
         </tbody>
