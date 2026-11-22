@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish content/core-entries.json as rank-band packs and a digest-pinned catalogue.
+"""Publish content/core-entries.json, with content/alternatives.json merged in, as rank-band packs and a digest-pinned catalogue.
 
 Rerun after editing the draft or NOTICE.md. The same input gives byte-identical output.
 """
@@ -9,6 +9,8 @@ import re
 from pathlib import Path
 from typing import NamedTuple
 from urllib.parse import quote
+
+from generate_alternatives import ALTERNATIVES, folded, load
 
 ROOT = Path(__file__).resolve().parents[2]
 DRAFT = 'content/core-entries.json'
@@ -28,6 +30,7 @@ STATUS = ('French definitions source-aligned; English glosses and examples machi
 MAX_BYTES = 20 * 1024 * 1024
 MAX_ENTRIES = 30000
 MAX_EXAMPLES = 5
+MAX_ALTERNATIVES = 5
 TOPICS = {'daily', 'culture', 'news'}
 ID = re.compile(r'[A-Za-z0-9_-]{1,100}')
 ONE_ANSWER = re.compile(r'[^{}]*\{[^{}]*\S[^{}]*\}[^{}]*')
@@ -62,7 +65,20 @@ class ContentError(ValueError):
     pass
 
 
-def pack_entry(row):
+def with_alternatives(row, record):
+    """The row's example with the record's accepted alternatives after its target: {target|alternative}."""
+    example = row['example']
+    if record is None:
+        return example
+    if record['example'] != example:
+        raise ContentError(f"{row['id']}: alternatives were generated for another example")
+    if not record['accepted']:
+        return example
+    start, end = example.index('{'), example.index('}')
+    return example[:start + 1] + '|'.join([example[start + 1:end], *record['accepted']]) + example[end:]
+
+
+def pack_entry(row, record=None):
     """A draft row as the app reads it. `gender` is always written, because the app takes an absent one from the article."""
     article, gender = NOUN_FORMS[row['gender']] if row['sourcePos'] == 'noun' else ('', None)
     return {
@@ -70,7 +86,7 @@ def pack_entry(row):
         'word': article + row['word'],
         'english': row['english'],
         'definition': row['definition'],
-        'examples': [row['example']],
+        'examples': [with_alternatives(row, record)],
         'topic': row['topic'],
         'lemma': row['lemma'],
         'rank': row['rank'],
@@ -113,6 +129,11 @@ def entry_problem(entry):
         return 'each example needs exactly one {answer}'
     if len({example.strip() for example in examples}) != len(examples):
         return 'duplicate example'
+    for example in examples:
+        parts = example[example.index('{') + 1:example.index('}')].split('|')
+        if len(parts) > 1 and (len(parts) > MAX_ALTERNATIVES + 1 or not all(p.strip() for p in parts)
+                               or len({folded(p.strip()) for p in parts}) != len(parts)):
+            return 'alternatives must be different, non-empty words (at most 5)'
     return None
 
 
@@ -132,11 +153,14 @@ def validate(packs):
                 raise ContentError(f"{entry['id']}: {problem}")
 
 
-def build(rows, notice):
-    """Every published file, keyed by repository path, from the draft rows and NOTICE.md bytes."""
+def build(rows, notice, alternatives=None):
+    """Every published file, keyed by repository path, from the draft rows, NOTICE.md bytes and alternatives by entry ID."""
+    alternatives = alternatives or {}
+    if unknown := set(alternatives) - {row['id'] for row in rows}:
+        raise ContentError(f'Alternatives for entries not in the draft: {sorted(unknown)[:5]}')
     by_band = {band: [] for band in BANDS}
     for row in rows:
-        by_band[band_of(row['rank'])].append(pack_entry(row))
+        by_band[band_of(row['rank'])].append(pack_entry(row, alternatives.get(row['id'])))
     packs = [pack(band, entries) for band, entries in by_band.items()]
     validate(packs)
     files, listing = {}, []
@@ -158,7 +182,7 @@ def build(rows, notice):
 
 
 def publish(root=ROOT):
-    files = build(json.loads((root / DRAFT).read_text()), (root / NOTICE).read_bytes())
+    files = build(json.loads((root / DRAFT).read_text()), (root / NOTICE).read_bytes(), load(root / ALTERNATIVES))
     for path, data in files.items():
         (root / path).write_bytes(data)
     return files

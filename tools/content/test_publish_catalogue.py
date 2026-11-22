@@ -1,5 +1,6 @@
 import json
 import unittest
+from generate_alternatives import ALTERNATIVES, load
 from publish_catalogue import ROOT, ContentError, build, pack_entry
 
 
@@ -60,8 +61,26 @@ class PublishTests(unittest.TestCase):
         with self.assertRaises(ContentError):
             build(one_per_band() + [row(id='a', rank=8000)], b'notice')
 
+    def test_merges_accepted_alternatives_into_their_example(self):
+        alternatives = {'a': {'example': 'Un {arbre} pousse.', 'accepted': ['arbuste', 'végétal'], 'rejected': []},
+                        'b': {'example': 'Un {arbre} pousse.', 'accepted': [], 'rejected': [{'candidate': 'bois', 'reason': 'checker'}]}}
+        files = build(one_per_band(), b'notice', alternatives)
+        frequent = json.loads(files['content/fr-core-frequent-2026-11-v1.json'])['entries']
+        everyday = json.loads(files['content/fr-core-everyday-2026-11-v1.json'])['entries']
+        self.assertEqual(['Un {arbre|arbuste|végétal} pousse.'], frequent[0]['examples'])
+        self.assertEqual(['Un {arbre} pousse.'], everyday[0]['examples'])
+
+    def test_refuses_stale_or_invalid_alternatives(self):
+        record = lambda accepted, example='Un {arbre} pousse.': {'example': example, 'accepted': accepted, 'rejected': []}
+        broken = [{'a': record(['arbuste'], 'Un {chêne} pousse.')}, {'gone': record(['arbuste'])},
+                  {'a': record(['Arbré'])}, {'a': record([' '])}, {'a': record(['x1', 'x2', 'x3', 'x4', 'x5', 'x6'])}]
+        for alternatives in broken:
+            with self.subTest(alternatives), self.assertRaises(ContentError):
+                build(one_per_band(), b'notice', alternatives)
+
     def test_committed_files_are_what_the_draft_publishes(self):
-        files = build(json.loads((ROOT/'content/core-entries.json').read_text()), (ROOT/'content/NOTICE.md').read_bytes())
+        files = build(json.loads((ROOT/'content/core-entries.json').read_text()), (ROOT/'content/NOTICE.md').read_bytes(),
+                      load(ROOT/ALTERNATIVES))
         for path, data in files.items():
             self.assertEqual(data, (ROOT/path).read_bytes(), path)
         catalogue = json.loads(files['content/catalogue.json'])
