@@ -16,8 +16,9 @@ import java.util.Random
 
 /**
  * Writes `content/fsrs-fixtures.json` from the real java-fsrs, so the TypeScript port in
- * `apps/backend/convex/fsrs.ts` can prove it schedules identically. Fails when the committed
- * file is stale; delete it and run the test again to regenerate.
+ * `apps/backend/convex/fsrs.ts` can prove it schedules identically. Cards and logs are stored
+ * as JSON objects and compared by value. Fails when the committed file is stale; delete it and
+ * run the test again to regenerate.
  */
 class FsrsFixturesTest {
     private val file = File("../../../content/fsrs-fixtures.json")
@@ -49,8 +50,8 @@ class FsrsFixturesTest {
             val rating = Rating.entries[random.nextInt(4)]
             val before = card.toJson()
             val result = scheduler.reviewCard(card, rating, now)
-            rows.put(JSONObject().put("card", before).put("rating", rating.name).put("reviewDatetime", now.toString())
-                .put("expectedCard", result.card().toJson()).put("expectedLog", result.reviewLog().toJson()))
+            rows.put(JSONObject().put("card", JSONObject(before)).put("rating", rating.name).put("reviewDatetime", now.toString())
+                .put("expectedCard", JSONObject(result.card().toJson())).put("expectedLog", JSONObject(result.reviewLog().toJson())))
             card = result.card()
             val untilDue = Duration.between(now, card.due).toMillis()
             val gap = when (random.nextInt(5)) {
@@ -90,8 +91,8 @@ class FsrsFixturesTest {
             val at = Instant.parse("2026-01-02T00:00:00Z").plusMillis(lastReview.toEpochMilli() % 1000)
             val result = scheduler.reviewCard(card, Rating.GOOD, at)
             cases.put(JSONObject().put("name", "precise $last").put("scheduler", "default").put("steps", JSONArray().put(
-                JSONObject().put("card", card.toJson()).put("rating", "GOOD").put("reviewDatetime", at.toString())
-                    .put("expectedCard", result.card().toJson()).put("expectedLog", result.reviewLog().toJson()))))
+                JSONObject().put("card", JSONObject(card.toJson())).put("rating", "GOOD").put("reviewDatetime", at.toString())
+                    .put("expectedCard", JSONObject(result.card().toJson())).put("expectedLog", JSONObject(result.reviewLog().toJson())))))
         }
         // A card serialised before its first answer, as `Learner.newCard` builds it.
         val log = ReviewLog(7, Rating.HARD, Instant.parse("2026-01-05T08:00:00.123Z"), 3200)
@@ -102,10 +103,33 @@ class FsrsFixturesTest {
                 .put("logWithDuration", log.toJson()))
     }
 
+    /**
+     * Same JSON, comparing numbers by value: JDKs print some doubles with different digits
+     * (JDK 19 changed `Double.toString`), and `Math.pow` may differ in the last bit between them.
+     */
+    private fun sameJson(path: String, a: Any?, b: Any?, tolerance: Double) {
+        when {
+            a is JSONObject && b is JSONObject -> {
+                val keys = a.keys().asSequence().toSet()
+                assertEquals("$path keys", keys, b.keys().asSequence().toSet())
+                keys.forEach { sameJson("$path.$it", a.get(it), b.get(it), tolerance) }
+            }
+            a is JSONArray && b is JSONArray -> {
+                assertEquals("$path length", a.length(), b.length())
+                for (i in 0 until a.length()) sameJson("$path[$i]", a.get(i), b.get(i), tolerance)
+            }
+            a is Number && b is Number -> {
+                val (x, y) = a.toDouble() to b.toDouble()
+                assertTrue("$path: $x vs $y", x == y || Math.abs(x - y) <= tolerance * maxOf(Math.abs(x), Math.abs(y)))
+            }
+            else -> assertEquals(path, a, b)
+        }
+    }
+
     @Test fun `fixtures match java-fsrs`() {
-        val text = generate().toString(1) + "\n"
-        if (!file.exists()) file.writeText(text)
-        assertEquals("content/fsrs-fixtures.json is stale; delete it and rerun this test", text, file.readText())
+        val generated = generate()
+        if (!file.exists()) file.writeText(generated.toString(1) + "\n")
+        sameJson("content/fsrs-fixtures.json is stale; delete it and rerun this test", generated, JSONObject(file.readText()), 1e-12)
     }
 
     /** `content/fsrs-typescript-output.json` is written by the TypeScript port's tests. */
@@ -116,7 +140,9 @@ class FsrsFixturesTest {
             assertTrue(items.length() > 10)
             for (i in 0 until items.length()) {
                 val json = items.getString(i)
-                assertEquals(json, if (key == "cards") Card.fromJson(json).toJson() else ReviewLog.fromJson(json).toJson())
+                // Every field, number and time reads back exactly as written.
+                val reserialised = if (key == "cards") Card.fromJson(json).toJson() else ReviewLog.fromJson(json).toJson()
+                sameJson("$key[$i]", JSONObject(json), JSONObject(reserialised), 0.0)
             }
         }
     }

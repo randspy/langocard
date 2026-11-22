@@ -30,16 +30,16 @@ describe("FSRS matches java-fsrs 1.0.0 (shared fixtures)", () => {
       random: javaRandom(config.randomSeed),
     });
     for (const step of steps) {
-      const card = cardFromJson(step.card);
-      expect(cardToJson(card)).toBe(step.card);
+      const card = cardFromJson(JSON.stringify(step.card));
+      expect(JSON.parse(cardToJson(card))).toEqual(step.card);
       const result = scheduler.review(card, step.rating as Rating, Date.parse(step.reviewDatetime));
-      expectSameCard(cardToJson(result.card), step.expectedCard);
-      expect(logToJson(result.log)).toBe(step.expectedLog);
+      expectSameCard(cardToJson(result.card), JSON.stringify(step.expectedCard));
+      expect(JSON.parse(logToJson(result.log))).toEqual(step.expectedLog);
     }
   });
 
   test("covers every state and rating", () => {
-    const outcomes = fixtures.cases.flatMap((c) => c.steps.map((s) => [cardFromJson(s.card).state, s.rating].join(" ")));
+    const outcomes = fixtures.cases.flatMap((c) => c.steps.map((s) => [s.card.state, s.rating].join(" ")));
     for (const state of ["LEARNING", "REVIEW", "RELEARNING"]) {
       for (const rating of ["AGAIN", "HARD", "GOOD", "EASY"]) expect(outcomes).toContain(`${state} ${rating}`);
     }
@@ -89,7 +89,7 @@ test("writes the TypeScript output Android round-trips", () => {
   const logs: string[] = [];
   for (const c of fixtures.cases.filter((c) => c.scheduler === "default").slice(0, 3)) {
     for (const step of c.steps) {
-      const result = scheduler.review(cardFromJson(step.card), step.rating as Rating, Date.parse(step.reviewDatetime), 1500);
+      const result = scheduler.review(cardFromJson(JSON.stringify(step.card)), step.rating as Rating, Date.parse(step.reviewDatetime), 1500);
       cards.push(cardToJson(result.card));
       logs.push(logToJson(result.log));
     }
