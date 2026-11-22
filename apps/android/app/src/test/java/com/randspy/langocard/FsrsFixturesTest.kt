@@ -7,6 +7,7 @@ import io.github.openspacedrepetition.Scheduler
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.time.Duration
@@ -95,15 +96,15 @@ class FsrsFixturesTest {
         assertEquals("content/fsrs-fixtures.json is stale; delete it and rerun this test", text, file.readText())
     }
 
-    @Test fun `cards serialised like the TypeScript port parse unchanged`() {
-        val cases = JSONObject(file.readText()).getJSONArray("cases")
-        for (i in 0 until cases.length()) {
-            val steps = cases.getJSONObject(i).getJSONArray("steps")
-            for (j in 0 until steps.length()) {
-                val json = steps.getJSONObject(j).getString("expectedCard")
-                assertEquals(json, Card.fromJson(json).toJson())
-                val log = steps.getJSONObject(j).getString("expectedLog")
-                assertEquals(log, ReviewLog.fromJson(log).toJson())
+    /** `content/fsrs-typescript-output.json` is written by the TypeScript port's tests. */
+    @Test fun `cards and logs the TypeScript port writes parse unchanged`() {
+        val output = JSONObject(File("../../../content/fsrs-typescript-output.json").readText())
+        for (key in listOf("cards", "logs")) {
+            val items = output.getJSONArray(key)
+            assertTrue(items.length() > 10)
+            for (i in 0 until items.length()) {
+                val json = items.getString(i)
+                assertEquals(json, if (key == "cards") Card.fromJson(json).toJson() else ReviewLog.fromJson(json).toJson())
             }
         }
     }

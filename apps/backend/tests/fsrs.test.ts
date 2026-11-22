@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import fixtures from "../../../content/fsrs-fixtures.json";
 import {
@@ -75,4 +76,25 @@ describe("FSRS", () => {
     expect(at(0)).toBeLessThan(plain);
     expect(at(0.999)).toBeGreaterThan(plain);
   });
+});
+
+/**
+ * Cards and logs this port writes, which Android's `FsrsFixturesTest` reads back with java-fsrs
+ * and must reserialise unchanged. Regenerated when missing; fails when stale.
+ */
+test("writes the TypeScript output Android round-trips", () => {
+  const file = new URL("../../../content/fsrs-typescript-output.json", import.meta.url);
+  const scheduler = new Scheduler({ enableFuzzing: false });
+  const cards: string[] = [];
+  const logs: string[] = [];
+  for (const c of fixtures.cases.filter((c) => c.scheduler === "default").slice(0, 3)) {
+    for (const step of c.steps) {
+      const result = scheduler.review(cardFromJson(step.card), step.rating as Rating, Date.parse(step.reviewDatetime), 1500);
+      cards.push(cardToJson(result.card));
+      logs.push(logToJson(result.log));
+    }
+  }
+  const text = JSON.stringify({ note: "Written by apps/backend/tests/fsrs.test.ts; do not edit.", cards, logs }, null, 1) + "\n";
+  if (!existsSync(file)) writeFileSync(file, text);
+  expect(readFileSync(file, "utf8")).toBe(text);
 });

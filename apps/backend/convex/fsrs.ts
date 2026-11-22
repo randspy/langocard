@@ -118,9 +118,13 @@ export class Scheduler {
       next.step = null;
       interval = this.nextInterval(next.stability!) * DAY;
     };
-    /** Learning and relearning share their step logic; java-fsrs's Hard on relearning step 0 with several steps uses the learning steps. */
+    /**
+     * Learning and relearning share their step logic. A stored card past the last step (from a
+     * scheduler with more steps) graduates. java-fsrs's Hard on relearning step 0 with several
+     * steps uses the learning steps.
+     */
     const stepThrough = (steps: number[]) => {
-      if (steps.length === 0 || (next.step! >= steps.length && rating !== "AGAIN")) return toReview();
+      if (next.step! >= steps.length && rating !== "AGAIN") return toReview();
       switch (rating) {
         case "AGAIN":
           next.step = 0;
@@ -164,7 +168,7 @@ export class Scheduler {
           ? this.shortTermStability(card.stability!, rating)
           : this.nextStability(card.difficulty!, card.stability!, this.retrievability(card, now), rating);
         next.difficulty = this.nextDifficulty(card.difficulty!, rating);
-        if (rating === "AGAIN" && RELEARNING_STEPS.length > 0) {
+        if (rating === "AGAIN") {
           next.state = "RELEARNING";
           next.step = 0;
           interval = RELEARNING_STEPS[0];
@@ -227,7 +231,11 @@ export class Scheduler {
     return this.clampStability(s);
   }
 
-  /** Whole days, from 1 to the maximum interval. */
+  /**
+   * Whole days, from 1 to the maximum interval. `Math.pow` isn't bit-identical across
+   * JavaScript engines, the JVM and Android's runtime, so an interval within an ulp of half
+   * a day can round to a neighbouring day; the fixtures hold for every generated history.
+   */
   private nextInterval(stability: number) {
     const days = round((stability / this.factor) * (Math.pow(this.retention, 1 / this.decay) - 1));
     return Math.min(Math.max(days, 1), MAXIMUM_INTERVAL);
