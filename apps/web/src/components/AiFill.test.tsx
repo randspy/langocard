@@ -92,6 +92,9 @@ describe("AI fill", () => {
     const word = screen.getByLabelText("French word or phrase");
     expect(word).toBeEnabled();
     await userEvent.clear(word);
+    await userEvent.type(word, "l'intrigue");
+    expect(screen.getByLabelText("Gender")).toHaveValue("feminine");
+    await userEvent.clear(word);
     await userEvent.type(word, "un récit");
     expect(screen.getByLabelText("Gender")).toHaveValue("masculine");
   });

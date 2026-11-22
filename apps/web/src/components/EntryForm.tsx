@@ -61,7 +61,11 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
     const next = field === "gender" ? { ...content, gender: (value || null) as Gender | null } : { ...content, [field]: value };
     if (field === "gender") setGenderChosen(true);
     if (drafted.has(field as SingleField)) setDrafted(new Set([...drafted].filter((f) => f !== field)));
-    if (field === "word" && !genderChosen) next.gender = articleGender(value);
+    if (field === "word" && !genderChosen) {
+      // A typed article decides; without one, a drafted gender stays (as for "l'intrigue").
+      const stated = articleGender(value);
+      if (stated !== null || !drafted.has("gender")) next.gender = stated;
+    }
     change(next);
   };
   const change = (next: EntryContent) => {
@@ -263,6 +267,7 @@ function AiFill({ model, english, anyDrafted, disabled, onDraft }: {
   const [availability, setAvailability] = useState<Availability>({ kind: "checking" });
   const [message, setMessage] = useState("");
   const [drafting, setDrafting] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const drafter = useMemo(() => new EntryDrafter((prompt) => model.generate(prompt)), [model]);
   useEffect(() => {
     let live = true;
@@ -292,12 +297,15 @@ function AiFill({ model, english, anyDrafted, disabled, onDraft }: {
     }
   };
   const remove = async () => {
+    setRemoving(true);
     try {
       await model.remove();
       setMessage("");
       setAvailability({ kind: "downloadable" });
     } catch (e) {
       setMessage(`Could not remove on-device AI: ${errorMessage(e)}`);
+    } finally {
+      setRemoving(false);
     }
   };
   return (
@@ -316,10 +324,10 @@ function AiFill({ model, english, anyDrafted, disabled, onDraft }: {
         <>
           <p className="text-xs text-muted">Type the English meaning, and the French word if you know it. AI fill drafts the rest for you to check.</p>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={() => void draft()} disabled={disabled || drafting || !english.trim()}>
+            <Button type="button" variant="outline" onClick={() => void draft()} disabled={disabled || drafting || removing || !english.trim()}>
               {drafting ? "Drafting…" : anyDrafted ? "Regenerate" : "Fill with AI"}
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void remove()} disabled={drafting}>Remove on-device AI</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => void remove()} disabled={drafting || removing}>Remove on-device AI</Button>
           </div>
           {message && <p role="status">{message}</p>}
         </>
