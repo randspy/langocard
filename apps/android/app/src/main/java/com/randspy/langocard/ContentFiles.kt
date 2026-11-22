@@ -1,5 +1,6 @@
 package com.randspy.langocard
 
+import java.text.Normalizer
 import org.json.JSONArray
 import org.json.JSONObject
 import io.github.openspacedrepetition.Card
@@ -9,6 +10,8 @@ object ContentFiles {
     const val MAX_BYTES = 20 * 1024 * 1024
     /** A meaning has at most this many examples; mirrors `MAX_EXAMPLES` in `entryRules.ts`. */
     const val MAX_EXAMPLES = 5
+    /** An example's answer lists at most this many alternatives; mirrors `MAX_ALTERNATIVES` in `entryRules.ts`. */
+    const val MAX_ALTERNATIVES = 5
     /** Formats that carry `examples`; files of earlier versions are rejected, not converted. */
     const val PACK_VERSION = 2
     const val BACKUP_VERSION = 2
@@ -18,6 +21,7 @@ object ContentFiles {
         require(e.id.matches(Regex("[a-zA-Z0-9_-]{1,100}"))) { "Invalid entry ID" }
         require((listOf(e.word, e.english, e.definition) + e.examples.map { it.marked }).all(::validText)) { "Fill every field (maximum 2,000 characters each)" }
         require(e.examples.all { validAnswer(it.marked) }) { "Mark exactly one answer with {braces} in the example" }
+        require(e.examples.all(::validAlternatives)) { "Alternatives must be different, non-empty words (at most $MAX_ALTERNATIVES)" }
         require(e.examples.size in 1..MAX_EXAMPLES) { "Give 1 to $MAX_EXAMPLES examples" }
         require(e.examples.map { it.marked.trim() }.distinct().size == e.examples.size) { "Each example must be different" }
         require(e.rank > 0 && e.lemma.length <= 200 && e.license.length <= 500) { "Invalid vocabulary metadata" }
@@ -27,9 +31,15 @@ object ContentFiles {
     }
     /** A required text field: not blank and at most 2,000 characters. */
     fun validText(s: String) = s.isNotBlank() && s.length <= 2000
-    /** The example marks exactly one non-blank answer with {braces}. */
+    /** The example marks exactly one answer with {braces}, with a non-blank target. */
     fun validAnswer(markedExample: String) = markedExample.count { it == '{' } == 1 && markedExample.count { it == '}' } == 1 &&
-        markedExample.indexOf('{') < markedExample.indexOf('}') && markedExample.substringAfter("{").substringBefore("}").isNotBlank()
+        markedExample.indexOf('{') < markedExample.indexOf('}') && Example(markedExample).answer.isNotBlank()
+    /** Every part of the answer is non-blank, with no two equal ignoring case and accents. */
+    fun validAlternatives(example: Example) = example.parts.size <= MAX_ALTERNATIVES + 1 &&
+        example.parts.none(String::isBlank) && example.parts.map(::foldedWord).distinct().size == example.parts.size
+    private val MARKS = Regex("\\p{Mn}+")
+    private fun foldedWord(s: String) = Normalizer.normalize(s, Normalizer.Form.NFD).replace(MARKS, "").lowercase()
+        .replace("œ", "oe").replace("æ", "ae")
     fun entryJson(e: Entry) = JSONObject().put("id", e.id).put("word", e.word).put("english", e.english)
         .put("definition", e.definition).put("examples", examplesJson(e)).put("topic", e.topic)
         .put("lemma", e.lemma).put("rank", e.rank).put("sourceUrl", e.sourceUrl).put("license", e.license)

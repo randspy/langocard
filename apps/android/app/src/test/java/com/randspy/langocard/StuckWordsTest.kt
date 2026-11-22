@@ -17,6 +17,10 @@ class StuckWordsTest {
     @Test fun oldHistoryAvoidsPreviousRotationExample() {
         assertEquals(b, StuckWords.returningExample(entry, 4, emptyList()))
     }
+    @Test fun failuresRecordedBeforeAlternativesStillCount() {
+        val withAlternatives = entry.copy(examples = listOf(Example("A {mot|terme}."), b, c))
+        assertEquals(c, StuckWords.returningExample(withAlternatives, 6, listOf(a.marked, b.marked)))
+    }
     @Test fun singleExampleFallsBack() {
         assertEquals(a, StuckWords.returningExample(entry.copy(examples = listOf(a)), 4, listOf(a.marked)))
     }

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import ruleFixtures from "../../../content/entry-rules-fixtures.json";
 import mergeFixtures from "../../../content/merge-fixtures.json";
-import { answerOf, clozeOf, entryErrors, exampleAt, fromAndroidJson, sameContent, textOf, type EntryContent } from "../convex/entryRules";
+import { alternativesOf, answerOf, clozeOf, entryErrors, exampleAt, fromAndroidJson, sameContent, textOf, type EntryContent } from "../convex/entryRules";
 import { entryWins, isDeleted, mergeCard, SUSPENDED_INDEFINITELY, type CardState } from "../convex/merge";
 
 describe("entry rules (shared fixtures)", () => {
@@ -24,6 +24,16 @@ describe("entry rules", () => {
     expect(answerOf("Il pleut, {pourtant} elle sort.")).toBe("pourtant");
     expect(clozeOf("Il pleut, {pourtant} elle sort.")).toBe("Il pleut, ________ elle sort.");
     expect(textOf("Il pleut, {pourtant} elle sort.")).toBe("Il pleut, pourtant elle sort.");
+  });
+
+  test("separates the target from its alternatives", () => {
+    const example = "Le train devrait {arriver | parvenir|atteindre la gare} à la gare.";
+    expect(answerOf(example)).toBe("arriver");
+    expect(alternativesOf(example)).toEqual(["parvenir", "atteindre la gare"]);
+    expect(clozeOf(example)).toBe("Le train devrait ________ à la gare.");
+    expect(textOf(example)).toBe("Le train devrait arriver à la gare.");
+    expect(alternativesOf("Il pleut, {pourtant} elle sort.")).toEqual([]);
+    expect(textOf("A | B : {arriver}.")).toBe("A | B : arriver.");
   });
 
   test("rotates through the examples, starting with the introductory one", () => {

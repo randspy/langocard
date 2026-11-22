@@ -19,7 +19,8 @@ export type EntryContent = {
   english: string;
   definition: string;
   /**
-   * 1 to `MAX_EXAMPLES` sentences, each with exactly one `{answer}`. The first is the
+   * 1 to `MAX_EXAMPLES` sentences, each with exactly one `{answer}`, which may list
+   * alternatives after the target: `{arriver|parvenir}`. The first is the
    * introductory example; practice rotates through the rest (see `exampleAt`).
    */
   examples: string[];
@@ -36,7 +37,7 @@ export const CONTENT_FIELDS = [
   "word", "english", "definition", "examples", "topic", "lemma", "rank", "sourceUrl", "license", "gender",
 ] as const satisfies readonly (keyof EntryContent)[];
 
-export type RuleCode = "id" | "fields" | "answer" | "examples" | "metadata" | "sourceUrl" | "topic" | "gender";
+export type RuleCode = "id" | "fields" | "answer" | "alternatives" | "examples" | "metadata" | "sourceUrl" | "topic" | "gender";
 /** `index` is set for an error in one example: its position in `examples`. */
 export type RuleError = { rule: RuleCode; field: keyof EntryContent | "entryId"; message: string; index?: number };
 
@@ -70,21 +71,59 @@ export function nounOf(word: string): string {
   return trimmed.replace(ARTICLE, "").replace(ELISION, "");
 }
 
-/** The marked answer, e.g. "pourtant" in "Il pleut, {pourtant} elle sort." */
-export function answerOf(example: string): string {
+/** An example's answer lists at most this many alternatives after its target. */
+export const MAX_ALTERNATIVES = 5;
+
+/** The text between the answer marks, or null when the example has none. */
+function marked(example: string): { start: number; end: number; inner: string } | null {
   const start = example.indexOf("{");
   const end = example.indexOf("}", start + 1);
-  return start < 0 || end < 0 ? "" : example.slice(start + 1, end);
+  return start < 0 || end < 0 ? null : { start, end, inner: example.slice(start + 1, end) };
+}
+
+/**
+ * The marked answer's parts: the target first, then any alternatives, written
+ * `{target|alternative}`. A lone answer is kept as written; listed parts are trimmed.
+ */
+function answerParts(example: string): string[] {
+  const inner = marked(example)?.inner ?? "";
+  return inner.includes("|") ? inner.split("|").map((part) => part.trim()) : [inner];
+}
+
+/** The example with its answer marks replaced by `replacement`. */
+function replaceAnswer(example: string, replacement: string): string {
+  const m = marked(example);
+  return m ? example.slice(0, m.start) + replacement + example.slice(m.end + 1) : example;
+}
+
+/** The target, e.g. "pourtant" in "Il pleut, {pourtant} elle sort." or "arriver" in "{arriver|parvenir}". */
+export function answerOf(example: string): string {
+  return answerParts(example)[0];
+}
+
+/** Other words the gap accepts in Production: "parvenir" in "Le train devrait {arriver|parvenir} à la gare." */
+export function alternativesOf(example: string): string[] {
+  return answerParts(example).slice(1);
 }
 
 /** The example with the answer replaced by a gap, as shown in production practice. */
 export function clozeOf(example: string): string {
-  return example.replace(`{${answerOf(example)}}`, "________");
+  return replaceAnswer(example, "________");
 }
 
-/** The example without its answer marks, as read or spoken. */
+/** The example without its answer marks or alternatives, as read or spoken. */
 export function textOf(example: string): string {
-  return example.replace("{", "").replace("}", "");
+  return replaceAnswer(example, answerOf(example));
+}
+
+/** The example with its answer's alternatives replaced by `alternatives`. */
+export function withAlternatives(example: string, alternatives: readonly string[]): string {
+  return marked(example) ? replaceAnswer(example, `{${[answerOf(example), ...alternatives].join("|")}}`) : example;
+}
+
+/** The example with its alternatives dropped: the sentence an example's alternatives belong to. */
+export function withoutAlternatives(example: string): string {
+  return withAlternatives(example, []);
 }
 
 /**
@@ -94,6 +133,13 @@ export function textOf(example: string): string {
 export function exampleAt(examples: readonly string[], exposures: number): string {
   return examples[exposures % examples.length];
 }
+
+/** Lower case without accents, so "Râvi" and "ravi" count as the same word. */
+export const folded = (s: string) => s.normalize("NFD").replace(/\p{Mn}+/gu, "").toLowerCase().replace(/œ/g, "oe").replace(/æ/g, "ae");
+const validAlternatives = (example: string) => {
+  const parts = answerParts(example);
+  return parts.length <= MAX_ALTERNATIVES + 1 && parts.every((part) => !blank(part)) && new Set(parts.map(folded)).size === parts.length;
+};
 
 const markedOnce = (example: string) =>
   count(example, "{") === 1 && count(example, "}") === 1 && example.indexOf("{") < example.indexOf("}") && !blank(answerOf(example));
@@ -109,6 +155,8 @@ export function entryErrors(entryId: string, e: EntryContent): RuleError[] {
     if (!validText(example)) errors.push({ ...fieldsError("examples"), index });
     else if (!markedOnce(example)) {
       errors.push({ rule: "answer", field: "examples", index, message: "Mark exactly one answer with {braces} in the example" });
+    } else if (!validAlternatives(example)) {
+      errors.push({ rule: "alternatives", field: "examples", index, message: "Alternatives must be different, non-empty words (at most 5)" });
     }
   });
   const distinct = new Set(e.examples.map((example) => example.trim()));

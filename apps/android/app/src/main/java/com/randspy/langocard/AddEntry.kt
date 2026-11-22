@@ -175,7 +175,7 @@ private data class ExampleField(val text: String = "", val drafted: Boolean = fa
 @Composable
 private fun Examples(examples: MutableList<ExampleField>, enabled: Boolean) {
     Text("Examples", style = MaterialTheme.typography.labelLarge)
-    Text("Mark the word in each with {braces}: Elle {se rend compte} du problème. Practice shows them in turn.",
+    Text("Mark the word in each with {braces}: Elle {se rend compte} du problème. Add other words the gap accepts after a bar: {pourtant|cependant}. Practice shows them in turn.",
         style = MaterialTheme.typography.bodySmall)
     examples.forEachIndexed { index, example ->
         OutlinedTextField(

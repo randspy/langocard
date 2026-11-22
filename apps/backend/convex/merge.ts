@@ -4,7 +4,10 @@
  * Every rule is idempotent, so devices can resend the same data without changing
  * the result. Self-contained apart from `entryRules.ts`.
  */
-import { contentOf, sameContent, type EntryContent, type StoredContent } from "./entryRules";
+import {
+  alternativesOf, contentOf, folded, MAX_ALTERNATIVES, sameContent, withAlternatives, withoutAlternatives,
+  type EntryContent, type StoredContent,
+} from "./entryRules";
 
 export type Settings = {
   placementDone: boolean;
@@ -70,6 +73,7 @@ export type SeededEntry = StoredContent & {
  * null when it is already current. Unedited entries take the new content; edited
  * entries keep the learner's wording and are flagged when the shipped content moved.
  * An entry counts as edited when its content differs from what was last shipped.
+ * Alternatives alone never flag an edited entry: newly shipped ones are carried into it.
  */
 export function applyShipped(stored: SeededEntry, shipped: EntryContent, origin: string): Partial<SeededEntry> | null {
   const patch: Partial<SeededEntry> = {};
@@ -81,11 +85,36 @@ export function applyShipped(stored: SeededEntry, shipped: EntryContent, origin:
     const edited = !previous || !sameContent(contentOf(stored), previous);
     if (!edited) Object.assign(patch, contentOf(shipped));
     else {
-      const differs = !sameContent(contentOf(stored), shipped);
-      if (differs !== stored.upstreamChanged) patch.upstreamChanged = differs;
+      const examples = carryAlternatives(stored.examples, previous?.examples ?? [], shipped.examples);
+      if (examples.some((example, i) => example !== stored.examples[i])) patch.examples = examples;
+      const plainShipped = withoutAnyAlternatives(shipped);
+      if (!previous || !sameContent(withoutAnyAlternatives(contentOf(previous)), plainShipped)) {
+        const differs = !sameContent(withoutAnyAlternatives(contentOf(stored)), plainShipped);
+        if (differs !== stored.upstreamChanged) patch.upstreamChanged = differs;
+      }
     }
   }
   return Object.keys(patch).length ? patch : null;
+}
+
+const withoutAnyAlternatives = (content: EntryContent): EntryContent =>
+  ({ ...content, examples: content.examples.map(withoutAlternatives) });
+
+/**
+ * The learner's examples, each followed by the alternatives shipped for the same sentence
+ * since `previous`. Alternatives the learner removed stay removed until shipped anew, and a
+ * rewritten sentence gains none.
+ */
+function carryAlternatives(examples: string[], previous: string[], shipped: string[]): string[] {
+  const bySentence = (list: string[]) => new Map(list.map((e) => [withoutAlternatives(e), alternativesOf(e)]));
+  const [before, now] = [bySentence(previous), bySentence(shipped)];
+  return examples.map((example) => {
+    const sentence = withoutAlternatives(example);
+    const own = alternativesOf(example);
+    const known = new Set([...own, ...(before.get(sentence) ?? [])].map(folded));
+    const added = (now.get(sentence) ?? []).filter((a) => !known.has(folded(a)));
+    return added.length ? withAlternatives(example, [...own, ...added].slice(0, MAX_ALTERNATIVES)) : example;
+  });
 }
 
 // ---- Cards -----------------------------------------------------------------
