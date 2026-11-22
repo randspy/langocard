@@ -1,5 +1,5 @@
 {
-  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, alternatives, examples, metadata, sourceUrl, topic, gender). examples holds 1 to 5 distinct sentences, each with one {answer}; the answer may list up to 5 alternatives after the target, {target|alt}, all non-blank and different ignoring case and accents (rule alternatives). gender absent means the gender the word's article states (content written before gender existed).",
+  "description": "Entry validation cases shared by apps/backend/convex/entryRules.ts and Android ContentFiles.validateEntry. Entries use the Android pack JSON shape (rank absent = unranked). rule: null means valid; otherwise the single rule the entry breaks (id, fields, answer, alternatives, examples, metadata, sourceUrl, topic, gender). examples holds 1 to 5 sentences, distinct ignoring alternatives, each with one {answer}; the answer may list up to 5 alternatives after the target, {target|alt}, all non-blank and different ignoring case and accents (rule alternatives). gender absent means the gender the word's article states (content written before gender existed).",
   "cases": [
     {
       "name": "minimal personal entry",
@@ -686,6 +686,21 @@
         ]
       },
       "rule": "answer"
+    },
+    {
+      "name": "examples differing only in alternatives",
+      "entry": {
+        "id": "personal-1",
+        "word": "arriver",
+        "english": "To reach a destination.",
+        "definition": "Parvenir à destination.",
+        "topic": "daily",
+        "examples": [
+          "Il va {arriver}.",
+          "Il va {arriver|parvenir}."
+        ]
+      },
+      "rule": "examples"
     }
   ]
 }

@@ -23,7 +23,7 @@ object ContentFiles {
         require(e.examples.all { validAnswer(it.marked) }) { "Mark exactly one answer with {braces} in the example" }
         require(e.examples.all(::validAlternatives)) { "Alternatives must be different, non-empty words (at most $MAX_ALTERNATIVES)" }
         require(e.examples.size in 1..MAX_EXAMPLES) { "Give 1 to $MAX_EXAMPLES examples" }
-        require(e.examples.map { it.marked.trim() }.distinct().size == e.examples.size) { "Each example must be different" }
+        require(e.examples.map { it.withoutAlternatives.trim() }.distinct().size == e.examples.size) { "Each example must be different" }
         require(e.rank > 0 && e.lemma.length <= 200 && e.license.length <= 500) { "Invalid vocabulary metadata" }
         require(e.sourceUrl.isBlank() || (e.sourceUrl.startsWith("https://") && e.sourceUrl.length <= 2000)) { "Invalid source URL" }
         require(e.topic in setOf("daily", "culture", "news")) { "Unknown topic" }

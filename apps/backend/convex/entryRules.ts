@@ -159,7 +159,8 @@ export function entryErrors(entryId: string, e: EntryContent): RuleError[] {
       errors.push({ rule: "alternatives", field: "examples", index, message: "Alternatives must be different, non-empty words (at most 5)" });
     }
   });
-  const distinct = new Set(e.examples.map((example) => example.trim()));
+  // Alternatives don't make a sentence another example.
+  const distinct = new Set(e.examples.map((example) => withoutAlternatives(example).trim()));
   if (e.examples.length < 1 || e.examples.length > MAX_EXAMPLES) {
     errors.push({ rule: "examples", field: "examples", message: `Give 1 to ${MAX_EXAMPLES} examples` });
   } else if (distinct.size !== e.examples.length) {
