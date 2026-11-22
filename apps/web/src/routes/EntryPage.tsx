@@ -6,10 +6,12 @@ import { EntryFlags } from "@/components/EntryBadges";
 import { EntryForm } from "@/components/EntryForm";
 import { SkillPanels } from "@/components/SkillPanels";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/input";
 import { useTokenMutation, useTokenQuery } from "@/lib/convex";
 import { originLabel } from "@/lib/library";
 import { useAsyncAction } from "@/lib/useAsyncAction";
 import { useNow } from "@/lib/useNow";
+import { cn } from "@/lib/utils";
 
 export function EntryPage() {
   const { entryId } = useParams({ from: "/entries/$entryId" });
@@ -35,7 +37,7 @@ export function EntryPage() {
         <BackLink />
         <header className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className={entry.deleted ? "font-semibold text-3xl text-muted line-through" : "font-semibold text-3xl"}>{entry.word}</h1>
+            <h1 className={cn("font-semibold text-3xl", entry.deleted && "text-muted line-through")}>{entry.word}</h1>
             <EntryFlags entry={entry} />
           </div>
           <p className="text-sm text-muted">
@@ -105,7 +107,7 @@ function MemoryHook({ entryId }: { entryId: string }) {
 function HookEditor({ initial, save, error }: { initial: string; save: (text: string) => Promise<unknown>; error: string | null }) {
   const [text, setText] = useState(initial);
   return <form className="space-y-2" onSubmit={event => { event.preventDefault(); void save(text); }}>
-    <label className="block">Memory hook<textarea className="block w-full rounded-lg border border-line bg-surface p-2" value={text} maxLength={500} onChange={event => setText(event.target.value)} /></label>
+    <label className="block">Memory hook<Textarea className="block" value={text} maxLength={500} onChange={event => setText(event.target.value)} /></label>
     <Button type="submit">Save memory hook</Button>
     {error && <p role="alert">{error}</p>}
   </form>;
