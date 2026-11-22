@@ -3,8 +3,9 @@
 // Usage: npm run link-android            (development deployment)
 //        npm run link-android -- --prod  (production deployment)
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { writePrivateFile } from "./write-private-file.mjs";
 
 const prod = process.argv.includes("--prod");
 const backend = fileURLToPath(new URL("..", import.meta.url));
@@ -27,5 +28,5 @@ const settings = { "langocard.syncUrl": url, "langocard.syncToken": token };
 const lines = (existsSync(target) ? readFileSync(target, "utf8") : "")
   .split("\n").filter((line) => line && !Object.keys(settings).some((key) => line.startsWith(`${key}=`)));
 for (const [key, value] of Object.entries(settings)) lines.push(`${key}=${value}`);
-writeFileSync(target, lines.join("\n") + "\n", { mode: 0o600 });
+writePrivateFile(target, lines.join("\n") + "\n");
 console.log(`Linked Android builds to ${url}. Rebuild and reinstall the app to apply.`);
