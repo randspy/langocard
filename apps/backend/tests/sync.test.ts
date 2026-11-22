@@ -142,6 +142,17 @@ describe("sync", () => {
   });
 });
 
+test("a push without the new settings fields keeps the stored fit and Gender count", async () => {
+  const t = convexTest(schema, modules);
+  const fit = { ...settings, genderIntroduced: 6, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 20 };
+  await t.mutation(api.sync.push, { token, ...empty, settings: fit });
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, seconds: 30 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ seconds: 30, genderIntroduced: 6, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 20 }]);
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: null, fittedSettingsChangedAt: 25 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: null, fittedSettingsChangedAt: 25 }]);
+  await expect(t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: "x".repeat(4001), fittedSettingsChangedAt: 30 } })).rejects.toThrow();
+});
+
 describe("mergeSettings", () => {
   test("a newer day replaces the daily counters", () => {
     const merged = mergeSettings({ ...settings, day: "2026-11-11", seconds: 900 }, { ...settings, day: "2026-11-12", seconds: 60 });

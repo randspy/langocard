@@ -15,20 +15,29 @@ import java.time.Instant
 class LearningModel(application: Application) : AndroidViewModel(application) {
     val library = LearningLibrary(application)
     private val learner get() = library.learner
-    private var scheduler = learner.fittedSettings?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
+    /** Built once per fit, so a fit synced from another device takes effect on the next answer. */
+    private var schedulerFit: String? = null
+    private var cachedScheduler: Scheduler? = null
+    private val scheduler: Scheduler get() {
+        val fit = learner.fittedSettings
+        val json = fit?.toJson()?.toString()
+        if (cachedScheduler == null || json != schedulerFit) {
+            cachedScheduler = fit?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
+            schedulerFit = json
+        }
+        return cachedScheduler!!
+    }
     val schedulingDescription: String get() = learner.fittedSettings?.let {
         "FSRS · ${(it.retention * 100).toInt()}% target recall · fitted with ${it.reviewCount} reviews on ${it.fitDate}"
     } ?: "FSRS defaults · 90% target recall"
     fun importFittedSettings(text: String) {
         val fit = FittedSettings.parse(text)
-        val replacement = fit.scheduler()
+        fit.scheduler()
         learner.fittedSettings = fit
-        scheduler = replacement
         library.save()
     }
     fun resetFittedSettings() {
         learner.fittedSettings = null
-        scheduler = Scheduler.builder().desiredRetention(0.9).build()
         library.save()
     }
     var screen by androidx.compose.runtime.mutableStateOf<LearningScreen>(LearningScreen.Home); private set
@@ -89,7 +98,6 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun dueCount(audio: Boolean): Int = studyRules.dueCount(audio && !listeningMuted, Instant.now())
     fun restore(text: String) {
         library.restore(text)
-        scheduler = learner.fittedSettings?.scheduler() ?: Scheduler.builder().desiredRetention(0.9).build()
         placementIndex = learner.placementIndex
         home()
     }

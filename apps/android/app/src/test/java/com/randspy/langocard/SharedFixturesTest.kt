@@ -66,6 +66,18 @@ class SharedFixturesTest {
         assertEquals(expected, ContentFiles.anki(entries, sources))
     }
 
+    @Test fun `settings merges match the backend`() {
+        val cases = fixtures("merge-fixtures.json").getJSONArray("settings")
+        for (i in 0 until cases.length()) {
+            val case = cases.getJSONObject(i)
+            val merged = SyncData.mergeSettings(case.getJSONObject("stored"), case.getJSONObject("incoming"))
+            val expected = case.getJSONObject("expected")
+            expected.keys().forEach { key ->
+                assertEquals("${case.getString("name")}: $key", expected.get(key).toString(), merged.get(key).toString())
+            }
+        }
+    }
+
     @Test fun `entry merges match the backend`() {
         val cases = fixtures("merge-fixtures.json").getJSONArray("entries")
         for (i in 0 until cases.length()) {

@@ -19,19 +19,27 @@ export type Settings = {
   day: string;
   seconds: number;
   introduced: number;
+  /** Absent from older APKs' pushes; counts as 0. */
+  genderIntroduced?: number;
+  /** Absent from older APKs' pushes, which then keep the stored fit. */
+  fittedSettings?: string | null;
+  fittedSettingsChangedAt?: number;
 };
 
 export function mergeSettings(a: Settings, b: Settings): Settings {
   const preferences = b.preferencesChangedAt > a.preferencesChangedAt ? b : a;
+  const fit = (b.fittedSettingsChangedAt ?? 0) > (a.fittedSettingsChangedAt ?? 0) ? b : a;
   // Daily counters belong to the most recent local day. On the same day the
   // larger value is kept: it undercounts study split across two devices, but
   // never lets resent data inflate the daily target.
+  const counters = (s: Settings) => ({ day: s.day, seconds: s.seconds, introduced: s.introduced, genderIntroduced: s.genderIntroduced ?? 0 });
   const daily =
     a.day === b.day
-      ? { day: a.day, seconds: Math.max(a.seconds, b.seconds), introduced: Math.max(a.introduced, b.introduced) }
-      : a.day > b.day
-        ? { day: a.day, seconds: a.seconds, introduced: a.introduced }
-        : { day: b.day, seconds: b.seconds, introduced: b.introduced };
+      ? {
+        day: a.day, seconds: Math.max(a.seconds, b.seconds), introduced: Math.max(a.introduced, b.introduced),
+        genderIntroduced: Math.max(a.genderIntroduced ?? 0, b.genderIntroduced ?? 0),
+      }
+      : counters(a.day > b.day ? a : b);
   return {
     placementDone: a.placementDone || b.placementDone,
     placementIndex: Math.max(a.placementIndex, b.placementIndex),
@@ -40,6 +48,8 @@ export function mergeSettings(a: Settings, b: Settings): Settings {
     interests: preferences.interests,
     preferencesChangedAt: preferences.preferencesChangedAt,
     ...daily,
+    fittedSettings: fit.fittedSettings ?? null,
+    fittedSettingsChangedAt: fit.fittedSettingsChangedAt ?? 0,
   };
 }
 

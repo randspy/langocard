@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import ruleFixtures from "../../../content/entry-rules-fixtures.json";
 import mergeFixtures from "../../../content/merge-fixtures.json";
 import { alternativesOf, answerOf, clozeOf, entryErrors, exampleAt, fromAndroidJson, sameContent, textOf, type EntryContent } from "../convex/entryRules";
-import { entryWins, isDeleted, mergeCard, SUSPENDED_INDEFINITELY, type CardState } from "../convex/merge";
+import { entryWins, isDeleted, mergeCard, mergeSettings, SUSPENDED_INDEFINITELY, type CardState, type Settings } from "../convex/merge";
 
 describe("entry rules (shared fixtures)", () => {
   test.each(ruleFixtures.cases)("$name", ({ entry, rule }) => {
@@ -62,5 +62,11 @@ describe("merge rules (shared fixtures)", () => {
   test.each(mergeFixtures.entries)("entry: $name", ({ stored, incoming, incomingWins, deleted }) => {
     expect(entryWins(incoming, stored)).toBe(incomingWins);
     expect(isDeleted(incoming)).toBe(deleted);
+  });
+});
+
+describe("settings merge (shared fixtures)", () => {
+  test.each(mergeFixtures.settings)("$name", ({ stored, incoming, expected }) => {
+    expect(mergeSettings(stored as Settings, incoming as Settings)).toMatchObject(expected);
   });
 });

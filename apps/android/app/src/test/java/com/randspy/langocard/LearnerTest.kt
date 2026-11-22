@@ -197,4 +197,60 @@ class LearnerTest {
         assertEquals("after", pushed.getString("text"))
         assertEquals(future + 1, pushed.getLong("editedAt"))
     }
+    private fun fit(retention: Double) = FittedSettings.parse(JSONObject().put("format", "langocard-fsrs").put("version", 1)
+        .put("parameters", JSONArray(scheduler.parameters.toList())).put("desiredRetention", retention)
+        .put("reviewCount", 1200).put("fitDate", "2026-11-15T12:00:00Z").toString())
+
+    /** Pushes [from]'s settings and merges them into [to], as a sync through the backend does. */
+    private fun sync(from: Learner, to: Learner) {
+        val pushed = JSONObject(SyncData.outbox(from.document, day).settings.toString())
+        // Convex returns numbers as doubles.
+        for (key in listOf("placementIndex", "nextCardId", "minimumRank", "preferencesChangedAt", "seconds", "introduced", "genderIntroduced", "fittedSettingsChangedAt"))
+            pushed.put(key, pushed.getDouble(key))
+        to.merge("settings", listOf(pushed), emptySet())
+    }
+
+    @Test fun `a fit imported on one phone becomes active on another, and a later reset follows`() {
+        val phone = Learner(JSONObject().put("version", 2).put("day", day))
+        val tablet = Learner(JSONObject().put("version", 2).put("day", day))
+        phone.fittedSettings = fit(0.85)
+        sync(phone, tablet)
+        assertEquals(0.85, tablet.fittedSettings!!.retention, 0.0)
+        Thread.sleep(2)
+        tablet.fittedSettings = null
+        sync(tablet, phone)
+        assertNull(phone.fittedSettings)
+        // The older fit doesn't come back.
+        sync(Learner(JSONObject().put("version", 2).put("day", day)).also { it.document.put("fittedSettings", fit(0.8).toJson()).put("fittedSettingsChangedAt", 1L) }, phone)
+        assertNull(phone.fittedSettings)
+    }
+
+    @Test fun `restoring a backup makes its fit the newest`() {
+        val current = Learner(JSONObject().put("version", 2).put("day", day))
+        current.fittedSettings = fit(0.85)
+        val restored = current.restoredFrom(JSONObject().put("version", 2).put("day", day))
+        assertNull(restored.fittedSettings)
+        assertTrue(restored.document.getLong("fittedSettingsChangedAt") > current.document.getLong("fittedSettingsChangedAt"))
+    }
+
+    @Test fun `Gender introductions on one device count on another the same day`() {
+        val phone = Learner(JSONObject().put("version", 2).put("day", day).put("genderIntroduced", 6))
+        val tablet = Learner(JSONObject().put("version", 2).put("day", day).put("genderIntroduced", 2))
+        sync(phone, tablet)
+        assertEquals(6, tablet.genderIntroduced)
+        assertFalse(PracticeBlock.DAILY.genderRoom(Learner(JSONObject().put("version", 2).put("day", day).put("genderIntroduced", 10)).genderIntroduced))
+    }
+
+    @Test fun `remote settings without the new fields keep local ones`() {
+        val learner = Learner(JSONObject().put("version", 2).put("day", day).put("genderIntroduced", 4))
+        learner.fittedSettings = fit(0.85)
+        val old = JSONObject().put("placementDone", false).put("placementIndex", 0.0).put("nextCardId", 0.0).put("minimumRank", 2501.0)
+            .put("interests", "daily").put("preferencesChangedAt", 0.0).put("day", day).put("seconds", 10.0).put("introduced", 0.0)
+        learner.merge("settings", listOf(old), emptySet())
+        assertEquals(4, learner.genderIntroduced)
+        assertEquals(0.85, learner.fittedSettings!!.retention, 0.0)
+        // An unusable fit from another device is ignored.
+        learner.merge("settings", listOf(JSONObject(old.toString()).put("fittedSettings", "{}").put("fittedSettingsChangedAt", 9e12)), emptySet())
+        assertEquals(0.85, learner.fittedSettings!!.retention, 0.0)
+    }
 }

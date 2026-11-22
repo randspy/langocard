@@ -50,4 +50,13 @@ export const settingsFields = {
   day: v.string(),
   seconds: v.number(),
   introduced: v.number(),
+  /**
+   * Gender cards introduced on `day`. Optional, like the fit below, so pushes from older
+   * APKs still validate; an omitted field keeps the stored value.
+   */
+  genderIntroduced: v.optional(v.number()),
+  /** The fitted FSRS settings JSON Android imported, or null for the defaults. */
+  fittedSettings: v.optional(v.union(v.string(), v.null())),
+  /** When the fit was last imported, reset or restored; the newer change wins. */
+  fittedSettingsChangedAt: v.optional(v.number()),
 };

@@ -80,8 +80,9 @@ export const push = mutation({
       else if (item.day > stored.day) await ctx.db.patch(stored._id, { day: item.day, updatedAt });
     }
     if (args.settings) {
+      if ((args.settings.fittedSettings?.length ?? 0) > 4000) throw new ConvexError("Fitted FSRS settings are too long");
       const stored = await ctx.db.query("settings").first();
-      if (!stored) await ctx.db.insert("settings", { ...args.settings, updatedAt });
+      if (!stored) await ctx.db.insert("settings", { ...mergeSettings(args.settings, args.settings), updatedAt });
       else {
         const { _id, _creationTime, updatedAt: _, ...current } = stored;
         const merged = mergeSettings(current, args.settings);
