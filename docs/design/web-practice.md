@@ -73,17 +73,20 @@ edits, resets, pack installs), plus backfill migrations that can also rebuild th
 - **Entries** get derived `lexeme` (Android's `Entry.lexeme`) and `introducible` (not started,
   not retired, not deleted, bundled/personal or from an installed pack). Indexes: `lexeme`,
   `[introducible, origin]` and `[introducible, rank]`.
-- **Entry progress** (`progress` table): one row per started entry with the skills still
+- **Entry progress** (`progress` table): one row per entry that has ever been answered with the skills still
   without a card, `nounKey` (bare noun + gender), `rank`, the lowest started card ID, whether
-  it has a Gender card, and its **exposure count** (sentence-bearing answers, placement
-  included, counted once per review ID). Indexes on "started but incomplete" and `nounKey`.
+  it has a Gender card, whether it's started now, and its **exposure count**
+  (sentence-bearing answers, placement included, counted once per review ID). The row
+  outlives resets, so a meaning whose last card was reset keeps its count, as Android's
+  review history does; a fixture covers it. Indexes on "started but incomplete" and `nounKey`.
 - **Reviews** get a derived `reviewedAt` (from the log's `review_datetime`) and an index
   `[key, reviewedAt]`, so a card's last four answers are read in review-time order even when
   sync delivers them late. Duplicates can't occur: `reviewId` is unique.
 
 How each choice keeps Android's order without unbounded reads:
 
-- **Due cards.** Walk `[active=true, due ≤ now]` in ascending `due`, skipping cards that are
+- **Due cards.** Walk `[active=true, 0 ≤ due ≤ now]` in ascending `due` (the numeric bound keeps
+  new and reset cards, whose `due` is null, out of the range), skipping cards that are
   paused, suspended for a while, buried today, Listening without audio, or Gender cards of
   non-owners, until the first eligible card. Only blocked cards are skipped, and they are few
   (leech pauses, today's burials, timed suspensions), because deleted, uninstalled and
@@ -95,12 +98,15 @@ How each choice keeps Android's order without unbounded reads:
 - **New meanings.** Read `[introducible, origin="personal"]` first. Then walk
   `[introducible, rank ≥ minimumRank]` one band of 100 ranks at a time, and pick the first
   entry in the band whose topic is preferred, else the band's first, with ties in Android's
-  library order. A band only holds unstarted entries, so the walk ends at
-  the first non-empty band.
+  library order. Entries the rules can't introduce right now (all their skills buried or
+  suspended) are skipped, and the walk continues past personal entries and bands with no
+  eligible entry, under the same read budget.
 - **Burials.** Siblings come from the `lexeme` index, which covers unstarted meanings too.
 - **Shown example.** Rotation uses the progress row's exposure count. A returning paused card
   reads its last four answers from `[key, reviewedAt]`. Resets keep history, as on Android.
-- **Gender owners.** Resolved per noun through `nounKey`: every meaning that already has a
+- **Gender owners.** Resolved per noun through `nounKey`, among the meanings in the active
+  library only (deleted meanings and uninstalled packs' don't count, so a deleted owner hands
+  the role on): every meaning that already has a
   Gender card is an owner (two offline devices can make two, as on Android, and fixtures
   cover it); otherwise the meaning with the lowest started card ID.
 
@@ -123,7 +129,8 @@ due range whose first eligible card sits behind a page of blocked ones.
   a later day wins; an older APK's push omits it, which keeps the stored count on the same
   day and counts as 0 on a newer day) and `fittedSettings` (the fit JSON or null) with its own clock
   `fittedSettingsChangedAt`; the newer change wins, and resetting to defaults is a change.
-  Both are optional in `sync.push`; omitted fields keep the stored value.
+  Both are optional in `sync.push`; an omitted fit (sent with its clock or not at all) keeps the
+  stored fit.
 - Android pushes and pulls both. Importing a fit, resetting it or restoring a backup bumps
   the clock, and the phone's scheduler follows a fit pulled from another device.
 - Card rows keep their wire format; the derived columns are server-only.
