@@ -73,7 +73,9 @@ edits, resets, pack installs), plus backfill migrations that can also rebuild th
 - **Entries** get derived `lexeme` (Android's `Entry.lexeme`) and `introducible` (not started,
   not retired, not deleted, bundled/personal or from an installed pack). Indexes: `lexeme`,
   `[introducible, origin]` and `[introducible, rank]`.
-- **Entry progress** (`progress` table): one row per entry that has ever been answered with the skills still
+- **Entry progress** (`progress` table): one row per entry that has a card or an answer (created
+  by whichever arrives first, since Android may push a card and its log in separate batches;
+  started state comes from cards, the exposure count from reviews) with the skills still
   without a card, `nounKey` (bare noun + gender), `rank`, the lowest started card ID, whether
   it has a Gender card, whether it's started now, and its **exposure count**
   (sentence-bearing answers, placement included, counted once per review ID). The row
@@ -95,7 +97,8 @@ How each choice keeps Android's order without unbounded reads:
   `null`. `null` means the range is exhausted.
 - **Sibling skills.** From progress rows that are started but incomplete (bounded by the
   meanings in progress), the same rules as `StudyRules.choose`.
-- **New meanings.** Read `[introducible, origin="personal"]` first. Then walk
+- **New meanings.** Read `[introducible, origin="personal"]` first, keeping only entries at or
+  above `minimumRank` (an unranked personal entry counts as the highest rank, as on Android). Then walk
   `[introducible, rank ≥ minimumRank]` one band of 100 ranks at a time, and pick the first
   entry in the band whose topic is preferred, else the band's first, with ties in Android's
   library order. Entries the rules can't introduce right now (all their skills buried or
