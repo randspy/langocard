@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { textOf, answerOf } from "@backend/entryRules";
+import { usePracticeClock } from "@/lib/usePracticeClock";
 import type { Rating } from "@backend/fsrs";
 import { Button } from "@/components/ui/button";
 import { GENDER_TAGS } from "@/lib/library";
@@ -10,9 +11,10 @@ const RATINGS: [Rating, string][] = [["AGAIN", "Again"], ["HARD", "Hard"], ["GOO
 
 type Props = {
   /** Fetches the card to show next, or null when nothing is due. Called once per card, never subscribed. */
-  fetchNext: () => Promise<StudyCard | null>;
+  fetchNext: (pending: string[]) => Promise<StudyCard | null>;
   answer: (card: StudyCard, rating: Rating) => Promise<AnswerResult>;
   clock: () => number;
+  tick?: (checkpoint: { day: string; seconds: number }) => Promise<unknown>;
 };
 
 type State =
@@ -25,21 +27,36 @@ type State =
  * One sitting of review: show a due card, reveal it, rate it, then fetch the next one.
  * Reading cards show the French word in its sentence; the learner recalls the meaning.
  */
-export function StudySession({ fetchNext, answer, clock }: Props) {
+const noTick = async () => {};
+
+export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const pending = useRef(new Set<string>());
+  const [reviews, setReviews] = useState(0);
+  const [recalled, setRecalled] = useState(0);
+  const { seconds, flush, error: timeError } = usePracticeClock(state.kind === "card", tick, clock);
   const load = useCallback(async () => {
     setState({ kind: "loading" });
     try {
-      const card = await fetchNext();
+      await flush();
+      const card = await fetchNext([...pending.current]);
       setState(card ? { kind: "card", card, revealed: false, saving: false } : { kind: "done" });
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e) });
     }
-  }, [fetchNext]);
-  useEffect(() => { void load(); }, [load]);
+  }, [fetchNext, flush]);
+  // Start once per mounted sitting; timer state changes must not replace the shown card.
+  const start = useRef(load);
+  useEffect(() => { void start.current(); }, []);
 
   if (state.kind === "loading") return <p className="text-muted">Loading…</p>;
-  if (state.kind === "done") return <p role="status" className="text-lg">Nothing due. Come back later.</p>;
+  if (state.kind === "done") return (
+    <div role="status" className="space-y-2">
+      <p className="text-lg">Session complete.</p>
+      <p>{Math.floor(seconds / 60)}m {seconds % 60}s practised · {reviews} assessments · {recalled} recalled</p>
+      {timeError && <p role="alert">{timeError}</p>}
+    </div>
+  );
   if (state.kind === "error") {
     return (
       <div className="space-y-3">
@@ -55,7 +72,13 @@ export function StudySession({ fetchNext, answer, clock }: Props) {
     setState({ ...state, saving: true });
     try {
       // A stale card (reviewed on the phone meanwhile) is simply skipped: fetch again.
-      await answer(card, rating);
+      const result = await answer(card, rating);
+      if (result.status === "ok") {
+        pending.current.delete(card.key);
+        if (rating === "AGAIN" || card.card === null) pending.current.add(card.key);
+        setReviews((n) => n + 1);
+        if (rating !== "AGAIN") setRecalled((n) => n + 1);
+      }
       await load();
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e) });
@@ -65,6 +88,11 @@ export function StudySession({ fetchNext, answer, clock }: Props) {
   const word = entry.gender ? `${entry.word} (${GENDER_TAGS[entry.gender]})` : entry.word;
   return (
     <article className="max-w-2xl space-y-6" aria-label="Study card">
+      {timeError && <p role="alert">{timeError}</p>}
+      <Button variant="outline" disabled={saving} onClick={() => {
+        setState({ ...state, saving: true });
+        void flush().then(() => setState({ kind: "done" })).catch((e) => setState({ kind: "error", message: errorMessage(e) }));
+      }}>End session</Button>
       <p className="text-sm uppercase tracking-wide text-muted">Read</p>
       <div className="space-y-3">
         <p className="font-semibold text-3xl">{entry.word}</p>

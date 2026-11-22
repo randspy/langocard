@@ -31,8 +31,10 @@ describe("StudySession", () => {
     expect(await screen.findByText("une trame")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Reveal answer" }));
     await userEvent.click(screen.getByRole("button", { name: /Again/ }));
-    expect(await screen.findByText("Nothing due. Come back later.")).toBeInTheDocument();
+    expect(await screen.findByText("Session complete.")).toBeInTheDocument();
     expect(fetchNext).toHaveBeenCalledTimes(3);
+    expect(fetchNext).toHaveBeenLastCalledWith(["b:Reading"]);
+    expect(screen.getByRole("status")).toHaveTextContent("2 assessments · 1 recalled");
   });
 
   test("a card reviewed on the phone meanwhile is skipped by fetching again", async () => {
@@ -41,6 +43,7 @@ describe("StudySession", () => {
     render(<StudySession fetchNext={async () => queue.shift() ?? null} answer={answer} clock={() => now} />);
     await userEvent.click(await screen.findByRole("button", { name: "Reveal answer" }));
     await userEvent.click(screen.getByRole("button", { name: /Hard/ }));
-    expect(await screen.findByText("Nothing due. Come back later.")).toBeInTheDocument();
+    expect(await screen.findByText("Session complete.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("0 assessments · 0 recalled");
   });
 });

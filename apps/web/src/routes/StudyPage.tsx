@@ -8,12 +8,14 @@ import { useNow } from "@/lib/useNow";
 export function StudyPage() {
   const fetch = useTokenFetch();
   const submit = useTokenMutation(api.study.answer);
-  const now = useNow();
+  const tick = useTokenMutation(api.study.tick);
+  const now = useNow(1000);
+  const progress = useTokenQuery(api.study.progress, { day: localDay(now) });
   const summary = useTokenQuery(api.study.summary, { day: localDay(now), now });
   // Fetched once per card rather than subscribed, so a phone sync can't swap the card mid-answer.
-  const fetchNext = useCallback(() => {
+  const fetchNext = useCallback((pending: string[]) => {
     const at = Date.now();
-    return fetch(api.study.next, { day: localDay(at), now: at });
+    return fetch(api.study.next, { day: localDay(at), now: at, pending });
   }, [fetch]);
   const answer = useCallback((card: StudyCard, rating: "AGAIN" | "HARD" | "GOOD" | "EASY") => {
     const at = Date.now();
@@ -25,7 +27,13 @@ export function StudyPage() {
         <h1 className="font-semibold text-3xl">Study</h1>
         {summary && <p className="text-sm text-muted">{summary.dueCapped ? `${summary.due}+` : summary.due} due</p>}
       </div>
-      <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} />
+      {progress && <p className="text-sm text-muted">
+        {Math.floor(progress.seconds / 60)} / 15 minutes today
+        {progress.phase === "wind-down" && " · Winding down"}
+        {progress.phase === "cleanup" && " · Finishing learning cards"}
+        {progress.phase === "done" && " · Daily practice complete"}
+      </p>}
+      <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} />
     </section>
   );
 }

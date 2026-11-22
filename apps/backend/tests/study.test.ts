@@ -237,3 +237,41 @@ test("an Android-sized push that deletes entries stays within transaction limits
   const next = await withToken(t).query(api.study.next, clock);
   expect(next?.key).toMatch(/^frw-\d+:Reading$/);
 }, 120_000);
+
+describe("daily practice", () => {
+  test("checkpoints sync to the phone, keep the larger same-day total, and roll counters forward", async () => {
+    const t = setup();
+    const client = withToken(t);
+    await client.mutation(api.study.tick, { day, seconds: 10 });
+    await client.mutation(api.study.tick, { day, seconds: 10 });
+    const { _id, _creationTime, updatedAt, ...settings } = await t.run(async (ctx) => (await ctx.db.query("settings").first())!);
+    await push(t, { settings: { ...settings, seconds: 15 } });
+    expect((await client.query(api.study.progress, { day })).seconds).toBe(20);
+    const pull = await client.query(api.sync.pull, { since: 0, table: "settings", cursor: null });
+    expect(pull).toMatchObject({ page: [expect.objectContaining({ seconds: 20 })] });
+    await client.mutation(api.study.tick, { day: "2026-11-21", seconds: 5 });
+    await client.mutation(api.study.tick, { day, seconds: 10 });
+    expect(await client.query(api.study.progress, { day: "2026-11-21" })).toEqual({ seconds: 5, phase: "practice" });
+  });
+
+  test("failed cards return early; cleanup offers only session learning debt and stops at 17 minutes", async () => {
+    const t = setup();
+    const client = withToken(t);
+    await seed(t, [shipped()]);
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    const shown = (await client.query(api.study.next, clock))!;
+    await client.mutation(api.study.answer, { ...clock, key: shown.key, version: shown.version, example: shown.example, rating: "AGAIN" });
+    expect(await client.query(api.study.next, clock)).toBeNull();
+    expect((await client.query(api.study.next, { ...clock, pending: [shown.key] }))?.key).toBe(shown.key);
+    await client.mutation(api.study.tick, { day, seconds: 780 });
+    expect((await client.query(api.study.progress, { day })).phase).toBe("wind-down");
+    await client.mutation(api.study.tick, { day, seconds: 120 });
+    expect((await client.query(api.study.progress, { day })).phase).toBe("cleanup");
+    const cleanup = (await client.query(api.study.next, { ...clock, pending: [shown.key] }))!;
+    expect(cleanup.key).toBe(shown.key);
+    await client.mutation(api.study.tick, { day, seconds: 120 });
+    expect(await client.query(api.study.next, { ...clock, pending: [shown.key] })).toBeNull();
+    // The last shown card is still answerable after time expires.
+    expect((await client.mutation(api.study.answer, { ...clock, key: cleanup.key, version: cleanup.version, example: cleanup.example, rating: "GOOD" })).status).toBe("ok");
+  });
+});

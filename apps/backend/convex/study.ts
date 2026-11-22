@@ -5,6 +5,7 @@ import { requireToken } from "./access";
 import { contentOf, exampleAt, type EntryContent } from "./entryRules";
 import { cardFromJson, cardToJson, instantString, logToJson, newCard, RATINGS, Scheduler, type Rating } from "./fsrs";
 import { isDeleted } from "./merge";
+import { practicePhase } from "./studyPolicy";
 import { refreshCard } from "./studyIndex";
 
 /**
@@ -71,23 +72,73 @@ async function exposures(ctx: QueryCtx, entryId: string): Promise<number> {
 
 const clock = { day: v.string(), now: v.number() };
 
+/** Daily counters use the browser's local day, exactly as phone sync does. */
+async function dailySeconds(ctx: QueryCtx, day: string) {
+  const settings = await ctx.db.query("settings").first();
+  return settings?.day === day ? settings.seconds : 0;
+}
+
+/** Checkpoints foreground seconds into the settings row that Android already syncs. */
+export const tick = mutation({
+  args: { token: v.string(), day: v.string(), seconds: v.number() },
+  handler: async (ctx, { token, day, seconds }) => {
+    requireToken(token);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isSafeInteger(seconds) || seconds < 0 || seconds > 86400) {
+      throw new ConvexError("Invalid practice time");
+    }
+    const settings = await ctx.db.query("settings").first();
+    if (settings && settings.day > day) return;
+    const updatedAt = Date.now();
+    if (settings) {
+      const counters = settings.day === day
+        ? { seconds: settings.seconds + seconds }
+        : { day, seconds, introduced: 0, genderIntroduced: 0 };
+      await ctx.db.patch(settings._id, { ...counters, updatedAt });
+    } else {
+      await ctx.db.insert("settings", {
+        placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: 0,
+        interests: "[]", preferencesChangedAt: 0, day, seconds, introduced: 0,
+        genderIntroduced: 0, updatedAt,
+      });
+    }
+  },
+});
+
+/** Today's synced time and the practice phase displayed by the browser. */
+export const progress = query({
+  args: { token: v.string(), day: v.string() },
+  handler: async (ctx, { token, day }) => {
+    requireToken(token);
+    const seconds = await dailySeconds(ctx, day);
+    return { seconds, phase: practicePhase(seconds) };
+  },
+});
+
 /** The card to study next, or null when nothing is due. */
 export const next = query({
-  args: { token: v.string(), ...clock },
-  handler: async (ctx, { token, day, now }) => {
+  args: { token: v.string(), ...clock, pending: v.optional(v.array(v.string())) },
+  handler: async (ctx, { token, day, now, pending = [] }) => {
     requireToken(token);
-    for await (const { row, entry } of dueCards(ctx, now, day)) {
+    if (pending.length > 1000) throw new ConvexError("Too many session cards");
+    const phase = practicePhase(await dailySeconds(ctx, day));
+    if (phase === "done") return null;
+    const chosen = async (row: Doc<"cards">, entry: Entry) => {
       const content: EntryContent = contentOf(entry);
       return {
-        key: row.key,
-        skill: row.skill as "Reading",
-        /** The card's review clock; `answer` refuses a card that changed since. */
-        version: row.lastReview,
-        card: row.card,
-        entryId: entry.entryId,
-        entry: content,
+        key: row.key, skill: "Reading" as const, version: row.lastReview, card: row.card,
+        entryId: entry.entryId, entry: content,
         example: exampleAt(content.examples, await exposures(ctx, entry.entryId)),
       };
+    };
+    if (phase !== "cleanup") for await (const { row, entry } of dueCards(ctx, now, day)) {
+      return chosen(row, entry);
+    }
+    // A sitting's learning debt may return before FSRS's due time, in insertion order.
+    for (const key of pending) {
+      const row = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
+      if (!row || !row.card || row.fsrsState === "REVIEW") continue;
+      const entry = await studiable(ctx, row, now, day);
+      if (entry) return chosen(row, entry);
     }
     return null;
   },
