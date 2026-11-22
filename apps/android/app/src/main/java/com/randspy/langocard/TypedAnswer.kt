@@ -14,6 +14,11 @@ enum class AnswerMatch(val suggested: Rating, val label: String) {
     Accents(Rating.HARD, "Check the accents"),
     /** The right noun with another article or none: the Gender card schedules the article. */
     Article(Rating.HARD, "Right word, wrong article"),
+    /**
+     * Another word the sentence accepts, accents forgiven. Valid French, but not recall
+     * of the word this card trains.
+     */
+    Alternative(Rating.HARD, "✓ Also correct"),
     Different(Rating.AGAIN, "✗ Not this time"),
 }
 
@@ -22,18 +27,24 @@ data class AnswerPart(val text: String, val marked: Boolean)
 
 /**
  * A learner's typed answer to a Listening or Production gap-fill, checked against the [Example.answer] of the
- * shown sentence. It only suggests a rating: the learner can still choose another.
+ * shown sentence and, when asked for, its [Example.alternatives]. It only suggests a rating: the learner can
+ * still choose another.
  */
-class TypedAnswer private constructor(typed: String, expected: String, noun: Boolean) {
+class TypedAnswer private constructor(typed: String, target: String, noun: Boolean, alternatives: List<String>) {
     val typed = typed.spaced()
-    val expected = expected.spaced()
+    /** The word this card trains. */
+    val target = target.spaced()
+    private val alternative = alternatives.map { it.spaced() }.firstOrNull { it.folded() == this.typed.folded() }
     val match = when {
-        this.typed.keyed() == this.expected.keyed() -> AnswerMatch.Exact
-        this.typed.folded() == this.expected.folded() -> AnswerMatch.Accents
-        noun && this.typed.article() != this.expected.article() &&
-            Gender.noun(this.typed).folded() == Gender.noun(this.expected).folded() -> AnswerMatch.Article
+        this.typed.keyed() == this.target.keyed() -> AnswerMatch.Exact
+        this.typed.folded() == this.target.folded() -> AnswerMatch.Accents
+        noun && this.typed.article() != this.target.article() &&
+            Gender.noun(this.typed).folded() == Gender.noun(this.target).folded() -> AnswerMatch.Article
+        alternative != null -> AnswerMatch.Alternative
         else -> AnswerMatch.Different
     }
+    /** The answer [typed] is compared with: the alternative it matched, otherwise the [target]. */
+    val expected = if (match == AnswerMatch.Alternative) alternative!! else this.target
     /** [typed] split into runs, marking letters the expected answer doesn't have. */
     val typedParts: List<AnswerPart>
     /** [expected] split into runs, marking letters the learner didn't type. */
@@ -58,9 +69,13 @@ class TypedAnswer private constructor(typed: String, expected: String, noun: Boo
     }
 
     companion object {
-        /** The check of [typed] against [example]'s answer, or null when nothing was typed. */
-        fun of(typed: String, example: Example, noun: Boolean = false): TypedAnswer? =
-            if (typed.isBlank()) null else TypedAnswer(typed, example.answer, noun)
+        /**
+         * The check of [typed] against [example]'s answer, also accepting its alternatives when
+         * [alternatives] is set, or null when nothing was typed.
+         */
+        fun of(typed: String, example: Example, noun: Boolean = false, alternatives: Boolean = false): TypedAnswer? =
+            if (typed.isBlank()) null
+            else TypedAnswer(typed, example.answer, noun, if (alternatives) example.alternatives else emptyList())
 
         private val MARKS = Regex("\\p{Mn}+")
         private fun String.spaced() = Normalizer.normalize(trim(), Normalizer.Form.NFC)

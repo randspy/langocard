@@ -54,6 +54,15 @@ class ReviewCardTest {
         assertEquals(Rating.HARD, answer.ratingToConfirm)
     }
 
+    @Test fun `production accepts an alternative but listening wants the word it played`() {
+        val example = Example("Elle a {des idées|des pensées}.")
+        val produced = card(Skill.Production, example).type("des pensées").reveal(false, false)
+        assertEquals(AnswerMatch.Alternative, produced.comparison!!.match)
+        assertEquals(Rating.HARD, produced.ratingToConfirm)
+        val heard = card(Skill.Listening, example).type("des pensées").played(true).reveal(true, false)
+        assertEquals(AnswerMatch.Different, heard.comparison!!.match)
+    }
+
     @Test fun `listening requires successful playback that has finished with audio still available`() {
         val question = card(Skill.Listening).type("une idée")
         assertFalse(question.canReveal(true, false))

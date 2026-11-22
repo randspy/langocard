@@ -54,7 +54,8 @@ class ReviewCard private constructor(val prompt: Prompt, val response: Response)
     /** Freezes typed feedback and its suggested rating when the answer is revealed. */
     fun reveal(audioAvailable: Boolean, speaking: Boolean): ReviewCard {
         if (!canReveal(audioAvailable, speaking)) return this
-        val comparison = TypedAnswer.of(typed, prompt.example, prompt.entry.gender != null)
+        // Production asks for a word that fits; Listening asks for the word it played.
+        val comparison = TypedAnswer.of(typed, prompt.example, prompt.entry.gender != null, alternatives = prompt.skill == Skill.Production)
         return with(comparison?.let { Response.Compared(it, it.match.suggested) } ?: Response.Recalled)
     }
 

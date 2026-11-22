@@ -14,6 +14,10 @@ curly apostrophes are ignored. Internal whitespace remains significant.
 - For noun entries only, the right noun with a different or omitted leading article
   suggests Hard. The existing article parser recognizes un, une, le, la and l'.
   An article error combined with an accent error also suggests Hard.
+- In Production only, an alternative the example lists (`{arriver|parvenir}`), with or
+  without accent slips, suggests Hard as "✓ Also correct". The target is checked first.
+  The reveal compares the answer with the matched alternative and names the target. See
+  `answer-alternatives.md`.
 - Other differences suggest Again. No answer automatically suggests Easy.
 
 Both answers appear on reveal, with differing characters emphasized. A highlighted
