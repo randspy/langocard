@@ -136,12 +136,13 @@ def alternatives_for(row, generate):
         listing = ''.join(f'{i}. {c}: {cloze.replace(GAP, c)}\n' for i, c in enumerate(candidates, 1))
         reply = generate(CHECK.format(english=row['english'], sentence=example.replace('{', '').replace('}', ''),
                                       target=target, candidates=listing)).get('verdicts')
-        judged = [v for v in reply if isinstance(v, dict) and isinstance(v.get('candidate'), str)
-                  and isinstance(v.get('grammatical'), bool) and isinstance(v.get('same_meaning'), bool)] \
-            if isinstance(reply, list) else []
-        verdicts = {folded(v['candidate'].strip()): v for v in judged}
+        complete = lambda v: isinstance(v, dict) and isinstance(v.get('candidate'), str) and \
+            isinstance(v.get('grammatical'), bool) and isinstance(v.get('same_meaning'), bool)
+        if not isinstance(reply, list) or not all(map(complete, reply)):
+            raise UnusableReply(f"{row['id']}: incomplete verdicts")
+        verdicts = {folded(v['candidate'].strip()): v for v in reply}
         # Exactly one complete verdict per candidate, or the reply can't be trusted.
-        if len(verdicts) != len(judged) or set(verdicts) != {folded(c) for c in candidates}:
+        if len(verdicts) != len(reply) or set(verdicts) != {folded(c) for c in candidates}:
             raise UnusableReply(f"{row['id']}: no single complete verdict for every candidate")
         for c in candidates:
             v = verdicts[folded(c)]

@@ -57,7 +57,9 @@ class GenerateTests(unittest.TestCase):
                                 ({'alternatives': ['parvenir']}, {'verdicts': [verdict('dérailler')]}),
                                 ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir', False), verdict('Parvenir')]}),
                                 ({'alternatives': ['parvenir']}, {'verdicts': [{'candidate': 'parvenir'}]}),
-                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir') | {'same_meaning': 'yes'}]})]:
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir') | {'same_meaning': 'yes'}]}),
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir'), {'candidate': 'Parvenir'}]}),
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir'), verdict('x') | {'grammatical': 1}]})]:
             model = FakeModel(*[r for r in (proposal, check) if r is not None])
             with self.subTest(proposal), self.assertRaises(UnusableReply):
                 alternatives_for(ROW, model)
