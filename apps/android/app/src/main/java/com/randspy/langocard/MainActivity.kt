@@ -254,7 +254,7 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard,
             Skill.Listening -> {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { val success = speech.say(p.example.text); model.presentCard { it.played(success) } }, enabled = speech.available) {
-                        Text(if (card.played) "Play again" else "Play French sentence")
+                        Text("Play")
                     }
                     TextButton(onClick = model::muteListening) { Text("Skip listening") }
                 }
