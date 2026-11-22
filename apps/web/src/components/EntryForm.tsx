@@ -69,8 +69,19 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
     setSavedAt(null);
   };
 
-  /** Drafts what the learner hasn't written, keeping everything they did. */
+  // While the model drafts, the form is locked so its reply can't overwrite new edits.
+  const [drafting, setDrafting] = useState(false);
   async function draftWith(drafter: EntryDrafter): Promise<string> {
+    setDrafting(true);
+    try {
+      return await draftInto(drafter);
+    } finally {
+      setDrafting(false);
+    }
+  }
+
+  /** Drafts what the learner hasn't written, keeping everything they did. */
+  async function draftInto(drafter: EntryDrafter): Promise<string> {
     const kept: Partial<Record<SingleField, string>> = {};
     if (!drafted.has("word")) kept.word = content.word;
     if (!drafted.has("definition")) kept.definition = content.definition;
@@ -90,7 +101,6 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
     // Drafted examples are replaced; a stale one that couldn't be redrafted goes too.
     next.examples = [...own, ...draft.examples];
     if (next.examples.length === 0) next.examples = [""];
-    if (draft.filled.gender !== undefined) setGenderChosen(true);
     setDrafted(new Set([...[...drafted].filter((f) => !draft.unfilled.has(f)), ...(Object.keys(draft.filled) as SingleField[])]));
     setDraftedExamples(new Set(draft.examples));
     change(next);
@@ -108,7 +118,7 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5">
-      <fieldset disabled={disabled || saving} className="space-y-5">
+      <fieldset disabled={disabled || saving || drafting} className="space-y-5">
         {FIELDS.map(({ field, label, hint, control }) => {
           const error = errorFor(field);
           const id = `entry-${field}`;
@@ -162,7 +172,7 @@ export function EntryForm({ initial, entryId, submitLabel, disabled, onSubmit, a
       )}
       {serverError && <p role="alert" className="text-sm text-danger">{serverError}</p>}
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={disabled || saving || unchanged}>{saving ? "Saving…" : submitLabel}</Button>
+        <Button type="submit" disabled={disabled || saving || drafting || unchanged}>{saving ? "Saving…" : submitLabel}</Button>
         {savedAt && <span role="status" className="text-sm text-muted">Saved. Your phone picks it up on its next sync.</span>}
       </div>
     </form>
@@ -282,8 +292,13 @@ function AiFill({ model, english, anyDrafted, disabled, onDraft }: {
     }
   };
   const remove = async () => {
-    await model.remove().catch(() => {});
-    setAvailability({ kind: "downloadable" });
+    try {
+      await model.remove();
+      setMessage("");
+      setAvailability({ kind: "downloadable" });
+    } catch (e) {
+      setMessage(`Could not remove on-device AI: ${errorMessage(e)}`);
+    }
   };
   return (
     <div className="space-y-2 rounded-panel border border-line bg-surface p-4 text-sm" aria-label="AI fill">

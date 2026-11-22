@@ -73,4 +73,26 @@ describe("AI fill", () => {
     expect(word).toHaveValue("une trame");
     expect(model.prompts[1]).toContain("French word: une trame");
   });
+
+  test("locks the form while drafting and leaves the gender to follow a later article", async () => {
+    let reply!: (text: string) => void;
+    const model: OnDeviceModel = {
+      availability: async () => ({ kind: "available" }),
+      download: async () => {},
+      generate: () => new Promise((resolve) => { reply = resolve; }),
+      remove: async () => {},
+    };
+    renderForm(model);
+    await userEvent.type(screen.getByLabelText("English"), "a plot");
+    await userEvent.click(await screen.findByRole("button", { name: "Fill with AI" }));
+    expect(screen.getByLabelText("French word or phrase")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add entry" })).toBeDisabled();
+    reply(plot("Première."));
+    await screen.findByText("Check the draft before saving.");
+    const word = screen.getByLabelText("French word or phrase");
+    expect(word).toBeEnabled();
+    await userEvent.clear(word);
+    await userEvent.type(word, "un récit");
+    expect(screen.getByLabelText("Gender")).toHaveValue("masculine");
+  });
 });
