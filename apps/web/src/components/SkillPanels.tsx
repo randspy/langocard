@@ -28,7 +28,7 @@ export function SkillPanels({ cards, now, actions }: { cards: SkillCard[]; now: 
   return (
     <section className="space-y-4" aria-label="Cards">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-2xl">Cards</h2>
+        <h2 className="font-semibold text-2xl">Cards</h2>
         <div className="flex gap-2">
           {anySuspended
             ? <Button variant="outline" size="sm" onClick={() => void run(() => actions.resume(undefined))}>Resume all</Button>
@@ -53,7 +53,7 @@ function SkillPanel({ card, now, actions, run }: {
   const id = `suspend-until-${card.skill}`;
 
   return (
-    <article className="space-y-3 rounded-lg border border-line bg-white p-4" aria-label={`${label} card`}>
+    <article className="space-y-3 rounded-panel border border-line bg-surface p-4" aria-label={`${label} card`}>
       <header className="flex items-center gap-3">
         <h3 className="font-medium">{label}</h3>
         <SkillBadge status={status} label={label} />

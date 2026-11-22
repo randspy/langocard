@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { api } from "@backend/_generated/api";
 import { LibraryView } from "@/components/LibraryView";
+import { buttonVariants } from "@/components/ui/button";
 import { useTokenQuery } from "@/lib/convex";
 import { useNow } from "@/lib/useNow";
 
@@ -12,8 +13,8 @@ export function LibraryPage() {
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-serif text-3xl">Library</h1>
-        <Link to="/entries/new" className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper hover:bg-ink/85">New entry</Link>
+        <h1 className="font-semibold text-3xl">Library</h1>
+        <Link to="/entries/new" className={buttonVariants()}>New entry</Link>
       </div>
       {library === undefined
         ? <p className="text-muted">Loading the library…</p>

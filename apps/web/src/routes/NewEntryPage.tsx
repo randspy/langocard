@@ -14,7 +14,7 @@ export function NewEntryPage() {
   return (
     <section className="max-w-2xl space-y-6">
       <Link to="/" className="text-sm text-muted hover:text-ink">← Library</Link>
-      <h1 className="font-serif text-3xl">New entry</h1>
+      <h1 className="font-semibold text-3xl">New entry</h1>
       <p className="text-sm text-muted">Personal entries are introduced before dictionary entries on your phone.</p>
       <EntryForm
         entryId="personal-new"

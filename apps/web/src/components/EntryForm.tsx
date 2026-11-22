@@ -176,12 +176,12 @@ function Preview({ examples }: { examples: string[] }) {
   const marked = examples.filter((example) => answerOf(example).trim());
   if (marked.length === 0) return null;
   return (
-    <div className="rounded-md border border-dashed border-line bg-white p-4 text-sm" aria-label="Speaking practice preview">
+    <div className="rounded-panel border border-dashed border-line bg-surface p-4 text-sm" aria-label="Speaking practice preview">
       <p className="mb-1 text-xs uppercase tracking-wide text-muted">Speaking practice shows, in turn</p>
       <ol className="space-y-2">
         {marked.map((example, index) => (
           <li key={index}>
-            <p className="font-serif text-base">{clozeOf(example)}</p>
+            <p className="font-semibold text-base">{clozeOf(example)}</p>
             <p className="mt-1 text-muted">Answer: <span className="font-medium text-ink">{answerOf(example)}</span></p>
           </li>
         ))}

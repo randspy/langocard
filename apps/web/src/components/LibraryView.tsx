@@ -54,7 +54,7 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
         {matches.length.toLocaleString("en-GB")} of {entries.length.toLocaleString("en-GB")} entries
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-white">
+      <div className="overflow-x-auto rounded-panel border border-line bg-surface">
         <table className="w-full text-sm">
           <thead className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
             <tr>
@@ -70,7 +70,7 @@ export function LibraryView({ entries, search, onSearch, now, entryLink }: Props
             {matches.slice(0, shown).map((entry) => (
               <tr key={entry.entryId} className="border-b border-line/60 last:border-0 hover:bg-paper/60">
                 <td className="px-3 py-2">
-                  <span className={entry.deleted ? "text-muted line-through" : "font-serif text-base"}>
+                  <span className={entry.deleted ? "text-muted line-through" : "font-semibold text-base"}>
                     {entryLink ? entryLink(entry) : entry.word}
                   </span>
                   {entry.gender && <span className="ml-1.5 text-xs text-muted" title={entry.gender}>{GENDER_TAGS[entry.gender]}</span>}
