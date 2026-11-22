@@ -12,7 +12,8 @@ import androidx.compose.ui.text.withStyle
 @Composable
 internal fun TypedAnswerFeedback(answer: TypedAnswer) {
     Text(answer.match.label, style = MaterialTheme.typography.titleMedium)
-    listOf("You typed" to answer.typedParts, "Expected" to answer.expectedParts).forEach { (label, parts) ->
+    val alternative = answer.match == AnswerMatch.Alternative
+    listOf("You typed" to answer.typedParts, (if (alternative) "Accepted" else "Expected") to answer.expectedParts).forEach { (label, parts) ->
         Text(buildAnnotatedString {
             append("$label: ")
             parts.forEach { part ->
@@ -22,4 +23,5 @@ internal fun TypedAnswerFeedback(answer: TypedAnswer) {
             }
         })
     }
+    if (alternative) Text("This card practises: ${answer.target}", fontWeight = FontWeight.Bold)
 }

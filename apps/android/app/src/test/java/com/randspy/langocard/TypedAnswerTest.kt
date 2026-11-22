@@ -50,6 +50,39 @@ class TypedAnswerTest {
         assertEquals(AnswerMatch.Different, TypedAnswer.of("se rendre compte", example)!!.match)
     }
 
+    private val train = Example("Le train devrait {arriver|parvenir|atteindre la gare} ce soir.")
+    private fun production(typed: String) = TypedAnswer.of(typed, train, alternatives = true)!!
+
+    @Test fun `an alternative the sentence accepts suggests Hard and names the target`() {
+        val answer = production("Parvenir")
+        assertEquals(AnswerMatch.Alternative, answer.match)
+        assertEquals(Rating.HARD, answer.match.suggested)
+        assertEquals("parvenir", answer.expected)
+        assertEquals("arriver", answer.target)
+        assertEquals(emptyList<String>(), marked(answer.typedParts))
+    }
+
+    @Test fun `accent slips in an alternative are forgiven but marked`() {
+        val answer = TypedAnswer.of("revé", Example("Il a {rêvé|songé} de toi."), alternatives = true)!!
+        assertEquals(AnswerMatch.Accents, answer.match)
+        val alternative = TypedAnswer.of("songe", Example("Il a {rêvé|songé} de toi."), alternatives = true)!!
+        assertEquals(AnswerMatch.Alternative, alternative.match)
+        assertEquals(listOf("é"), marked(alternative.expectedParts))
+    }
+
+    @Test fun `the target wins over its alternatives`() {
+        assertEquals(AnswerMatch.Exact, production("arriver").match)
+        assertEquals("arriver", production("arriver").expected)
+        assertEquals(AnswerMatch.Alternative, production("atteindre la gare").match)
+    }
+
+    @Test fun `alternatives count only when asked for, and a miss is compared with the target`() {
+        assertEquals(AnswerMatch.Different, TypedAnswer.of("parvenir", train)!!.match)
+        val miss = production("venir")
+        assertEquals(AnswerMatch.Different, miss.match)
+        assertEquals("arriver", miss.expected)
+    }
+
     @Test fun `the difference marks the letters each side lacks`() {
         val accents = check("probleme", "problème")
         assertEquals(listOf(AnswerPart("probl", false), AnswerPart("e", true), AnswerPart("me", false)), accents.typedParts)
