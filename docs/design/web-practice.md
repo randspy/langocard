@@ -46,12 +46,15 @@ All token-gated like the rest of the web API.
 - `study.next({ day, now, session, block, audio })` → the card to show (key, skill,
   entry content, shown example, FSRS card JSON or null, memory hook) or `null`.
   `session` is the per-sitting list of card keys still to recall; `block` is the extra-block
-  grant and usage, or null for the daily block.
-- `study.answer({ key, rating, example, day, now, session, block })` → the scheduled card,
+  grant and usage, or null for the daily block. The card comes with its `version` (its
+  `lastReview` clock).
+- `study.answer({ key, version, rating, example, day, now, session, block })` → the scheduled card,
   burials, whether a memory-hook offer is due, and the updated block usage. It reschedules
   with FSRS, writes the card's review fields, appends a review row, buries siblings, bumps
   the daily counters and leech state, and allocates a card ID for a first answer. It refuses
-  an answer to a card that isn't eligible any more (deleted, suspended).
+  an answer to a card that isn't eligible any more (deleted, suspended). It also refuses one
+  whose `version` no longer matches, because a phone review synced in between; the page
+  then fetches the next card again.
 - `study.tick({ day, seconds })` → adds foreground seconds to today's total, rolling the
   daily counters over when `day` is newer.
 - `study.summary({ day, now, block, audio })` → due count (display capped), seconds today
@@ -60,23 +63,49 @@ All token-gated like the rest of the web API.
 ## Read-limit strategy
 
 Android scans the whole library in memory. Convex functions can't, so the data gains
-derived columns and indexes kept current on every write:
+derived columns and indexes kept current on every write (sync push, web answers, entry
+edits, resets, pack installs), plus backfill migrations that can also rebuild them:
 
-- **Cards** get derived scheduling columns: `due` (ms, or null for new/reset cards),
-  `fsrsState`, `cardId`, `entryId` and `skill`, with indexes on `due` and on `entryId`.
-  They are written by sync push, web answers, resets and a backfill migration. `sync.pull`
-  strips them, so the Android wire format is unchanged.
+- **Cards** get derived columns: `due` (FSRS due in ms, or null for new/reset cards),
+  `fsrsState`, `cardId`, `entryId`, `skill`, and `active` (false while the entry is deleted,
+  its pack isn't installed, or the card is suspended indefinitely). Indexes: `[active, due]`
+  and `entryId`. `sync.pull` strips the derived columns, so Android's wire format is unchanged.
+- **Entries** get derived `lexeme` (Android's `Entry.lexeme`) and `introducible` (not started,
+  not retired, not deleted, bundled/personal or from an installed pack). Indexes: `lexeme`,
+  and `[introducible, origin, rank]`.
 - **Entry progress** (`progress` table): one row per started entry with the skills still
-  without a card, `lexeme`, `nounKey` (bare noun + gender, for Gender owners), `rank`,
-  `origin` and whether it's complete. Indexes on "started but incomplete" and on
-  `nounKey`. Maintained on every card write and entry edit, backfilled by a migration.
-- **Entries** get indexes on `rank` and `origin`, so new meanings are picked by walking
-  ranks from the learner's starting rank instead of scanning.
+  without a card, `nounKey` (bare noun + gender), `rank`, the lowest started card ID, whether
+  it has a Gender card, and its **exposure count** (sentence-bearing answers, placement
+  included, counted once per review ID). Indexes on "started but incomplete" and `nounKey`.
+- **Reviews** get a derived `reviewedAt` (from the log's `review_datetime`) and an index
+  `[key, reviewedAt]`, so a card's last four answers are read in review-time order even when
+  sync delivers them late. Duplicates can't occur: `reviewId` is unique.
 
-A next-card query then reads: the earliest due eligible cards (a short indexed range,
-skipping paused, suspended, buried and inactive ones), started-but-incomplete entries
-for siblings, and a bounded walk of entries by rank for new meanings. Tests run each
-function against a full seeded library and thousands of started entries.
+How each choice keeps Android's order without unbounded reads:
+
+- **Due cards.** Walk `[active=true, due ≤ now]` in ascending `due`, skipping cards that are
+  paused, suspended for a while, buried today, Listening without audio, or Gender cards of
+  non-owners, until the first eligible card. Only blocked cards are skipped, and they are few
+  (leech pauses, today's burials, timed suspensions), because deleted, uninstalled and
+  indefinitely suspended cards are inactive. The walk reads in pages under a fixed budget. If
+  the budget runs out first, the query fails loudly rather than returning a later card or
+  `null`. `null` means the range is exhausted.
+- **Sibling skills.** From progress rows that are started but incomplete (bounded by the
+  meanings in progress), the same rules as `StudyRules.choose`.
+- **New meanings.** Read `[introducible, origin="personal"]` first. Then walk
+  `[introducible, origin, rank ≥ minimumRank]` one band of 100 ranks at a time across the
+  bundled and installed-pack origins, and pick the first entry in the band whose topic is
+  preferred, else the band's first. A band only holds unstarted entries, so the walk ends at
+  the first non-empty band.
+- **Burials.** Siblings come from the `lexeme` index, which covers unstarted meanings too.
+- **Shown example.** Rotation uses the progress row's exposure count. A returning paused card
+  reads its last four answers from `[key, reviewedAt]`. Resets keep history, as on Android.
+- **Gender owners.** Resolved per noun through `nounKey`: every meaning that already has a
+  Gender card is an owner (two offline devices can make two, as on Android, and fixtures
+  cover it); otherwise the meaning with the lowest started card ID.
+
+Tests run each function against a full seeded library, thousands of started entries, and a
+due range whose first eligible card sits behind a page of blocked ones.
 
 ## Fixtures
 
@@ -91,11 +120,12 @@ function against a full seeded library and thousands of started entries.
 ## Sync changes
 
 - `settings` gains `genderIntroduced` (merged like `introduced`: same day keeps the larger,
-  a later day wins) and `fittedSettings` (the fit JSON or null) with its own clock
+  a later day wins; an older APK's push omits it, which keeps the stored count on the same
+  day and counts as 0 on a newer day) and `fittedSettings` (the fit JSON or null) with its own clock
   `fittedSettingsChangedAt`; the newer change wins, and resetting to defaults is a change.
   Both are optional in `sync.push`; omitted fields keep the stored value.
 - Android pushes and pulls both. Importing a fit, resetting it or restoring a backup bumps
-  the clock.
+  the clock, and the phone's scheduler follows a fit pulled from another device.
 - Card rows keep their wire format; the derived columns are server-only.
 
 ## Delivery
@@ -116,8 +146,9 @@ function against a full seeded library and thousands of started entries.
   other meaning as owner; scheduling is unaffected.
 - **Daily seconds undercount** when studying on two devices the same day, since the
   same-day merge keeps the larger value (unchanged from phone-to-phone sync).
-- **Concurrent answers.** A web answer and a phone review of the same card merge by
-  `lastReview`, as two phones do today.
+- **Concurrent answers.** A phone review that syncs after a web answer merges by
+  `lastReview`, as between two phones. One that syncs before the answer is caught by the
+  `version` check.
 - **Derived-column drift.** Every card and entry write must go through the helpers that
   maintain the derived columns and progress rows; a migration can rebuild them.
 - **No offline web practice.**
