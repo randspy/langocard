@@ -33,6 +33,10 @@ devices, the daily study time keeps the larger value rather than the sum.
 - Entry validation lives in `convex/entryRules.ts`. Android mirrors it and the merge
   rules; `content/entry-rules-fixtures.json` and `content/merge-fixtures.json` hold
   cases both implementations must pass.
+- `convex/fsrs.ts` is a port of java-fsrs 1.0.0 (MIT), the FSRS scheduler Android uses, so
+  the web can schedule reviews. Android's `FsrsFixturesTest` writes
+  `content/fsrs-fixtures.json` from the real library and fails when it's stale (delete the
+  file and rerun the test to regenerate); `tests/fsrs.test.ts` replays it.
 
 ## Library seed
 

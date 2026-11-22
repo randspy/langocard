@@ -181,9 +181,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun interval(rating: Rating): String {
         val p = (screen as? LearningScreen.Review)?.card?.prompt ?: return ""
         val card = state(p) ?: MemoryCard.builder().cardId(learner.nextCardId).build()
-        val result = scheduler.reviewCard(card, rating)
-        val minutes = ((java.time.Duration.between(Instant.now(), result.card().due).seconds + 59) / 60).coerceAtLeast(1)
-        return if (minutes < 60) "${minutes}m" else if (minutes < 1440) "${minutes / 60}h" else "${minutes / 1440}d"
+        val now = Instant.now()
+        return StudyPolicy.interval(now, scheduler.reviewCard(card, rating, now).card().due)
     }
 
     val cloudSync = LearningSync(application, viewModelScope, library,
