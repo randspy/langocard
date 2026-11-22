@@ -2,13 +2,13 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50",
+export const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-ink text-paper hover:bg-ink/85",
-        outline: "border border-line bg-surface hover:bg-paper",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        outline: "border border-line bg-surface hover:border-highlight",
         ghost: "hover:bg-line/60",
         danger: "bg-danger text-white hover:bg-danger/85",
       },

@@ -54,7 +54,7 @@ export function EntryPage() {
           </div>
           {error && <p role="alert" className="text-sm text-danger">{error}</p>}
         </header>
-        {entry.deleted && <p className="rounded-md bg-line/50 p-3 text-sm">Restore this entry to edit it.</p>}
+        {entry.deleted && <p className="rounded-panel bg-line/50 p-3 text-sm">Restore this entry to edit it.</p>}
         <MemoryHook entryId={entryId} />
         <EntryForm
           key={`${entry.editedAt}-${entry.deletedAt}`}
@@ -105,7 +105,7 @@ function MemoryHook({ entryId }: { entryId: string }) {
 function HookEditor({ initial, save, error }: { initial: string; save: (text: string) => Promise<unknown>; error: string | null }) {
   const [text, setText] = useState(initial);
   return <form className="space-y-2" onSubmit={event => { event.preventDefault(); void save(text); }}>
-    <label className="block">Memory hook<textarea className="block w-full rounded border border-line bg-surface p-2" value={text} maxLength={500} onChange={event => setText(event.target.value)} /></label>
+    <label className="block">Memory hook<textarea className="block w-full rounded-lg border border-line bg-surface p-2" value={text} maxLength={500} onChange={event => setText(event.target.value)} /></label>
     <Button type="submit">Save memory hook</Button>
     {error && <p role="alert">{error}</p>}
   </form>;

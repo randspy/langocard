@@ -15,6 +15,7 @@
   --color-primary: #44536a;
   --color-primary-foreground: #fcfcfc;
   --color-highlight: #f17463;
+  --radius-panel: 0.875rem;
 }
 
 :root {
