@@ -110,30 +110,39 @@ def rejection(candidate, target, seen):
     return None
 
 
+class UnusableReply(ValueError):
+    """The model's reply can't be used; the row stays pending for the next run."""
+
+
 def alternatives_for(row, generate):
     """The record for one draft row: accepted alternatives and rejected candidates with reasons."""
     example = row['example']
     target = target_of(example)
     cloze = example.replace('{' + target + '}', GAP)
     proposed = generate(PROPOSE.format(english=row['english'], cloze=cloze, target=target)).get('alternatives')
+    if not isinstance(proposed, list):
+        raise UnusableReply(f"{row['id']}: no list of alternatives")
     candidates, rejected, seen = [], [], set()
-    for candidate in proposed if isinstance(proposed, list) else []:
+    for candidate in proposed:
+        candidate = candidate.strip() if isinstance(candidate, str) else candidate
         reason = rejection(candidate, target, seen)
         if reason:
             rejected.append({'candidate': candidate if isinstance(candidate, str) else str(candidate), 'reason': reason})
         else:
-            candidates.append(candidate.strip())
+            candidates.append(candidate)
             seen.add(folded(candidate))
     accepted = []
     if candidates:
         listing = ''.join(f'{i}. {c}: {cloze.replace(GAP, c)}\n' for i, c in enumerate(candidates, 1))
-        verdicts = generate(CHECK.format(english=row['english'], sentence=example.replace('{', '').replace('}', ''),
-                                         target=target, candidates=listing)).get('verdicts')
-        verdicts = verdicts if isinstance(verdicts, list) and len(verdicts) == len(candidates) else [None] * len(candidates)
-        for c, v in zip(candidates, verdicts):
-            if not isinstance(v, dict):
-                rejected.append({'candidate': c, 'reason': 'checker gave no verdict'})
-            elif v.get('grammatical') is True and v.get('same_meaning') is True and len(accepted) < MAX_ALTERNATIVES:
+        reply = generate(CHECK.format(english=row['english'], sentence=example.replace('{', '').replace('}', ''),
+                                      target=target, candidates=listing)).get('verdicts')
+        verdicts = {folded(v['candidate'].strip()): v for v in reply if isinstance(v, dict) and isinstance(v.get('candidate'), str)} \
+            if isinstance(reply, list) else {}
+        if any(folded(c) not in verdicts for c in candidates):
+            raise UnusableReply(f"{row['id']}: no verdict for every candidate")
+        for c in candidates:
+            v = verdicts[folded(c)]
+            if v.get('grammatical') is True and v.get('same_meaning') is True and len(accepted) < MAX_ALTERNATIVES:
                 accepted.append(c)
             else:
                 rejected.append({'candidate': c, 'reason': f"checker: {v.get('reason', '')}".strip()})
@@ -159,11 +168,23 @@ def pending(rows, records):
 
 
 def run(rows, records, generate, workers=1, limit=None, on_progress=None):
-    """Fills `records` in place for pending rows; calls `on_progress(done, total)` after each one."""
+    """
+    Fills `records` in place for pending rows; calls `on_progress(done, total)` after each one.
+    A row whose reply is unusable is left out, so the next run retries it.
+    """
     todo = pending(rows, records)[:limit]
+
+    def attempt(row):
+        try:
+            return alternatives_for(row, generate)
+        except (UnusableReply, OllamaError) as e:
+            print(f'skipped {e}', file=sys.stderr, flush=True)
+            return None
+
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        for done, (row, record) in enumerate(zip(todo, pool.map(lambda r: alternatives_for(r, generate), todo)), 1):
-            records[row['id']] = record
+        for done, (row, record) in enumerate(zip(todo, pool.map(attempt, todo)), 1):
+            if record is not None:
+                records[row['id']] = record
             if on_progress:
                 on_progress(done, len(todo))
     return records

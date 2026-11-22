@@ -2,7 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from generate_alternatives import alternatives_for, load, pending, rejection, run, save
+from generate_alternatives import UnusableReply, alternatives_for, load, pending, rejection, run, save
 
 ROW = dict(id='fr-core-1', english='To reach a destination.', example='Le train devrait {arriver} à la gare.', rank=103)
 
@@ -50,12 +50,25 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual({'example': ROW['example'], 'accepted': [], 'rejected': []}, alternatives_for(ROW, model))
         self.assertEqual(1, len(model.prompts))
 
-    def test_unusable_replies_accept_nothing(self):
+    def test_unusable_replies_leave_the_row_pending(self):
         for proposal, check in [({}, None), ({'alternatives': 'parvenir'}, None),
                                 ({'alternatives': ['parvenir', 'atteindre']}, {'verdicts': [verdict('parvenir')]}),
-                                ({'alternatives': ['parvenir']}, {})]:
+                                ({'alternatives': ['parvenir']}, {}),
+                                ({'alternatives': ['parvenir']}, {'verdicts': [verdict('dérailler')]})]:
             model = FakeModel(*[r for r in (proposal, check) if r is not None])
-            self.assertEqual([], alternatives_for(ROW, model)['accepted'], proposal)
+            with self.subTest(proposal), self.assertRaises(UnusableReply):
+                alternatives_for(ROW, model)
+
+    def test_verdicts_are_matched_by_candidate_not_position(self):
+        model = FakeModel({'alternatives': ['parvenir', 'dérailler']},
+                          {'verdicts': [verdict('dérailler', False), verdict('Parvenir')]})
+        self.assertEqual(['parvenir'], alternatives_for(ROW, model)['accepted'])
+
+    def test_candidates_are_trimmed_before_filtering(self):
+        model = FakeModel({'alternatives': [' Arrivér ', 'parvenir', ' parvenir ']}, {'verdicts': [verdict('parvenir')]})
+        record = alternatives_for(ROW, model)
+        self.assertEqual(['parvenir'], record['accepted'])
+        self.assertEqual(['target variant', 'duplicate'], [r['reason'] for r in record['rejected']])
 
     def test_accepts_at_most_five(self):
         words = ['a1', 'b2', 'c3', 'd4', 'e5', 'f6']
@@ -72,6 +85,11 @@ class ResumeTests(unittest.TestCase):
         run(rows, records, lambda prompt: {'alternatives': []}, workers=2, limit=1)
         self.assertEqual('Il va {partir}.', records['fr-core-3']['example'])
         self.assertNotIn('fr-core-2', records)
+
+    def test_a_failed_row_stays_pending_and_the_run_goes_on(self):
+        rows = [ROW, ROW | {'id': 'fr-core-2', 'rank': 200, 'example': 'Il va {partir}.'}]
+        records = run(rows, {}, lambda prompt: {} if 'arriver' in prompt else {'alternatives': []})
+        self.assertEqual(['fr-core-2'], list(records))
 
     def test_saves_and_loads_sorted_records(self):
         with tempfile.TemporaryDirectory() as tmp:

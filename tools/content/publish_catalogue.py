@@ -72,10 +72,13 @@ def with_alternatives(row, record):
         return example
     if record['example'] != example:
         raise ContentError(f"{row['id']}: alternatives were generated for another example")
-    if not record['accepted']:
+    accepted = record['accepted']
+    if not isinstance(accepted, list) or not all(isinstance(a, str) and a.strip() and not set(a) & set('{}|') for a in accepted):
+        raise ContentError(f"{row['id']}: accepted alternatives must be non-blank words without braces or bars")
+    if not accepted:
         return example
     start, end = example.index('{'), example.index('}')
-    return example[:start + 1] + '|'.join([example[start + 1:end], *record['accepted']]) + example[end:]
+    return example[:start + 1] + '|'.join([example[start + 1:end], *accepted]) + example[end:]
 
 
 def pack_entry(row, record=None):

@@ -73,7 +73,7 @@ class PublishTests(unittest.TestCase):
     def test_refuses_stale_or_invalid_alternatives(self):
         record = lambda accepted, example='Un {arbre} pousse.': {'example': example, 'accepted': accepted, 'rejected': []}
         broken = [{'a': record(['arbuste'], 'Un {chêne} pousse.')}, {'gone': record(['arbuste'])},
-                  {'a': record(['Arbré'])}, {'a': record([' '])}, {'a': record(['x1', 'x2', 'x3', 'x4', 'x5', 'x6'])}]
+                  {'a': record(['Arbré'])}, {'a': record([' '])}, {'a': record(['arbuste|végétal'])}, {'a': record('bois')}, {'a': record(['x1', 'x2', 'x3', 'x4', 'x5', 'x6'])}]
         for alternatives in broken:
             with self.subTest(alternatives), self.assertRaises(ContentError):
                 build(one_per_band(), b'notice', alternatives)
