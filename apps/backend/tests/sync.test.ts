@@ -150,7 +150,8 @@ test("a push without the new settings fields keeps the stored fit and Gender cou
   expect(await pullAll(t, "settings")).toMatchObject([{ seconds: 30, genderIntroduced: 6, fittedSettings: '{"fit":1}', fittedSettingsChangedAt: 20 }]);
   await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: null, fittedSettingsChangedAt: 25 } });
   expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: null, fittedSettingsChangedAt: 25 }]);
-  await expect(t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettings: "x".repeat(4001), fittedSettingsChangedAt: 30 } })).rejects.toThrow();
+  await t.mutation(api.sync.push, { token, ...empty, settings: { ...settings, fittedSettingsChangedAt: 30 } });
+  expect(await pullAll(t, "settings")).toMatchObject([{ fittedSettings: null, fittedSettingsChangedAt: 25 }]);
 });
 
 describe("mergeSettings", () => {

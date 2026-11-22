@@ -113,7 +113,8 @@ object SyncData {
         .put("introduced", data.optInt("introduced"))
         .put("genderIntroduced", data.optInt("genderIntroduced"))
         .put("fittedSettings", data.optJSONObject("fittedSettings")?.toString() ?: JSONObject.NULL)
-        .put("fittedSettingsChangedAt", data.optLong("fittedSettingsChangedAt"))
+        // A fit imported before fits synced has no clock; 1 lets it win over untouched defaults only.
+        .put("fittedSettingsChangedAt", data.optLong("fittedSettingsChangedAt", if (data.has("fittedSettings")) 1L else 0L))
 
     /**
      * Mirrors `mergeSettings` in `apps/backend/convex/merge.ts`. [b] may omit the Gender count
@@ -121,7 +122,7 @@ object SyncData {
      */
     fun mergeSettings(a: JSONObject, b: JSONObject): JSONObject {
         val preferences = if (b.getLong("preferencesChangedAt") > a.getLong("preferencesChangedAt")) b else a
-        val fit = if (b.optLong("fittedSettingsChangedAt") > a.optLong("fittedSettingsChangedAt")) b else a
+        val fit = if (b.has("fittedSettings") && b.optLong("fittedSettingsChangedAt") > a.optLong("fittedSettingsChangedAt")) b else a
         val dayA = a.getString("day"); val dayB = b.getString("day")
         val daily = when {
             dayA == dayB -> JSONObject().put("day", dayA)

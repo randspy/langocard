@@ -28,7 +28,8 @@ export type Settings = {
 
 export function mergeSettings(a: Settings, b: Settings): Settings {
   const preferences = b.preferencesChangedAt > a.preferencesChangedAt ? b : a;
-  const fit = (b.fittedSettingsChangedAt ?? 0) > (a.fittedSettingsChangedAt ?? 0) ? b : a;
+  // The fit and its clock travel together; a push without the fit can't clear it.
+  const fit = b.fittedSettings !== undefined && (b.fittedSettingsChangedAt ?? 0) > (a.fittedSettingsChangedAt ?? 0) ? b : a;
   // Daily counters belong to the most recent local day. On the same day the
   // larger value is kept: it undercounts study split across two devices, but
   // never lets resent data inflate the daily target.

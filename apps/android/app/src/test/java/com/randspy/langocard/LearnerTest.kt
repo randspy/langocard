@@ -216,13 +216,19 @@ class LearnerTest {
         phone.fittedSettings = fit(0.85)
         sync(phone, tablet)
         assertEquals(0.85, tablet.fittedSettings!!.retention, 0.0)
-        Thread.sleep(2)
         tablet.fittedSettings = null
         sync(tablet, phone)
         assertNull(phone.fittedSettings)
         // The older fit doesn't come back.
         sync(Learner(JSONObject().put("version", 2).put("day", day)).also { it.document.put("fittedSettings", fit(0.8).toJson()).put("fittedSettingsChangedAt", 1L) }, phone)
         assertNull(phone.fittedSettings)
+    }
+
+    @Test fun `a fit imported before fits synced reaches a device with defaults`() {
+        val upgraded = Learner(JSONObject().put("version", 2).put("day", day).put("fittedSettings", fit(0.85).toJson()))
+        val other = Learner(JSONObject().put("version", 2).put("day", day))
+        sync(upgraded, other)
+        assertEquals(0.85, other.fittedSettings!!.retention, 0.0)
     }
 
     @Test fun `restoring a backup makes its fit the newest`() {

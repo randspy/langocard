@@ -599,6 +599,39 @@
         "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
         "fittedSettingsChangedAt": 30
       }
+    },
+    {
+      "name": "a newer clock without a fit can't clear it",
+      "stored": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "genderIntroduced": 3,
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      },
+      "incoming": {
+        "placementDone": false,
+        "placementIndex": 0,
+        "nextCardId": 0,
+        "minimumRank": 2501,
+        "interests": "daily,culture,news",
+        "preferencesChangedAt": 0,
+        "day": "2026-11-20",
+        "seconds": 0,
+        "introduced": 0,
+        "fittedSettingsChangedAt": 50
+      },
+      "expected": {
+        "fittedSettings": "{\"format\":\"langocard-fsrs\",\"version\":1,\"parameters\":[0.2172,1.1771,3.2602,16.1507,7.0114,0.57,2.0966,0.0069,1.5261,0.112,1.0178,1.849,0.1133,0.3127,2.2934,0.2191,3.0004,0.7536,0.3332,0.1437,0.2],\"desiredRetention\":0.85,\"reviewCount\":1200,\"fitDate\":\"2026-11-15T12:00:00Z\"}",
+        "fittedSettingsChangedAt": 30
+      }
     }
   ]
 }
