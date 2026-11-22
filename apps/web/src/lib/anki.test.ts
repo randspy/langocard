@@ -24,5 +24,7 @@ test("exports every page of the library in export order", async () => {
   const [a, b] = fixture.entries.map(fromAndroidJson).map((e, i) => ({ ...e, origin: i === 0 ? "personal" : "bundled" }));
   const pages = { start: { entries: [a], isDone: false, continueCursor: "next" }, next: { entries: [b], isDone: true, continueCursor: "" } };
   const tsv = await exportLibrary(async (cursor) => pages[cursor === null ? "start" : "next"], []);
-  expect(tsv.indexOf(b.word)).toBeLessThan(tsv.indexOf(`${a.word}<br>`));
+  expect(tsv).toContain(`${a.word}<br>`);
+  expect(tsv).toContain(`${b.word}<br>`);
+  expect(tsv.indexOf(`${b.word}<br>`)).toBeLessThan(tsv.indexOf(`${a.word}<br>`));
 });
