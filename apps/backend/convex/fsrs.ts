@@ -1,6 +1,7 @@
 /**
  * FSRS-6 scheduling, ported from java-fsrs 1.0.0, the library the Android app uses, so a card
- * reviewed on the web is scheduled exactly as on the phone. `content/fsrs-fixtures.json`
+ * reviewed on the web is scheduled as on the phone (except for rare rounding at half-day
+ * boundaries; see `nextInterval`). `content/fsrs-fixtures.json`
  * (generated from java-fsrs by Android's `FsrsFixturesTest`) holds the cases both must pass.
  * Cards and review logs read and write the JSON Android stores and syncs.
  * Self-contained, so Convex functions and the web app can both import it.
@@ -306,10 +307,15 @@ export function logToJson(log: ReviewLog): string {
     `"reviewDuration":${log.reviewDuration ?? "null"}}`;
 }
 
+/**
+ * Epoch milliseconds, keeping any finer digits as a fraction: Android may write microseconds,
+ * and elapsed whole days must be counted from the exact time.
+ */
 function instant(value: unknown): number {
   const ms = typeof value === "string" ? Date.parse(value) : NaN;
   if (Number.isNaN(ms)) throw new Error(`Invalid FSRS time: ${String(value)}`);
-  return ms;
+  const finer = /\.\d{3}(\d+)Z$/.exec(value as string)?.[1];
+  return finer ? ms + Number(`0.${finer}`) : ms;
 }
 
 /** Reads a card in Android's JSON. Like `Card.fromJson`, a learning card without a step starts at step 0. */

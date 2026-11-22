@@ -5,11 +5,13 @@ on:
     paths:
       - "apps/android/**"
       - "content/*-fixtures.json"
+      - "content/fsrs-typescript-output.json"
       - ".github/workflows/android.yml"
   pull_request:
     paths:
       - "apps/android/**"
       - "content/*-fixtures.json"
+      - "content/fsrs-typescript-output.json"
       - ".github/workflows/android.yml"
   workflow_dispatch:
 
