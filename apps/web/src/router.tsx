@@ -6,6 +6,7 @@ import { ExportPage } from "@/routes/ExportPage";
 import { LibraryPage } from "@/routes/LibraryPage";
 import { NewEntryPage } from "@/routes/NewEntryPage";
 import { SourcesPage } from "@/routes/SourcesPage";
+import { StudyPage } from "@/routes/StudyPage";
 import { UpstreamPage } from "@/routes/UpstreamPage";
 
 const rootRoute = createRootRoute({ component: Layout });
@@ -17,6 +18,7 @@ function Layout() {
         <nav className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3">
           <Link to="/" className="font-semibold text-xl">Langocard</Link>
           <Link to="/" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium" activeOptions={{ exact: true, includeSearch: false }}>Library</Link>
+          <Link to="/study" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Study</Link>
           <Link to="/entries/new" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">New entry</Link>
           <Link to="/conflicts" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Upstream changes</Link>
           <Link to="/export" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Export</Link>
@@ -65,7 +67,13 @@ const sourcesRoute = createRoute({
   component: SourcesPage,
 });
 
-const routeTree = rootRoute.addChildren([libraryRoute, newEntryRoute, entryRoute, upstreamRoute, exportRoute, sourcesRoute]);
+const studyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/study",
+  component: StudyPage,
+});
+
+const routeTree = rootRoute.addChildren([studyRoute, libraryRoute, newEntryRoute, entryRoute, upstreamRoute, exportRoute, sourcesRoute]);
 export const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

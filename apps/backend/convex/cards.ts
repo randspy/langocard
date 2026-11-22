@@ -5,6 +5,7 @@ import { parseCard, parseReviewLog } from "./cardState";
 import { contentOf } from "./entryRules";
 import { SKILLS, skillsOf, type Skill } from "./skills";
 import { SUSPENDED_INDEFINITELY, resetCard } from "./merge";
+import { refreshCard } from "./studyIndex";
 
 /**
  * Web app card management. Suspensions and resets advance a card's `cardEditedAt`
@@ -58,11 +59,12 @@ async function setSuspension(ctx: MutationCtx, entryId: string, skill: Skill | u
       if (suspendedUntil === 0) continue;
       // A never-studied card: record only the manual fields. Its review clock stays at 0,
       // so it never overrides a device's first review.
-      await ctx.db.insert("cards", {
+      await refreshCard(ctx, await ctx.db.insert("cards", {
         key, card: null, lastReview: 0, failures: 0, pausedUntil: 0, suspendedUntil, cardEditedAt: now, updatedAt: now,
-      });
+      }));
     } else if (row.suspendedUntil !== suspendedUntil) {
       await ctx.db.patch(row._id, { suspendedUntil, cardEditedAt: Math.max(now, row.cardEditedAt + 1), updatedAt: now });
+      await refreshCard(ctx, row._id);
     }
   }
 }
@@ -93,6 +95,7 @@ export const reset = mutation({
       const now = Math.max(Date.now(), row.lastReview + 1, row.cardEditedAt + 1);
       // Keep any suspension: a reset is about memory state, not about whether to study.
       await ctx.db.patch(row._id, { ...resetCard(now), suspendedUntil: row.suspendedUntil, updatedAt: Date.now() });
+      await refreshCard(ctx, row._id);
     }
   },
 });

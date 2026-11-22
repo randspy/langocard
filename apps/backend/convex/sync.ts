@@ -3,7 +3,8 @@ import { mutation, query } from "./_generated/server";
 import { requireToken } from "./access";
 import type { DataModel } from "./_generated/dataModel";
 import { contentOf, entryErrors } from "./entryRules";
-import { entryWins, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
+import { entryWins, isDeleted, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
+import { deriveCard, entryIdOf, entryState, entryStateOf, refreshEntryCards, withoutDerived, type EntryState } from "./studyIndex";
 import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
 
 /**
@@ -30,17 +31,15 @@ export const push = mutation({
       if (list.length > MAX_BATCH) throw new ConvexError(`At most ${MAX_BATCH} items of each kind per push`);
     }
     const updatedAt = Date.now();
+    // Entry states read or written in this push, so each entry is looked up at most once.
+    const states = new Map<string, EntryState>();
+    const stateOf = async (entryId: string) => {
+      if (!states.has(entryId)) states.set(entryId, await entryState(ctx, entryId));
+      return states.get(entryId)!;
+    };
     /** Entry IDs the server refused: invalid content, or an unknown non-personal entry. */
     const rejected: string[] = [];
 
-    for (const { key, ...incoming } of args.cards) {
-      const stored = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
-      if (!stored) await ctx.db.insert("cards", { key, ...incoming, updatedAt });
-      else {
-        const merged = mergeCard(stored, incoming);
-        if (!sameCard(merged, stored)) await ctx.db.patch(stored._id, { ...merged, updatedAt });
-      }
-    }
     for (const hook of args.hooks ?? []) {
       if (hook.text.length > 500 || !Number.isFinite(hook.editedAt) || hook.editedAt <= 0) throw new ConvexError("Invalid memory hook");
       const stored = await ctx.db.query("hooks").withIndex("by_entry", q => q.eq("entryId", hook.entryId)).unique();
@@ -65,9 +64,26 @@ export const push = mutation({
             entryId, ...contentOf(content), editedAt, deletedAt,
             origin: "personal", shipped: null, upstreamChanged: false, retired: false, updatedAt,
           });
+          const state: EntryState = { live: !isDeleted({ editedAt, deletedAt }), packId: null };
+          states.set(entryId, state);
+          // Cards pushed before their entry (in an earlier batch) become studiable now.
+          await refreshEntryCards(ctx, entryId, state);
         }
       } else if (entryWins({ editedAt, deletedAt }, stored)) {
         await ctx.db.patch(stored._id, { ...contentOf(content), editedAt, deletedAt, updatedAt });
+        const state = entryStateOf({ ...stored, editedAt, deletedAt });
+        states.set(entryId, state);
+        if (state.live !== entryStateOf(stored).live) await refreshEntryCards(ctx, entryId, state);
+      }
+    }
+    // After entries, so cards of entries added in this push are derived with them.
+    for (const { key, ...incoming } of args.cards) {
+      const entry = await stateOf(entryIdOf(key));
+      const stored = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
+      if (!stored) await ctx.db.insert("cards", { key, ...incoming, updatedAt, ...deriveCard({ key, ...incoming }, entry) });
+      else {
+        const merged = mergeCard(stored, incoming);
+        if (!sameCard(merged, stored)) await ctx.db.patch(stored._id, { ...merged, updatedAt, ...deriveCard({ key, ...merged }, entry) });
       }
     }
     for (const source of args.sources) {
@@ -126,7 +142,7 @@ export const pull = query({
           const { shipped: _, ...entry } = row;
           return { ...entry, ...contentOf(entry) };
         }
-        return row;
+        return table === "cards" ? withoutDerived(row) : row;
       }),
       isDone: result.isDone,
       continueCursor: result.continueCursor,
