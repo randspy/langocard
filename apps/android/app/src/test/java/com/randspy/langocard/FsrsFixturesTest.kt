@@ -81,6 +81,18 @@ class FsrsFixturesTest {
             names.put(schedulerJson(name, make()))
             for (i in 0 until 20) cases.put(case("$name #$i", name, make(), 1_000L + i, 14))
         }
+        // Phones may write micro- or nanosecond times; a review just short of a whole day is still the same day.
+        for (last in listOf("2026-01-01T00:00:00.000001Z", "2026-01-01T00:00:00.000000001Z", "2026-01-01T00:00:00.123456Z")) {
+            val lastReview = Instant.parse(last)
+            val card = Card.builder().cardId(9).state(io.github.openspacedrepetition.State.REVIEW).stability(5.0).difficulty(5.0)
+                .lastReview(lastReview).due(lastReview.plus(Duration.ofDays(5))).build()
+            val scheduler = schedulers().getValue("default")()
+            val at = Instant.parse("2026-01-02T00:00:00Z").plusMillis(lastReview.toEpochMilli() % 1000)
+            val result = scheduler.reviewCard(card, Rating.GOOD, at)
+            cases.put(JSONObject().put("name", "precise $last").put("scheduler", "default").put("steps", JSONArray().put(
+                JSONObject().put("card", card.toJson()).put("rating", "GOOD").put("reviewDatetime", at.toString())
+                    .put("expectedCard", result.card().toJson()).put("expectedLog", result.reviewLog().toJson()))))
+        }
         // A card serialised before its first answer, as `Learner.newCard` builds it.
         val log = ReviewLog(7, Rating.HARD, Instant.parse("2026-01-05T08:00:00.123Z"), 3200)
         return JSONObject()

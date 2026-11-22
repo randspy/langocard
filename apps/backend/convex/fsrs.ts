@@ -29,7 +29,11 @@ export type Rating = "AGAIN" | "HARD" | "GOOD" | "EASY";
 export type FsrsState = "LEARNING" | "REVIEW" | "RELEARNING";
 export const RATINGS: readonly Rating[] = ["AGAIN", "HARD", "GOOD", "EASY"];
 
-/** An FSRS card. Times are epoch milliseconds. */
+/**
+ * An FSRS card. Times are whole epoch milliseconds; `finer` keeps the digits after the
+ * millisecond that Android may write ("2026-01-01T00:00:00.000001Z" has "001"), so a card read
+ * from the phone is counted and written back exactly. Cards this port schedules have none.
+ */
 export type Card = {
   cardId: number;
   state: FsrsState;
@@ -38,9 +42,10 @@ export type Card = {
   difficulty: number | null;
   due: number;
   lastReview: number | null;
+  finer?: { due?: string; lastReview?: string };
 };
 
-export type ReviewLog = { cardId: number; rating: Rating; reviewDatetime: number; reviewDuration: number | null };
+export type ReviewLog = { cardId: number; rating: Rating; reviewDatetime: number; reviewDuration: number | null; finer?: string };
 
 export const DEFAULT_PARAMETERS: readonly number[] = [
   0.2172, 1.1771, 3.2602, 16.1507, 7.0114, 0.57, 2.0966, 0.0069, 1.5261, 0.112, 1.0178, 1.849,
@@ -71,8 +76,16 @@ const FUZZ_RANGES = [
 ];
 
 const ratingValue = (rating: Rating) => RATINGS.indexOf(rating) + 1;
-/** `ChronoUnit.DAYS.between`: whole days, truncated toward zero. */
-const daysBetween = (from: number, to: number) => Math.trunc((to - from) / DAY);
+/**
+ * `ChronoUnit.DAYS.between` from `from` (plus its `finer` digits) to the millisecond `to`:
+ * whole days, truncated toward zero.
+ */
+function daysBetween(from: number, finer: string | undefined, to: number): number {
+  const elapsed = to - from;
+  const days = Math.trunc(elapsed / DAY);
+  // A start a fraction of a millisecond later falls short of an exact whole day.
+  return /[1-9]/.test(finer ?? "") && elapsed > 0 && elapsed % DAY === 0 ? days - 1 : days;
+}
 /** Java's `Math.round`: halves round up. */
 const round = (x: number) => Math.floor(x + 0.5);
 
@@ -102,15 +115,14 @@ export class Scheduler {
   /** How likely the card is recalled at `now`; 0 before its first review. */
   retrievability(card: Card, now: number): number {
     if (card.lastReview === null) return 0;
-    const elapsedDays = Math.max(0, daysBetween(card.lastReview, now));
+    const elapsedDays = Math.max(0, daysBetween(card.lastReview, card.finer?.lastReview, now));
     return Math.pow(1 + (this.factor * elapsedDays) / card.stability!, this.decay);
   }
 
   /** The card and log after answering `card` with `rating` at `now`. Never mutates `card`. */
   review(card: Card, rating: Rating, now: number, reviewDuration: number | null = null): { card: Card; log: ReviewLog } {
-    const next = { ...card };
-    const w = this.w;
-    const daysSinceLastReview = card.lastReview === null ? null : daysBetween(card.lastReview, now);
+    const { finer: _, ...next } = card;
+    const daysSinceLastReview = card.lastReview === null ? null : daysBetween(card.lastReview, card.finer?.lastReview, now);
     const sameDay = daysSinceLastReview !== null && daysSinceLastReview < 1;
     let interval = 0;
 
@@ -273,9 +285,10 @@ export function javaRandom(seed: number): () => number {
 
 // ---- Android's JSON ----------------------------------------------------------
 
-/** `Instant.toString`: ISO-8601 in UTC, with milliseconds only when present. */
-export function instantString(ms: number): string {
+/** `Instant.toString`: ISO-8601 in UTC, with milliseconds (and `finer` digits) only when present. */
+export function instantString(ms: number, finer = ""): string {
   const iso = new Date(ms).toISOString();
+  if (finer) return iso.replace("Z", `${finer}Z`);
   return ms % 1000 === 0 ? iso.replace(".000Z", "Z") : iso;
 }
 
@@ -292,30 +305,27 @@ function javaDouble(x: number): string {
 }
 
 const javaNullableDouble = (x: number | null) => (x === null ? "null" : javaDouble(x));
-const nullableInstant = (ms: number | null) => (ms === null ? "null" : JSON.stringify(instantString(ms)));
+const nullableInstant = (ms: number | null, finer?: string) => (ms === null ? "null" : JSON.stringify(instantString(ms, finer)));
 
 /** The card as `Card.toJson` writes it, byte for byte. */
 export function cardToJson(card: Card): string {
   return `{"cardId":${card.cardId},"state":"${card.state}","step":${card.step ?? "null"},` +
     `"stability":${javaNullableDouble(card.stability)},"difficulty":${javaNullableDouble(card.difficulty)},` +
-    `"due":${nullableInstant(card.due)},"lastReview":${nullableInstant(card.lastReview)}}`;
+    `"due":${nullableInstant(card.due, card.finer?.due)},"lastReview":${nullableInstant(card.lastReview, card.finer?.lastReview)}}`;
 }
 
 /** The log as `ReviewLog.toJson` writes it, byte for byte. */
 export function logToJson(log: ReviewLog): string {
-  return `{"cardId":${log.cardId},"rating":"${log.rating}","review_datetime":${JSON.stringify(instantString(log.reviewDatetime))},` +
+  return `{"cardId":${log.cardId},"rating":"${log.rating}","review_datetime":${JSON.stringify(instantString(log.reviewDatetime, log.finer))},` +
     `"reviewDuration":${log.reviewDuration ?? "null"}}`;
 }
 
-/**
- * Epoch milliseconds, keeping any finer digits as a fraction: Android may write microseconds,
- * and elapsed whole days must be counted from the exact time.
- */
-function instant(value: unknown): number {
+/** Whole epoch milliseconds, and the digits after the millisecond if any. */
+function instant(value: unknown): { ms: number; finer?: string } {
   const ms = typeof value === "string" ? Date.parse(value) : NaN;
   if (Number.isNaN(ms)) throw new Error(`Invalid FSRS time: ${String(value)}`);
   const finer = /\.\d{3}(\d+)Z$/.exec(value as string)?.[1];
-  return finer ? ms + Number(`0.${finer}`) : ms;
+  return finer ? { ms, finer } : { ms };
 }
 
 /** Reads a card in Android's JSON. Like `Card.fromJson`, a learning card without a step starts at step 0. */
@@ -324,21 +334,28 @@ export function cardFromJson(json: string): Card {
   const state: FsrsState = o.state ?? "LEARNING";
   if (!["LEARNING", "REVIEW", "RELEARNING"].includes(state)) throw new Error(`Unknown FSRS state: ${state}`);
   if (!Number.isInteger(o.cardId)) throw new Error("FSRS card without an ID");
-  return {
+  const due = instant(o.due);
+  const lastReview = o.lastReview == null ? null : instant(o.lastReview);
+  const card: Card = {
     cardId: o.cardId,
     state,
     step: o.step ?? (state === "LEARNING" ? 0 : null),
     stability: o.stability ?? null,
     difficulty: o.difficulty ?? null,
-    due: instant(o.due),
-    lastReview: o.lastReview == null ? null : instant(o.lastReview),
+    due: due.ms,
+    lastReview: lastReview?.ms ?? null,
   };
+  if (due.finer || lastReview?.finer) card.finer = { due: due.finer, lastReview: lastReview?.finer };
+  return card;
 }
 
 export function logFromJson(json: string): ReviewLog {
   const o = JSON.parse(json);
   if (!RATINGS.includes(o.rating)) throw new Error(`Unknown rating: ${o.rating}`);
-  return { cardId: o.cardId, rating: o.rating, reviewDatetime: instant(o.review_datetime), reviewDuration: o.reviewDuration ?? null };
+  const at = instant(o.review_datetime);
+  const log: ReviewLog = { cardId: o.cardId, rating: o.rating, reviewDatetime: at.ms, reviewDuration: o.reviewDuration ?? null };
+  if (at.finer) log.finer = at.finer;
+  return log;
 }
 
 /** How long until `due`, as a rating button shows it: "10m", "3h", "4d". Mirrors `StudyPolicy.interval`. */

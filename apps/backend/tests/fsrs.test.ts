@@ -63,16 +63,6 @@ describe("FSRS", () => {
       .toEqual(newCard(1, Date.parse("2026-01-01T00:00:00Z")));
   });
 
-  test("counts elapsed days from microsecond times", () => {
-    const card = cardFromJson('{"cardId":1,"state":"REVIEW","step":null,"stability":5.0,"difficulty":5.0,"due":"2026-01-02T00:00:00Z","lastReview":"2026-01-01T00:00:00.000001Z"}');
-    expect(card.lastReview!).toBeGreaterThan(Date.parse("2026-01-01T00:00:00Z"));
-    const plain = { ...card, lastReview: Date.parse("2026-01-01T00:00:00Z") };
-    // One microsecond short of a day is still the same day.
-    const scheduler = new Scheduler({ enableFuzzing: false });
-    const at = Date.parse("2026-01-02T00:00:00Z");
-    expect(scheduler.review(card, "GOOD", at).card.stability).not.toBe(scheduler.review(plain, "GOOD", at).card.stability);
-  });
-
   test("writes Java's exponent form for very small and large values", () => {
     const card = { ...newCard(1, 0), stability: 0.0001, difficulty: 12345678.5 };
     expect(cardToJson(card)).toContain('"stability":1.0E-4,"difficulty":1.23456785E7');

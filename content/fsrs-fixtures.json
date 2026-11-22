@@ -6312,6 +6312,39 @@
      "card": "{\"cardId\":1019,\"state\":\"REVIEW\",\"step\":null,\"stability\":2352.1632911974675,\"difficulty\":7.959461154280938,\"due\":\"2046-01-30T03:04:46.624Z\",\"lastReview\":\"2039-06-15T03:04:46.624Z\"}"
     }
    ]
+  },
+  {
+   "scheduler": "default",
+   "name": "precise 2026-01-01T00:00:00.000001Z",
+   "steps": [{
+    "reviewDatetime": "2026-01-02T00:00:00Z",
+    "expectedCard": "{\"cardId\":9,\"state\":\"REVIEW\",\"step\":null,\"stability\":5.100105390992837,\"difficulty\":4.982628825804394,\"due\":\"2026-01-07T00:00:00Z\",\"lastReview\":\"2026-01-02T00:00:00Z\"}",
+    "rating": "GOOD",
+    "expectedLog": "{\"cardId\":9,\"rating\":\"GOOD\",\"review_datetime\":\"2026-01-02T00:00:00Z\",\"reviewDuration\":null}",
+    "card": "{\"cardId\":9,\"state\":\"REVIEW\",\"step\":null,\"stability\":5.0,\"difficulty\":5.0,\"due\":\"2026-01-06T00:00:00.000001Z\",\"lastReview\":\"2026-01-01T00:00:00.000001Z\"}"
+   }]
+  },
+  {
+   "scheduler": "default",
+   "name": "precise 2026-01-01T00:00:00.000000001Z",
+   "steps": [{
+    "reviewDatetime": "2026-01-02T00:00:00Z",
+    "expectedCard": "{\"cardId\":9,\"state\":\"REVIEW\",\"step\":null,\"stability\":5.100105390992837,\"difficulty\":4.982628825804394,\"due\":\"2026-01-07T00:00:00Z\",\"lastReview\":\"2026-01-02T00:00:00Z\"}",
+    "rating": "GOOD",
+    "expectedLog": "{\"cardId\":9,\"rating\":\"GOOD\",\"review_datetime\":\"2026-01-02T00:00:00Z\",\"reviewDuration\":null}",
+    "card": "{\"cardId\":9,\"state\":\"REVIEW\",\"step\":null,\"stability\":5.0,\"difficulty\":5.0,\"due\":\"2026-01-06T00:00:00.000000001Z\",\"lastReview\":\"2026-01-01T00:00:00.000000001Z\"}"
+   }]
+  },
+  {
+   "scheduler": "default",
+   "name": "precise 2026-01-01T00:00:00.123456Z",
+   "steps": [{
+    "reviewDatetime": "2026-01-02T00:00:00.123Z",
+    "expectedCard": "{\"cardId\":9,\"state\":\"REVIEW\",\"step\":null,\"stability\":5.100105390992837,\"difficulty\":4.982628825804394,\"due\":\"2026-01-07T00:00:00.123Z\",\"lastReview\":\"2026-01-02T00:00:00.123Z\"}",
+    "rating": "GOOD",
+    "expectedLog": "{\"cardId\":9,\"rating\":\"GOOD\",\"review_datetime\":\"2026-01-02T00:00:00.123Z\",\"reviewDuration\":null}",
+    "card": "{\"cardId\":9,\"state\":\"REVIEW\",\"step\":null,\"stability\":5.0,\"difficulty\":5.0,\"due\":\"2026-01-06T00:00:00.123456Z\",\"lastReview\":\"2026-01-01T00:00:00.123456Z\"}"
+   }]
   }
  ],
  "schedulers": [
