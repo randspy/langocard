@@ -17,7 +17,9 @@ export default defineConfig({
     // The backend's generated files import `convex`; use this app's single copy.
     dedupe: ["convex", "react", "react-dom"],
   },
-  server: { port: 5173, strictPort: true, fs: { allow: [".", backend] } },
+  // This local app serves a shared credential; other origins must not read its modules.
+  server: { host: "127.0.0.1", cors: false, port: 5173, strictPort: true, fs: { allow: [".", backend] } },
+  preview: { host: "127.0.0.1", cors: false },
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
