@@ -2,7 +2,9 @@ import type { FunctionArgs } from "convex/server";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { api, internal } from "../convex/_generated/api";
 import { cardFromJson, cardToJson, Scheduler, newCard } from "../convex/fsrs";
-import { TOKEN, setup, shipped, withToken, type T } from "./helpers";
+import { convexTest } from "convex-test";
+import schema from "../convex/schema";
+import { TOKEN, modules, setup, shipped, withToken, type T } from "./helpers";
 
 beforeEach(() => { process.env.SYNC_TOKEN = TOKEN; });
 afterEach(() => { delete process.env.SYNC_TOKEN; });
@@ -206,3 +208,32 @@ test("the migration rebuilds derived columns", async () => {
   expect(await t.mutation(internal.migrations.deriveCards, { cursor: null })).toMatchObject({ isDone: true });
   expect((await withToken(t).query(api.study.next, clock))?.key).toBe("frw-1:Reading");
 });
+
+test("an Android-sized push that deletes entries stays within transaction limits", async () => {
+  const t = convexTest({ schema, modules, transactionLimits: true });
+  for (let batch = 0; batch < 20; batch++) {
+    await t.run(async (ctx) => {
+      for (let i = batch * 1000; i < (batch + 1) * 1000; i++) {
+        const { entryId: _, origin, ...content } = shipped();
+        await ctx.db.insert("entries", { entryId: `frw-${i}`, ...content, origin, shipped: content, editedAt: null, deletedAt: null, upstreamChanged: false, retired: false, updatedAt: 1 });
+      }
+    });
+  }
+  const personal = Array.from({ length: 500 }, (_, i) => ({
+    entryId: `personal-${i}`, word: "pourtant", english: "however", definition: "Malgré cela.", examples: ["Il pleut, {pourtant} elle sort."],
+    topic: "daily", lemma: "", rank: null, sourceUrl: "", license: "", gender: null, editedAt: 1, deletedAt: null as number | null,
+  }));
+  await push(t, { entries: personal });
+  for (const skill of ["Reading", "Listening"]) {
+    await push(t, { cards: personal.map((e, i) => cardRow(`${e.entryId}:${skill}`, reviewedCard(i, DAY))) });
+  }
+  await push(t, {
+    entries: personal.map((e) => ({ ...e, deletedAt: 10 })),
+    cards: Array.from({ length: 500 }, (_, i) => cardRow(`frw-${i}:Reading`, reviewedCard(i, -DAY))),
+    reviews: Array.from({ length: 500 }, (_, i) => ({ reviewId: `frw-${i}:Reading@x`, key: `frw-${i}:Reading`, placement: false, log: "{}" })),
+    buried: Array.from({ length: 500 }, (_, i) => ({ key: `frw-${i}:Listening`, day })),
+    hooks: Array.from({ length: 500 }, (_, i) => ({ entryId: `frw-${i}`, text: "image", editedAt: 1 })),
+  });
+  const next = await withToken(t).query(api.study.next, clock);
+  expect(next?.key).toMatch(/^frw-\d+:Reading$/);
+}, 120_000);

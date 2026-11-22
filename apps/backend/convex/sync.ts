@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { requireToken } from "./access";
 import type { DataModel } from "./_generated/dataModel";
 import { contentOf, entryErrors } from "./entryRules";
-import { entryWins, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
+import { entryWins, isDeleted, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
 import { deriveCard, entryIdOf, entryState, entryStateOf, refreshEntryCards, withoutDerived, type EntryState } from "./studyIndex";
 import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
 
@@ -60,11 +60,11 @@ export const push = mutation({
         // Bundled and pack entries come from the seed; devices may only add personal ones.
         if (!entryId.startsWith("personal-")) rejected.push(entryId);
         else {
-          const id = await ctx.db.insert("entries", {
+          await ctx.db.insert("entries", {
             entryId, ...contentOf(content), editedAt, deletedAt,
             origin: "personal", shipped: null, upstreamChanged: false, retired: false, updatedAt,
           });
-          const state = entryStateOf(await ctx.db.get(id));
+          const state: EntryState = { live: !isDeleted({ editedAt, deletedAt }), packId: null };
           states.set(entryId, state);
           // Cards pushed before their entry (in an earlier batch) become studiable now.
           await refreshEntryCards(ctx, entryId, state);

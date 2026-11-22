@@ -49,19 +49,23 @@ export async function entryState(ctx: QueryCtx, entryId: string): Promise<EntryS
   return entryStateOf(await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique());
 }
 
+/** Patches a card row read in this transaction when its derived columns are out of date. */
+async function rederive(ctx: MutationCtx, row: Doc<"cards">, entry: EntryState): Promise<void> {
+  const derived = deriveCard(row, entry);
+  if (DERIVED_CARD_FIELDS.some((field) => row[field] !== derived[field])) await ctx.db.patch(row._id, derived);
+}
+
 /** Recomputes one card's derived columns after a write. */
 export async function refreshCard(ctx: MutationCtx, id: Id<"cards">, entry?: EntryState): Promise<void> {
   const row = await ctx.db.get(id);
-  if (!row) return;
-  const derived = deriveCard(row, entry ?? await entryState(ctx, entryIdOf(row.key)));
-  if (DERIVED_CARD_FIELDS.some((field) => row[field] !== derived[field])) await ctx.db.patch(id, derived);
+  if (row) await rederive(ctx, row, entry ?? await entryState(ctx, entryIdOf(row.key)));
 }
 
 /** Recomputes the derived columns of every card of `entryId`, after its deletion or origin may have changed. */
 export async function refreshEntryCards(ctx: MutationCtx, entryId: string, entry?: EntryState): Promise<void> {
   const state = entry ?? await entryState(ctx, entryId);
   for (const row of await ctx.db.query("cards").withIndex("by_key", (q) => q.gte("key", `${entryId}:`).lt("key", `${entryId};`)).collect()) {
-    await refreshCard(ctx, row._id, state);
+    await rederive(ctx, row, state);
   }
 }
 
