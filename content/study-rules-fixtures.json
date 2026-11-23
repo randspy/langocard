@@ -157,6 +157,84 @@
         }
       ],
       "next": "alpha:Reading"
+    },
+    {
+      "name": "Production sibling after a recalled Reading",
+      "entries": [
+        {
+          "id": "fresh"
+        },
+        {
+          "id": "older"
+        }
+      ],
+      "cards": [
+        {
+          "key": "older:Reading",
+          "due": 86400
+        }
+      ],
+      "next": "older:Production"
+    },
+    {
+      "name": "due Production before a later due Reading",
+      "entries": [
+        {
+          "id": "alpha"
+        },
+        {
+          "id": "beta"
+        }
+      ],
+      "cards": [
+        {
+          "key": "alpha:Reading",
+          "due": -100
+        },
+        {
+          "key": "alpha:Production",
+          "due": 86400
+        },
+        {
+          "key": "beta:Reading",
+          "due": 86400
+        },
+        {
+          "key": "beta:Production",
+          "due": -200
+        }
+      ],
+      "next": "beta:Production"
+    },
+    {
+      "name": "equal due times follow study order before skill order",
+      "entries": [
+        {
+          "id": "alpha"
+        },
+        {
+          "id": "beta"
+        }
+      ],
+      "cards": [
+        {
+          "key": "alpha:Reading",
+          "due": 86400
+        },
+        {
+          "key": "alpha:Production",
+          "due": -100
+        },
+        {
+          "key": "beta:Reading",
+          "due": -100
+        },
+        {
+          "key": "beta:Production",
+          "due": 86400
+        }
+      ],
+      "next": "alpha:Production"
     }
   ]
 }

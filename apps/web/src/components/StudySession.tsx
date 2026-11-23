@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { textOf, answerOf } from "@backend/entryRules";
+import { clozeOf, textOf, answerOf } from "@backend/entryRules";
+import { MATCH_LABEL, MATCH_RATING, typedAnswer, type AnswerPart, type TypedAnswer } from "@backend/typedAnswer";
+import { Input } from "@/components/ui/input";
 import { usePracticeClock } from "@/lib/usePracticeClock";
 import type { Rating } from "@backend/fsrs";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,11 @@ type Props = {
 
 type State =
   | { kind: "loading" }
-  | { kind: "card"; card: StudyCard; revealed: boolean; saving: boolean }
+  | {
+    kind: "card"; card: StudyCard; revealed: boolean; saving: boolean;
+    /** Production: what the learner typed, its frozen comparison and the rating to confirm. */
+    typed: string; comparison: TypedAnswer | null; selected: Rating | null;
+  }
   | { kind: "ending" }
   | { kind: "done" }
   | { kind: "error"; message: string; retry: "load" | "finish" };
@@ -41,7 +47,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
     try {
       await flush();
       const card = await fetchNext([...pending.current]);
-      setState(card ? { kind: "card", card, revealed: false, saving: false } : { kind: "done" });
+      setState(card ? { kind: "card", card, revealed: false, saving: false, typed: "", comparison: null, selected: null } : { kind: "done" });
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e), retry: "load" });
     }
@@ -78,8 +84,14 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
     );
   }
 
-  const { card, revealed, saving } = state;
+  const { card, revealed, saving, typed, comparison, selected } = state;
   const { entry, example } = card;
+  const production = card.skill === "Production";
+  // Reveal freezes the typed feedback and its suggested rating; an empty answer suggests nothing.
+  const reveal = () => {
+    const check = production ? typedAnswer(typed, example, entry.gender !== null, true) : null;
+    setState({ ...state, revealed: true, comparison: check, selected: check ? MATCH_RATING[check.match] : null });
+  };
   const rate = async (rating: Rating) => {
     setState({ ...state, saving: true });
     try {
@@ -102,32 +114,83 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
     <article className="max-w-2xl space-y-6" aria-label="Study card">
       {timeError && <p role="alert">{timeError}</p>}
       <Button variant="outline" disabled={saving} onClick={() => void finish()}>End session</Button>
-      <p className="text-sm uppercase tracking-wide text-muted">Read</p>
-      <div className="space-y-3">
-        <p className="font-semibold text-3xl">{entry.word}</p>
-        <p className="text-lg">{textOf(example)}</p>
-        {!revealed && <p className="text-sm text-muted">Recall the meaning before revealing.</p>}
-      </div>
+      <p className="text-sm uppercase tracking-wide text-muted">{production ? "Speak" : "Read"}</p>
+      {production ? (
+        <div className="space-y-3">
+          <p className="font-semibold text-3xl">{entry.english}</p>
+          <p className="text-xl">{clozeOf(example)}</p>
+          {!revealed && (
+            <Input aria-label="Your answer (optional)" placeholder="Your answer (optional)" value={typed} autoComplete="off"
+              autoCapitalize="none" spellCheck={false} maxLength={200}
+              onChange={(e) => setState({ ...state, typed: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter") reveal(); }} />
+          )}
+          {!revealed && (
+            <p className="text-sm text-muted">
+              Say the missing French aloud, or type it. Include the article for nouns and use the form that fits the
+              sentence. Right word, wrong article? Rate Hard.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="font-semibold text-3xl">{entry.word}</p>
+          <p className="text-lg">{textOf(example)}</p>
+          {!revealed && <p className="text-sm text-muted">Recall the meaning before revealing.</p>}
+        </div>
+      )}
+      {revealed && comparison && <Feedback answer={comparison} />}
       {revealed && (
         <div className="space-y-2 border-t border-line pt-4">
           <p className="font-semibold text-2xl">{word}</p>
           {answerOf(example).toLowerCase() !== entry.word.toLowerCase() && <p>In this sentence: {answerOf(example)}</p>}
           <p className="text-lg font-medium">{entry.english}</p>
           <p>{entry.definition}</p>
+          {production && <p>{textOf(example)}</p>}
         </div>
       )}
       {!revealed
-        ? <Button onClick={() => setState({ ...state, revealed: true })}>Reveal answer</Button>
+        ? <Button onClick={reveal}>Reveal answer</Button>
         : (
-          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Rate your recall">
-            {RATINGS.map(([rating, label]) => (
-              <Button key={rating} variant="outline" disabled={saving} onClick={() => void rate(rating)} className="h-14 flex-col gap-0">
-                <span className="font-bold">{label}</span>
-                <span className="text-xs text-muted">~{previews![rating]}</span>
-              </Button>
-            ))}
+          <div className="space-y-2">
+            <div className="grid grid-cols-4 gap-2" role="group" aria-label="Rate your recall">
+              {RATINGS.map(([rating, label]) => (
+                // With typed feedback the buttons choose the rating to confirm; otherwise they rate directly.
+                <Button key={rating} variant={comparison && selected === rating ? "default" : "outline"} disabled={saving}
+                  aria-pressed={comparison ? selected === rating : undefined}
+                  onClick={() => (comparison ? setState({ ...state, selected: rating }) : void rate(rating))} className="h-14 flex-col gap-0">
+                  <span className="font-bold">{label}</span>
+                  <span className="text-xs">~{previews![rating]}</span>
+                </Button>
+              ))}
+            </div>
+            {comparison && selected && (
+              <Button className="w-full" disabled={saving} onClick={() => void rate(selected)}>Confirm rating</Button>
+            )}
           </div>
         )}
     </article>
+  );
+}
+
+/** Both answers, emphasising the characters that differ, as the phone shows them. */
+function Feedback({ answer }: { answer: TypedAnswer }) {
+  const alternative = answer.match === "Alternative";
+  const line = (label: string, parts: AnswerPart[]) => (
+    // Spaces are kept as typed, so a doubled or missing space is visible.
+    <p className="whitespace-pre-wrap">
+      {label}:{" "}
+      {parts.map((part, i) => part.marked
+        ? <mark key={i} className="rounded-sm bg-danger/15 font-bold text-ink">{part.text}</mark>
+        : <span key={i}>{part.text}</span>)}
+    </p>
+  );
+  return (
+    <div className="space-y-1" aria-label="Your answer">
+      <p className="font-semibold text-lg">{MATCH_LABEL[answer.match]}</p>
+      {line("You typed", answer.typedParts)}
+      {line(alternative ? "Accepted" : "Expected", answer.expectedParts)}
+      {alternative && <p className="font-bold">This card practises: {answer.target}</p>}
+    </div>
   );
 }

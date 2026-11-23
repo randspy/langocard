@@ -7,7 +7,8 @@ sync. **Export** downloads the active library as an Anki import file in the phon
 format, and **Content sources** shows the content notice and licences. **AI fill** on
 New entry drafts an entry in the browser with WebLLM (see
 [web practice](../../docs/design/web-practice.md#on-device-ai-on-the-web)). **Study**
-reviews due Reading cards; answers reach the phone on its next sync. The design is in
+practises Reading and Production (Speak) cards, introducing new meanings as the phone does; answers
+reach the phone on its next sync. The design is in
 [`docs/design/web-card-management.md`](../../docs/design/web-card-management.md).
 
 Stack: Vite, React, TypeScript, TanStack Router, Tailwind CSS. It talks to Convex
