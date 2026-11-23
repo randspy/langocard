@@ -28,8 +28,9 @@ export function reviewTime(log: string): string {
 /** The example a review log records as shown, or "" when it has none. */
 export function loggedExample(log: string): string {
   try {
+    // The marked text as logged: it names the example, so only a blank one counts as none.
     const example = (JSON.parse(log) as { example?: unknown }).example;
-    return typeof example === "string" ? example.trim() : "";
+    return typeof example === "string" && example.trim() ? example : "";
   } catch {
     return "";
   }

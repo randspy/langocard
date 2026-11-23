@@ -46,3 +46,21 @@ describe("stuck cards", () => {
     expect(screen.getByText("Memory hook: a tangled plot")).toBeInTheDocument();
   });
 });
+
+test("a repeat pause starts from the saved hook, which can be cleared, and a failed save keeps the draft", async () => {
+  const queue: (StudyCard | null)[] = [card("old image"), null];
+  const saveHook = vi.fn().mockRejectedValueOnce(new Error("Offline")).mockResolvedValue(undefined);
+  render(<StudySession fetchNext={async () => queue.shift() ?? null} clock={() => now} saveHook={saveHook}
+    answer={async () => ({ status: "ok" as const, card: "", offerHook: true })} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Reveal answer" }));
+  await userEvent.click(screen.getByRole("button", { name: /Again/ }));
+  const editor = await screen.findByLabelText("Memory hook");
+  expect(editor).toHaveValue("old image");
+  await userEvent.clear(editor);
+  await userEvent.click(screen.getByRole("button", { name: "Save hook" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Offline");
+  expect(screen.getByLabelText("Memory hook")).toHaveValue("");
+  await userEvent.click(screen.getByRole("button", { name: "Save hook" }));
+  expect(saveHook).toHaveBeenLastCalledWith("plot", "");
+  expect(await screen.findByText("Session complete.")).toBeInTheDocument();
+});

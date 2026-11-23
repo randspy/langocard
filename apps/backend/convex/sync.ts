@@ -164,8 +164,9 @@ export const pull = query({
             missingReading, missingListening, missingProduction, missingGender, studyRank, rankBand, ...entry } = row;
           return { ...entry, ...contentOf(entry) };
         }
-        if (table === "reviews" && "exposureCounted" in row) {
-          const { exposureCounted, ...review } = row;
+        if (table === "reviews") {
+          // Server-only bookkeeping; devices read the time from the log.
+          const { exposureCounted: _, reviewedAt: __, ...review } = row as typeof row & { exposureCounted?: boolean; reviewedAt?: string };
           return review;
         }
         return table === "cards" ? withoutDerived(row) : row;
