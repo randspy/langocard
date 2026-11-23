@@ -235,6 +235,244 @@
         }
       ],
       "next": "alpha:Production"
+    },
+    {
+      "name": "a card back from a pause shows a sentence it wasn't recently missed in",
+      "entries": [
+        {
+          "id": "stuck",
+          "examples": [
+            "{Avoir} un.",
+            "{Avoir} deux.",
+            "{Avoir} trois."
+          ]
+        }
+      ],
+      "cards": [
+        {
+          "key": "stuck:Reading",
+          "due": -100,
+          "pausedUntil": -50,
+          "lastReview": -345600
+        },
+        {
+          "key": "stuck:Production",
+          "due": 86400
+        }
+      ],
+      "reviews": [
+        {
+          "key": "stuck:Reading",
+          "at": -345900,
+          "example": "{Avoir} un."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345800,
+          "example": "{Avoir} deux."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345700,
+          "example": "{Avoir} un."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345600,
+          "example": "{Avoir} deux."
+        }
+      ],
+      "next": "stuck:Reading",
+      "example": "{Avoir} trois."
+    },
+    {
+      "name": "when every sentence was missed, the least recently missed one returns",
+      "entries": [
+        {
+          "id": "stuck"
+        }
+      ],
+      "cards": [
+        {
+          "key": "stuck:Reading",
+          "due": -100,
+          "pausedUntil": -50,
+          "lastReview": -345600
+        },
+        {
+          "key": "stuck:Production",
+          "due": 86400
+        }
+      ],
+      "reviews": [
+        {
+          "key": "stuck:Reading",
+          "at": -345800,
+          "example": "{Avoir} un."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345700,
+          "example": "{Avoir} deux."
+        }
+      ],
+      "next": "stuck:Reading",
+      "example": "{Avoir} un."
+    },
+    {
+      "name": "without a pause, examples rotate by exposures",
+      "entries": [
+        {
+          "id": "steady",
+          "examples": [
+            "{Avoir} un.",
+            "{Avoir} deux.",
+            "{Avoir} trois."
+          ]
+        }
+      ],
+      "cards": [
+        {
+          "key": "steady:Reading",
+          "due": -100
+        },
+        {
+          "key": "steady:Production",
+          "due": 86400
+        }
+      ],
+      "reviews": [
+        {
+          "key": "steady:Reading",
+          "at": -400000,
+          "example": "{Avoir} un."
+        },
+        {
+          "key": "steady:Reading",
+          "at": -300000,
+          "example": "{Avoir} deux."
+        },
+        {
+          "key": "steady:Reading",
+          "at": -200000,
+          "example": "{Avoir} trois."
+        },
+        {
+          "key": "steady:Reading",
+          "at": -100000,
+          "example": "{Avoir} un."
+        }
+      ],
+      "next": "steady:Reading",
+      "example": "{Avoir} deux."
+    },
+    {
+      "name": "only the last four answers count, in review-time order",
+      "entries": [
+        {
+          "id": "stuck",
+          "examples": [
+            "{Avoir} un.",
+            "{Avoir} deux.",
+            "{Avoir} trois."
+          ]
+        }
+      ],
+      "cards": [
+        {
+          "key": "stuck:Reading",
+          "due": -100,
+          "pausedUntil": -50,
+          "lastReview": -345600
+        },
+        {
+          "key": "stuck:Production",
+          "due": 86400
+        }
+      ],
+      "reviews": [
+        {
+          "key": "stuck:Reading",
+          "at": -345600,
+          "example": "{Avoir} deux."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -346000,
+          "example": "{Avoir} trois."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345800,
+          "example": "{Avoir} deux."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345700,
+          "example": "{Avoir} un."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345900,
+          "example": "{Avoir} un."
+        }
+      ],
+      "next": "stuck:Reading",
+      "example": "{Avoir} trois."
+    },
+    {
+      "name": "the least recently answered sentence returns, not the next in rotation",
+      "entries": [
+        {
+          "id": "stuck",
+          "examples": [
+            "{Avoir} un.",
+            "{Avoir} deux.",
+            "{Avoir} trois."
+          ]
+        }
+      ],
+      "cards": [
+        {
+          "key": "stuck:Reading",
+          "due": -100,
+          "pausedUntil": -50,
+          "lastReview": -345600
+        },
+        {
+          "key": "stuck:Production",
+          "due": 86400
+        }
+      ],
+      "reviews": [
+        {
+          "key": "stuck:Reading",
+          "at": -345600,
+          "example": "{Avoir} un."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345900,
+          "example": "{Avoir} deux."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345800,
+          "example": "{Avoir} trois."
+        },
+        {
+          "key": "stuck:Reading",
+          "at": -345700,
+          "example": "{Avoir} trois."
+        },
+        {
+          "key": "stuck:Production",
+          "at": -400000,
+          "example": "{Avoir} un."
+        }
+      ],
+      "next": "stuck:Reading",
+      "example": "{Avoir} deux."
     }
   ]
 }

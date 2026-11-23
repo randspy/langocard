@@ -8,14 +8,14 @@ import { StudySession } from "./StudySession";
 const now = Date.parse("2026-11-20T09:00:00Z");
 const reviewed = new Scheduler({ enableFuzzing: false }).review(newCard(1, now - 864e5 * 10), "GOOD", now - 864e5 * 10).card;
 const production: StudyCard = {
-  key: "plot:Production", skill: "Production", version: 5, card: cardToJson(reviewed), entryId: "plot",
+  key: "plot:Production", skill: "Production", version: 5, card: cardToJson(reviewed), entryId: "plot", hook: "",
   entry: { word: "une intrigue", english: "a plot", definition: "Ensemble des événements.", examples: ["Le roman a {une intrigue|une trame} complexe."], topic: "daily", lemma: "", rank: 1, sourceUrl: "", license: "", gender: "feminine" },
   example: "Le roman a {une intrigue|une trame} complexe.",
 };
 
 function renderCard() {
   const queue: (StudyCard | null)[] = [production, null];
-  const answer = vi.fn(async () => ({ status: "ok" as const, card: "" }));
+  const answer = vi.fn(async () => ({ status: "ok" as const, card: "", offerHook: false }));
   render(<StudySession fetchNext={async () => queue.shift() ?? null} answer={answer} clock={() => now} />);
   return answer;
 }

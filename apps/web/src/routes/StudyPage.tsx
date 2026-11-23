@@ -1,6 +1,6 @@
+import { schedulingDescription } from "@backend/fittedSettings";
 import { useCallback } from "react";
 import { api } from "@backend/_generated/api";
-import { schedulingDescription } from "@backend/fittedSettings";
 import { StudySession } from "@/components/StudySession";
 import { useTokenFetch, useTokenMutation, useTokenQuery } from "@/lib/convex";
 import { localDay, type StudyCard } from "@/lib/study";
@@ -9,13 +9,15 @@ import { useNow } from "@/lib/useNow";
 export function StudyPage() {
   const fetch = useTokenFetch();
   const submit = useTokenMutation(api.study.answer);
+  const fit = useTokenQuery(api.study.scheduling, {});
   const tick = useTokenMutation(api.study.tick);
+  const saveMemoryHook = useTokenMutation(api.sync.saveMemoryHook);
+  const saveHook = useCallback((entryId: string, text: string) => saveMemoryHook({ entryId, text }), [saveMemoryHook]);
   const now = useNow(1000);
   const dueNow = useNow();
   const progress = useTokenQuery(api.study.progress, { day: localDay(now) });
   const offer = useTokenQuery(api.study.offer, { day: localDay(now), now: dueNow });
   const summary = useTokenQuery(api.study.summary, { day: localDay(now), now: dueNow });
-  const fit = useTokenQuery(api.study.scheduling, {});
   // Fetched once per card rather than subscribed, so a phone sync can't swap the card mid-answer.
   const fetchNext = useCallback((pending: string[]) => {
     const at = Date.now();
@@ -39,11 +41,10 @@ export function StudyPage() {
       </p>}
       {offer === "moreVocabulary" && <p>Ready for more vocabulary? Add entries to your library.</p>}
       {offer === "nothingLeft" && <p>Nothing left for a fresh sitting right now.</p>}
-      {/* The session starts once the scheduling is known, so previews match what answers use. */}
       {fit === undefined ? <p className="text-muted">Loading…</p> : (
         <>
           <p className="text-xs text-muted">{schedulingDescription(fit)}</p>
-          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} fit={fit} />
+          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} saveHook={saveHook} fit={fit} />
         </>
       )}
     </section>

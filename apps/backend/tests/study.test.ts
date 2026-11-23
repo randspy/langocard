@@ -290,3 +290,24 @@ describe("daily practice", () => {
     expect((await client.mutation(api.study.answer, { ...clock, key: cleanup.key, version: cleanup.version, example: cleanup.example, rating: "GOOD" })).status).toBe("ok");
   });
 });
+
+test("the fourth consecutive Again pauses the card for three days and offers a memory hook", async () => {
+  const t = setup();
+  await seed(t, [shipped()]);
+  await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
+  const client = withToken(t);
+  let version: number | null = (await client.query(api.study.next, clock))!.version;
+  const results = [];
+  for (let i = 0; i < 4; i++) {
+    const result = await client.mutation(api.study.answer, { key: "frw-1:Reading", version, rating: "AGAIN", example: "{Avoir} de la force.", day, now: now + i * 1000 });
+    results.push(result);
+    version = now + i * 1000;
+  }
+  expect(results.map((r) => "offerHook" in r && r.offerHook)).toEqual([false, false, false, true]);
+  const row = (await t.query(api.sync.pull, { token: TOKEN, table: "cards", since: 0, cursor: null })).page
+    .find((r) => "key" in r && r.key === "frw-1:Reading") as Record<string, number>;
+  expect(row).toMatchObject({ failures: 0, pausedUntil: now + 3000 + 3 * DAY });
+  expect(await client.query(api.study.next, { day, now: now + 2 * DAY })).toBeNull();
+  await client.mutation(api.sync.saveMemoryHook, { entryId: "frw-1", text: "a strong image" });
+  expect((await client.query(api.study.next, { day: "2026-11-24", now: now + 4 * DAY }))?.hook).toBe("a strong image");
+});

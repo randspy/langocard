@@ -1,12 +1,12 @@
+import type { Fit } from "@backend/fittedSettings";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { clozeOf, textOf, answerOf } from "@backend/entryRules";
 import { MATCH_LABEL, MATCH_RATING, typedAnswer, type AnswerPart, type TypedAnswer } from "@backend/typedAnswer";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { usePracticeClock } from "@/lib/usePracticeClock";
 import type { Rating } from "@backend/fsrs";
 import { Button } from "@/components/ui/button";
 import { GENDER_TAGS } from "@/lib/library";
-import type { Fit } from "@backend/fittedSettings";
 import { intervals, type AnswerResult, type StudyCard } from "@/lib/study";
 import { errorMessage } from "@/lib/useAsyncAction";
 
@@ -17,9 +17,10 @@ type Props = {
   fetchNext: (pending: string[]) => Promise<StudyCard | null>;
   answer: (card: StudyCard, rating: Rating) => Promise<AnswerResult>;
   clock: () => number;
-  tick?: (checkpoint: { day: string; seconds: number }) => Promise<unknown>;
-  /** The synced fitted FSRS settings answers are scheduled with; null for the defaults. */
   fit?: Fit | null;
+  tick?: (checkpoint: { day: string; seconds: number }) => Promise<unknown>;
+  /** Saves a memory hook for an entry, offered after a card's fourth miss in a row. */
+  saveHook?: (entryId: string, text: string) => Promise<unknown>;
 };
 
 type State =
@@ -30,6 +31,8 @@ type State =
     typed: string; comparison: TypedAnswer | null; selected: Rating | null;
   }
   | { kind: "ending" }
+  /** A stuck card was paused: offer a memory hook for its entry before going on. */
+  | { kind: "hook"; entryId: string; word: string; text: string; saved: string; saving: boolean; error: string | null }
   | { kind: "done" }
   | { kind: "error"; message: string; retry: "load" | "finish" };
 
@@ -39,7 +42,7 @@ type State =
  */
 const noTick = async () => {};
 
-export function StudySession({ fetchNext, answer, clock, tick = noTick, fit = null }: Props) {
+export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook = noTick, fit = null }: Props) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const pending = useRef(new Set<string>());
   const [reviews, setReviews] = useState(0);
@@ -71,6 +74,30 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, fit = nu
 
   if (state.kind === "loading") return <p className="text-muted">Loading…</p>;
   if (state.kind === "ending") return <p className="text-muted">Saving practice time…</p>;
+  if (state.kind === "hook") {
+    const save = async () => {
+      setState({ ...state, saving: true, error: null });
+      try {
+        await saveHook(state.entryId, state.text.trim());
+      } catch (e) {
+        // Keep the draft so the learner can retry or skip.
+        return setState({ ...state, saving: false, error: errorMessage(e) });
+      }
+      await load();
+    };
+    return (
+      <section className="max-w-2xl space-y-3" aria-label="Memory hook offer">
+        <p className="text-lg">“{state.word}” keeps slipping away, so it's paused for three days.</p>
+        <p className="text-sm text-muted">A memory hook (an image, a sound-alike, a story) can help it stick. It's shown whenever you reveal this word.</p>
+        <Textarea aria-label="Memory hook" readOnly={state.saving} maxLength={500} value={state.text} onChange={(e) => setState({ ...state, text: e.target.value })} />
+        {state.error && <p role="alert" className="text-danger">{state.error}</p>}
+        <div className="flex gap-2">
+          <Button disabled={state.saving || state.text.trim() === state.saved.trim()} onClick={() => void save()}>Save hook</Button>
+          <Button variant="ghost" disabled={state.saving} onClick={() => void load()}>Skip</Button>
+        </div>
+      </section>
+    );
+  }
   if (state.kind === "done") return (
     <div role="status" className="space-y-2">
       <p className="text-lg">Session complete.</p>
@@ -105,6 +132,8 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, fit = nu
         if (rating === "AGAIN" || card.card === null) pending.current.add(card.key);
         setReviews((n) => n + 1);
         if (rating !== "AGAIN") setRecalled((n) => n + 1);
+        // As on the phone, the prompt starts from the entry's current hook, which can be edited or cleared.
+        if (result.offerHook) return setState({ kind: "hook", entryId: card.entryId, word: entry.word, text: card.hook, saved: card.hook, saving: false, error: null });
       }
       await load();
     } catch (e) {
@@ -149,6 +178,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, fit = nu
           {answerOf(example).toLowerCase() !== entry.word.toLowerCase() && <p>In this sentence: {answerOf(example)}</p>}
           <p className="text-lg font-medium">{entry.english}</p>
           <p>{entry.definition}</p>
+          {card.hook && <p>Memory hook: {card.hook}</p>}
           {production && <p>{textOf(example)}</p>}
         </div>
       )}

@@ -1,4 +1,5 @@
 import { withStudyProgress } from "./studyProgress";
+import { reviewTime } from "./stuckWords";
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireToken } from "./access";
@@ -52,7 +53,7 @@ export const push = mutation({
     for (const review of args.reviews) {
       const stored = await ctx.db.query("reviews").withIndex("by_review", (q) => q.eq("reviewId", review.reviewId)).unique();
       if (!stored) {
-        await ctx.db.insert("reviews", { ...review, updatedAt, exposureCounted: true });
+        await ctx.db.insert("reviews", { ...review, reviewedAt: reviewTime(review.log), updatedAt, exposureCounted: true });
         addedReviews.push(review.key);
       }
     }
@@ -163,8 +164,9 @@ export const pull = query({
             missingReading, missingListening, missingProduction, missingGender, studyRank, rankBand, ...entry } = row;
           return { ...entry, ...contentOf(entry) };
         }
-        if (table === "reviews" && "exposureCounted" in row) {
-          const { exposureCounted, ...review } = row;
+        if (table === "reviews") {
+          // Server-only bookkeeping; devices read the time from the log.
+          const { exposureCounted: _, reviewedAt: __, ...review } = row as typeof row & { exposureCounted?: boolean; reviewedAt?: string };
           return review;
         }
         return table === "cards" ? withoutDerived(row) : row;

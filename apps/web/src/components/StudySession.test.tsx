@@ -8,7 +8,7 @@ import { StudySession } from "./StudySession";
 const now = Date.parse("2026-11-20T09:00:00Z");
 const reviewed = new Scheduler({ enableFuzzing: false }).review(newCard(1, now - 864e5 * 10), "GOOD", now - 864e5 * 10).card;
 const card = (key: string, word: string): StudyCard => ({
-  key, skill: "Reading", version: 5, card: cardToJson(reviewed), entryId: key.split(":")[0],
+  key, skill: "Reading", version: 5, card: cardToJson(reviewed), entryId: key.split(":")[0], hook: "",
   entry: { word, english: "a plot", definition: "Ensemble des événements.", examples: ["Le roman a {une intrigue} complexe."], topic: "daily", lemma: "", rank: 1, sourceUrl: "", license: "", gender: "feminine" },
   example: "Le roman a {une intrigue} complexe.",
 });
@@ -55,7 +55,7 @@ describe("StudySession", () => {
   test("shows a due card, reveals it with interval previews, rates it and moves on", async () => {
     const queue: (StudyCard | null)[] = [card("a:Reading", "une intrigue"), card("b:Reading", "une trame"), null];
     const fetchNext = vi.fn(async () => queue.shift() ?? null);
-    const answer = vi.fn(async () => ({ status: "ok" as const, card: "" }));
+    const answer = vi.fn(async () => ({ status: "ok" as const, card: "", offerHook: false }));
     render(<StudySession fetchNext={fetchNext} answer={answer} clock={() => now} />);
     expect(await screen.findByText("Le roman a une intrigue complexe.")).toBeInTheDocument();
     expect(screen.queryByText("a plot")).not.toBeInTheDocument();

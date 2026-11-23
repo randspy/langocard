@@ -1,3 +1,4 @@
+import { reviewTime } from "./stuckWords";
 import { withStudyProgress } from "./studyProgress";
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
@@ -45,6 +46,21 @@ export const deriveCards = internalMutation({
 });
 
 /** Rebuilds bounded memory slots and entry indexes without changing sync clocks. */
+/**
+ * Fills each review's `reviewedAt` from its log, for reviews stored before it existed. Pass the
+ * returned `cursor` back until `isDone`.
+ */
+export const deriveReviewTimes = internalMutation({
+  args: { cursor: v.union(v.string(), v.null()) },
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db.query("reviews").paginate({ cursor, numItems: 500 });
+    for (const review of page.page) {
+      if (review.reviewedAt === undefined) await ctx.db.patch(review._id, { reviewedAt: reviewTime(review.log) });
+    }
+    return { cursor: page.continueCursor, isDone: page.isDone };
+  },
+});
+
 export const deriveEntryProgress = internalMutation({
   args: { cursor: v.union(v.string(), v.null()) },
   handler: async (ctx, { cursor }) => {
