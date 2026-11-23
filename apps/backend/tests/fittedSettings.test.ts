@@ -27,6 +27,9 @@ describe("fitted FSRS settings", () => {
     expect(parseFit(fitJson().replace('"version":1', '"version":1.0'))).toBeNull();
     expect(parseFit(fitJson({ reviewCount: 2147483648 }))).toBeNull();
     expect(parseFit(fitJson({ fitDate: "2026-11-15T12:00:00.5+01:00" }))).not.toBeNull();
+    expect(parseFit(fitJson({ fitDate: "2026-11-15T12:00:00+19:00" }))).toBeNull();
+    expect(parseFit(fitJson({ fitDate: "2026-11-15t12:00:00z" }))).not.toBeNull();
+    expect(parseFit(fitJson({ version: 2, metadata: { version: 1 } }))).toBeNull();
   });
 
   test("describes the active scheduling as the phone does", () => {

@@ -18,11 +18,18 @@ const BOUNDS: [number, number][] = [
 /** The fit in synced JSON, or null when absent or invalid (Android ignores a fit it can't use). */
 export function parseFit(json: string | null | undefined): Fit | null {
   if (!json) return null;
+  // Each object's raw `version` text, where the engine exposes source text to revivers.
+  const versions = new Map<unknown, string | undefined>();
   try {
-    const o = JSON.parse(json) as Record<string, unknown>;
+    // Android reads the top-level `version` as the integer 1, so "1.0" is refused as well.
+    let versionSource: string | undefined;
+    const o = JSON.parse(json, function (this: unknown, key, value, context?: { source?: string }) {
+      if (key === "version") versions.set(this, context?.source);
+      if (key === "") versionSource = versions.get(value) ?? (Number.isInteger(value?.version) ? String(value.version) : undefined);
+      return value;
+    }) as Record<string, unknown>;
     const p = o.parameters;
-    // Android reads `version` as the integer 1, so "1.0" is refused as well.
-    if (o.format !== "langocard-fsrs" || !/"version"\s*:\s*1\s*[,}]/.test(json) || !Array.isArray(p) || p.length !== 21) return null;
+    if (o.format !== "langocard-fsrs" || o.version !== 1 || versionSource !== "1" || !Array.isArray(p) || p.length !== 21) return null;
     if (!p.every((w, i) => typeof w === "number" && w >= BOUNDS[i][0] && w <= BOUNDS[i][1])) return null;
     const retention = o.desiredRetention;
     if (typeof retention !== "number" || retention < 0.7 || retention > 0.95) return null;
@@ -36,8 +43,11 @@ export function parseFit(json: string | null | undefined): Fit | null {
 
 /** An ISO-8601 date-time with an offset and a real calendar date, as `OffsetDateTime.parse` accepts. */
 function isOffsetDateTime(text: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(Z|[+-]\d{2}:\d{2}(?::\d{2})?)$/.exec(text);
+  const m = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:[Zz]|[+-](\d{2}):(\d{2})(?::(\d{2}))?)$/.exec(text);
   if (!m) return false;
+  // Offsets range up to ±18:00, as java.time allows.
+  const [offsetHours, offsetMinutes, offsetSeconds] = m.slice(7, 10).map((x) => Number(x ?? 0));
+  if (offsetMinutes > 59 || offsetSeconds > 59 || offsetHours * 3600 + offsetMinutes * 60 + offsetSeconds > 18 * 3600) return false;
   const [year, month, day, hour, minute, second] = m.slice(1, 7).map((x) => Number(x ?? 0));
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day &&
