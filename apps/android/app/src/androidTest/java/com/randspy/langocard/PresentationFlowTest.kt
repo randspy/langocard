@@ -2,6 +2,7 @@ package com.randspy.langocard
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -58,6 +59,24 @@ class PresentationFlowTest {
             model.start(kind, audio = true)
             assertEquals(skill, model.review.card.prompt.skill)
         }
+    }
+
+    @Test fun practiceCountdownUpdatesWhileTheSameCardIsOpen() {
+        start(Skill.Reading)
+        val card = model.review.card
+        show()
+        val countdown = compose.onNode(hasText(" left", substring = true))
+        fun remainingSeconds(): Int {
+            val label = countdown.fetchSemanticsNode().config[SemanticsProperties.Text].single().text
+            val (minutes, seconds) = label.removeSuffix(" left").split(':')
+            return minutes.toInt() * 60 + seconds.toInt()
+        }
+        val initial = remainingSeconds()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            remainingSeconds() < initial
+        }
+        compose.runOnIdle { assertEquals(card, model.review.card) }
     }
 
     @Test fun typedAnswerRequiresConfirmationAndTheNextCardHasFreshPresentation() {

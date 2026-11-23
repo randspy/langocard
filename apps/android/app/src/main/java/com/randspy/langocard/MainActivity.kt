@@ -288,15 +288,22 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard,
     TextButton(onClick = { speech.stop(); model.finish() }, contentPadding = PaddingValues(0.dp)) { Text(if (kind == SessionKind.Placement) "Pause placement" else "Finish session") }
 }
 
-/** Time or progress through the running session, shown in the top bar. Extra blocks lead with "+". */
+/** Remaining practice time or placement progress, shown in the top bar. */
 @Composable
 private fun SessionProgress(model: LearningModel, kind: SessionKind) {
-    val block = model.block
-    Text(when {
-        kind == SessionKind.Placement -> model.placementProgress
-        block.isExtra -> "+${block.minutesIn(model.spent)} / ${block.minutes} min"
-        else -> "${model.spent / 60} / 15 min"
-    }, modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+    // The clock updates the learner document, and the library revision makes those writes observable.
+    model.library.revision
+    val progress = if (kind == SessionKind.Placement) {
+        model.placementProgress
+    } else {
+        val block = model.block
+        val remaining = (block.end - model.spent).coerceAtLeast(0)
+        val seconds = (remaining % 60).toString().padStart(2, '0')
+        val prefix = if (block.isExtra) "+" else ""
+        "$prefix${remaining / 60}:$seconds left"
+    }
+    Text(progress, modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary)
 }
 
 /** The example with its answer blanked out, and an optional field to type the missing French. */
