@@ -55,6 +55,7 @@ export const create = mutation({
       entryId, ...contentOf(content), editedAt: null, deletedAt: null,
       origin: "personal", shipped: null, upstreamChanged: false, retired: false, updatedAt: Date.now(),
     });
+    await refreshEntryCards(ctx, entryId);
     return entryId;
   },
 });

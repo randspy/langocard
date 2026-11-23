@@ -67,6 +67,7 @@ export const settingsFields = {
  * run over rows written before they existed.
  */
 export const derivedCardFields = {
+  studyOrder: v.optional(v.string()),
   /** FSRS due time; null for a new or reset card. */
   due: v.optional(v.union(v.number(), v.null())),
   fsrsState: v.optional(v.union(v.string(), v.null())),

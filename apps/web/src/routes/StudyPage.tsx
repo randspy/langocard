@@ -12,6 +12,7 @@ export function StudyPage() {
   const now = useNow(1000);
   const dueNow = useNow();
   const progress = useTokenQuery(api.study.progress, { day: localDay(now) });
+  const offer = useTokenQuery(api.study.offer, { day: localDay(now), now: dueNow });
   const summary = useTokenQuery(api.study.summary, { day: localDay(now), now: dueNow });
   // Fetched once per card rather than subscribed, so a phone sync can't swap the card mid-answer.
   const fetchNext = useCallback((pending: string[]) => {
@@ -34,6 +35,8 @@ export function StudyPage() {
         {progress.phase === "cleanup" && " · Finishing learning cards"}
         {progress.phase === "done" && " · Daily practice complete"}
       </p>}
+      {offer === "moreVocabulary" && <p>Ready for more vocabulary? Add entries to your library.</p>}
+      {offer === "nothingLeft" && <p>Nothing left for a fresh sitting right now.</p>}
       <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} />
     </section>
   );

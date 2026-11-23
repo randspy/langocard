@@ -13,6 +13,7 @@ import org.json.JSONObject
  * Confined to the main thread; [LearnerStore] finishes each atomic write before publishing a save.
  */
 class LearningLibrary(application: Application) {
+    internal val studyOrder = StudyOrder(application.assets.open("study-order.json").bufferedReader().use { JSONObject(it.readText()) })
     private val bundledPack = application.assets.open("frequent-pack.json").bufferedReader().use { JSONObject(it.readText()) }
     private val bundled = ContentFiles.readEntries(bundledPack.getJSONArray("entries"))
     private val bundledIds = bundled.map { it.id }.toSet()

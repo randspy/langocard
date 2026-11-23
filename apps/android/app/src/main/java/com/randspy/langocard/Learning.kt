@@ -94,7 +94,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     val pausedCount get() = learner.pausedCount(System.currentTimeMillis())
     val suspendedCount get() = learner.suspendedCount(System.currentTimeMillis())
     fun state(p: Prompt): MemoryCard? = learner.card(p.key)
-    private val studyRules get() = StudyRules(library.entries, learner, library.retired)
+    private val studyRules get() = StudyRules(library.entries, learner, library.retired, order = library.studyOrder)
     fun dueCount(audio: Boolean): Int = studyRules.dueCount(audio && !listeningMuted, Instant.now())
     fun restore(text: String) {
         library.restore(text)
