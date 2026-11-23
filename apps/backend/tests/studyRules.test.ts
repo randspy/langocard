@@ -36,7 +36,7 @@ for (const fixture of fixtures.cases) test(fixture.name, async () => {
       day, seconds: fixture.seconds ?? 0, introduced: fixture.introduced ?? 0,
       genderIntroduced: (fixture as { genderIntroduced?: number }).genderIntroduced ?? 0 },
   });
-  const shown = await client.query(api.study.next, { day, now });
+  const shown = await client.query(api.study.next, { day, now, audio: "audio" in fixture && fixture.audio === true });
   expect(shown?.key ?? null).toBe(fixture.next);
   if (shown) expect(shown.example).toBe((fixture as { example?: string }).example ?? "{Avoir} un.");
   if (shown && fixture.burials) {

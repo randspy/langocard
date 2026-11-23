@@ -60,6 +60,7 @@ export default defineSchema({
     .index("by_entry", ["entryId"])
     .index("by_upstreamChanged", ["upstreamChanged"])
     .index("by_started", ["started"])
+    .index("by_missingListening", ["missingListening", "studyOrder"])
     .index("by_missingReading", ["missingReading", "studyOrder"])
     .index("by_missingProduction", ["missingProduction", "studyOrder"])
     .index("by_missingGender", ["missingGender", "studyOrder"])

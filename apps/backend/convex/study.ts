@@ -26,15 +26,15 @@ export const DUE_DISPLAY_CAP = 100;
 /** Answers that rotate an entry's examples: every sentence-bearing skill, placement included. */
 const SENTENCE_SKILLS = ["Reading", "Listening", "Production"] as const;
 /** Skills the web can present so far, in Android's skill order (which breaks ties). */
-export const WEB_SKILLS = ["Reading", "Production", "Gender"] as const;
+export const WEB_SKILLS = ["Reading", "Listening", "Production", "Gender"] as const;
 /** Skills a new meaning starts with; Gender comes later, as a sibling. */
-const MEANING_SKILLS = ["Reading", "Production"] as const;
+const MEANING_SKILLS = ["Reading", "Listening", "Production"] as const;
 /** Gender cards introduced per day in daily practice, as on Android. */
 const NEW_GENDER_CARDS = 10;
 export type WebSkill = (typeof WEB_SKILLS)[number];
 const isWebSkill = (skill: string | undefined): skill is WebSkill => (WEB_SKILLS as readonly string[]).includes(skill ?? "");
 /** Entry progress flags marking a started meaning without a card for a skill. */
-const MISSING_INDEX = { Reading: "by_missingReading", Production: "by_missingProduction", Gender: "by_missingGender" } as const;
+const MISSING_INDEX = { Listening: "by_missingListening", Reading: "by_missingReading", Production: "by_missingProduction", Gender: "by_missingGender" } as const;
 
 type Entry = Doc<"entries">;
 
@@ -154,13 +154,13 @@ async function* dueCards(ctx: QueryCtx, skill: WebSkill, now: number, day: strin
  * The due card due soonest across the web's skills. Equal due times follow Android's prompt
  * order: meanings in study order, then skills in skill order.
  */
-async function soonestDue(ctx: QueryCtx, now: number, day: string): Promise<{ row: Doc<"cards">; entry: Entry } | null> {
+async function soonestDue(ctx: QueryCtx, now: number, day: string, audio = false): Promise<{ row: Doc<"cards">; entry: Entry } | null> {
   const rank = (c: { row: Doc<"cards">; entry: Entry }) =>
     [c.row.due!, c.entry.studyOrder ?? c.entry.entryId, WEB_SKILLS.indexOf(c.row.skill as WebSkill)] as const;
   const before = (a: ReturnType<typeof rank>, b: ReturnType<typeof rank>) =>
     a[0] !== b[0] ? a[0] < b[0] : a[1] !== b[1] ? a[1] < b[1] : a[2] < b[2];
   let best: { row: Doc<"cards">; entry: Entry } | null = null;
-  for (const skill of WEB_SKILLS) {
+  for (const skill of WEB_SKILLS.filter(s => audio || s !== "Listening")) {
     let first: number | null = null;
     // Once this skill's first card is found, running out of budget while looking for its ties
     // just ends the search; before that, an exhausted walk still fails loudly.
@@ -210,13 +210,14 @@ async function exposures(ctx: QueryCtx, entryId: string): Promise<number> {
 }
 
 /** The next new card: a sibling skill of a started meaning, else a new meaning, for skills the web presents. */
-async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ entry: Entry; skill: WebSkill; row: Doc<"cards"> | null } | null> {
+async function introduction(ctx: QueryCtx, day: string, now: number, audio = false): Promise<{ entry: Entry; skill: WebSkill; row: Doc<"cards"> | null } | null> {
   const settings = await ctx.db.query("settings").first();
   const phase = practicePhase(settings?.day === day ? settings.seconds : 0);
   if (phase !== "practice") return null;
   if (await ctx.db.query("entries").withIndex("by_started", q => q.eq("started", undefined)).first()) {
     throw new ConvexError("Run migrations:deriveEntryProgress before introducing cards");
   }
+  const meaningSkills = MEANING_SKILLS.filter(s => audio || s !== "Listening");
   let walked = 0;
   const candidate = async (entry: Entry, skills: readonly WebSkill[]) => {
     if (++walked > 1000) throw new ConvexError("Too many blocked introductions; try again later");
@@ -234,10 +235,10 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
   // Siblings: the first started meaning in study order with a free missing skill. Any other
   // sibling skill comes before a Gender card, which also needs room in today's Gender count.
   let sibling: { entry: Entry; skill: WebSkill; row: Doc<"cards"> | null } | null = null;
-  for (const skill of MEANING_SKILLS) {
+  for (const skill of meaningSkills) {
     for await (const entry of ctx.db.query("entries").withIndex(MISSING_INDEX[skill], q => q.eq(`missing${skill}`, true))) {
       if (sibling && (entry.studyOrder ?? entry.entryId) >= (sibling.entry.studyOrder ?? sibling.entry.entryId)) break;
-      const choice = await candidate(entry, MEANING_SKILLS);
+      const choice = await candidate(entry, meaningSkills);
       if (choice) { sibling = choice; break; }
     }
   }
@@ -253,7 +254,7 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
   const { minimumRank: minimum, interests } = preferences(settings);
   for await (const entry of ctx.db.query("entries").withIndex("by_introducible_origin", q => q.eq("introducible", true).eq("origin", "personal"))) {
     if ((entry.studyRank ?? 0) < minimum) continue;
-    const choice = await candidate(entry, MEANING_SKILLS);
+    const choice = await candidate(entry, meaningSkills);
     if (choice) return choice;
   }
   // Only built-in and installed packs: entries of packs no device installed stay dormant.
@@ -272,7 +273,7 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     entries.sort((a, b) => Number(interests.includes(b.topic)) - Number(interests.includes(a.topic)) || (a.studyOrder ?? a.entryId).localeCompare(b.studyOrder ?? b.entryId));
     for (const entry of entries) {
       if (entry.origin === "personal" || (entry.studyRank ?? 0) < minimum) continue;
-      const choice = await candidate(entry, MEANING_SKILLS);
+      const choice = await candidate(entry, meaningSkills);
       if (choice) return choice;
     }
     band++;
@@ -322,8 +323,8 @@ export const progress = query({
 
 /** The card to study next, or null when nothing is due. */
 export const next = query({
-  args: { token: v.string(), ...clock, pending: v.optional(v.array(v.string())) },
-  handler: async (ctx, { token, day, now, pending = [] }) => {
+  args: { token: v.string(), ...clock, audio: v.optional(v.boolean()), pending: v.optional(v.array(v.string())) },
+  handler: async (ctx, { token, day, now, audio = false, pending = [] }) => {
     requireToken(token);
     if (pending.length > 1000) throw new ConvexError("Too many session cards");
     const phase = practicePhase(await dailySeconds(ctx, day));
@@ -337,11 +338,11 @@ export const next = query({
       };
     };
     if (phase !== "cleanup") {
-      const due = await soonestDue(ctx, now, day);
+      const due = await soonestDue(ctx, now, day, audio);
       if (due) return chosen(due.row, due.entry);
     }
     if (phase === "practice") {
-      const choice = await introduction(ctx, day, now);
+      const choice = await introduction(ctx, day, now, audio);
       if (choice) {
         const { entry, skill, row } = choice;
         const content = contentOf(entry);
@@ -353,7 +354,7 @@ export const next = query({
     // A sitting's learning debt may return before FSRS's due time, in insertion order.
     for (const key of pending) {
       const row = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
-      if (!row || !row.card || row.fsrsState === "REVIEW") continue;
+      if (!row || !row.card || row.fsrsState === "REVIEW" || (row.skill === "Listening" && !audio)) continue;
       const entry = await studiable(ctx, row, now, day);
       if (entry) return chosen(row, entry);
     }
@@ -372,12 +373,12 @@ export const scheduling = query({
 
 /** Due cards waiting now, counted up to `DUE_DISPLAY_CAP`. */
 export const summary = query({
-  args: { token: v.string(), ...clock },
-  handler: async (ctx, { token, day, now }) => {
+  args: { token: v.string(), ...clock, audio: v.optional(v.boolean()) },
+  handler: async (ctx, { token, day, now, audio = false }) => {
     requireToken(token);
     let due = 0;
     // The count is for display; past the walk budget it reports what it found.
-    for (const skill of WEB_SKILLS) {
+    for (const skill of WEB_SKILLS.filter(s => audio || s !== "Listening")) {
       for await (const _ of dueCards(ctx, skill, now, day, true)) if (++due >= DUE_DISPLAY_CAP) break;
     }
     return { due, dueCapped: due >= DUE_DISPLAY_CAP };
@@ -479,19 +480,19 @@ export const answer = mutation({
 
 /** The next action for a fresh daily sitting, restricted to skills the web can present. */
 export const offer = query({
-  args: { token: v.string(), ...clock },
-  handler: async (ctx, { token, day, now }) => {
+  args: { token: v.string(), ...clock, audio: v.optional(v.boolean()) },
+  handler: async (ctx, { token, day, now, audio = false }) => {
     requireToken(token);
     if (await dailySeconds(ctx, day) >= 900) return "nothingLeft" as const;
-    if (await soonestDue(ctx, now, day)) return "practice" as const;
-    if (await introduction(ctx, day, now)) return "practice" as const;
+    if (await soonestDue(ctx, now, day, audio)) return "practice" as const;
+    if (await introduction(ctx, day, now, audio)) return "practice" as const;
     // Unstarted meanings the learner could study later (as on Android, dormant packs don't count).
     const { minimumRank } = preferences(await ctx.db.query("settings").first());
     for (const origin of ["personal", ...await rankedOrigins(ctx)]) {
       if (await ctx.db.query("entries").withIndex("by_introducible_origin_rank", q => q.eq("introducible", true).eq("origin", origin)
         .gte("studyRank", minimumRank)).first()) return "nothingLeft" as const;
     }
-    for (const skill of WEB_SKILLS) {
+    for (const skill of WEB_SKILLS.filter(s => audio || s !== "Listening")) {
       if (skill === "Gender") {
         const installed = new Map<string, boolean>();
         for await (const entry of ctx.db.query("entries").withIndex(MISSING_INDEX[skill], q => q.eq(`missing${skill}`, true))) {

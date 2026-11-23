@@ -71,7 +71,7 @@ describe("StudySession", () => {
     await userEvent.click(screen.getByRole("button", { name: /Again/ }));
     expect(await screen.findByText("Session complete.")).toBeInTheDocument();
     expect(fetchNext).toHaveBeenCalledTimes(3);
-    expect(fetchNext).toHaveBeenLastCalledWith(["b:Reading"]);
+    expect(fetchNext).toHaveBeenLastCalledWith(["b:Reading"], false);
     expect(screen.getByRole("status")).toHaveTextContent("2 assessments · 1 recalled");
   });
 
