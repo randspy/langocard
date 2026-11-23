@@ -43,7 +43,7 @@ export function parseFit(json: string | null | undefined): Fit | null {
 
 /** An ISO-8601 date-time with an offset and a real calendar date, as `OffsetDateTime.parse` accepts. */
 function isOffsetDateTime(text: string): boolean {
-  const m = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:[Zz]|[+-](\d{2}):(\d{2})(?::(\d{2}))?)$/.exec(text);
+  const m = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(?:[Zz]|[+-](\d{2})(?::(\d{2})(?::(\d{2}))?)?)$/.exec(text);
   if (!m) return false;
   // Offsets range up to ±18:00, as java.time allows.
   const [offsetHours, offsetMinutes, offsetSeconds] = m.slice(7, 10).map((x) => Number(x ?? 0));
