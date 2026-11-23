@@ -6,6 +6,7 @@ import { usePracticeClock } from "@/lib/usePracticeClock";
 import type { Rating } from "@backend/fsrs";
 import { Button } from "@/components/ui/button";
 import { GENDER_TAGS } from "@/lib/library";
+import type { Fit } from "@backend/fittedSettings";
 import { intervals, type AnswerResult, type StudyCard } from "@/lib/study";
 import { errorMessage } from "@/lib/useAsyncAction";
 
@@ -17,6 +18,8 @@ type Props = {
   answer: (card: StudyCard, rating: Rating) => Promise<AnswerResult>;
   clock: () => number;
   tick?: (checkpoint: { day: string; seconds: number }) => Promise<unknown>;
+  /** The synced fitted FSRS settings answers are scheduled with; null for the defaults. */
+  fit?: Fit | null;
 };
 
 type State =
@@ -36,7 +39,7 @@ type State =
  */
 const noTick = async () => {};
 
-export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props) {
+export function StudySession({ fetchNext, answer, clock, tick = noTick, fit = null }: Props) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const pending = useRef(new Set<string>());
   const [reviews, setReviews] = useState(0);
@@ -108,7 +111,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
       setState({ kind: "error", message: errorMessage(e), retry: "load" });
     }
   };
-  const previews = revealed ? intervals(card.card, clock()) : null;
+  const previews = revealed ? intervals(card.card, clock(), fit) : null;
   const word = entry.gender ? `${entry.word} (${GENDER_TAGS[entry.gender]})` : entry.word;
   return (
     <article className="max-w-2xl space-y-6" aria-label="Study card">
