@@ -1,4 +1,5 @@
 import { withStudyProgress } from "./studyProgress";
+import { reviewTime } from "./stuckWords";
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireToken } from "./access";
@@ -52,7 +53,7 @@ export const push = mutation({
     for (const review of args.reviews) {
       const stored = await ctx.db.query("reviews").withIndex("by_review", (q) => q.eq("reviewId", review.reviewId)).unique();
       if (!stored) {
-        await ctx.db.insert("reviews", { ...review, updatedAt, exposureCounted: true });
+        await ctx.db.insert("reviews", { ...review, reviewedAt: reviewTime(review.log), updatedAt, exposureCounted: true });
         addedReviews.push(review.key);
       }
     }

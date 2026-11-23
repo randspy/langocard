@@ -156,6 +156,13 @@ npx convex run migrations:deriveCards '{"cursor":null}'
 ```
 
 Run them in that order. New writes maintain the projections while the backfill runs.
+After deploying the stuck-card change (#76), also fill review times once, so a card back
+from a leech pause can find its recent sentences:
+
+```sh
+npx convex run migrations:deriveReviewTimes '{"cursor":null}'
+```
+
 Review markers make replaying exposure pages safe; resetting a card preserves its count.
 Introductions refuse partially indexed libraries, and shown examples refuse uncounted
 historical reviews. These migrations preserve sync clocks. They initialize progress;

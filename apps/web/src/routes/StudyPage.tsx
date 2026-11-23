@@ -10,6 +10,8 @@ export function StudyPage() {
   const fetch = useTokenFetch();
   const submit = useTokenMutation(api.study.answer);
   const tick = useTokenMutation(api.study.tick);
+  const saveMemoryHook = useTokenMutation(api.sync.saveMemoryHook);
+  const saveHook = useCallback((entryId: string, text: string) => saveMemoryHook({ entryId, text }), [saveMemoryHook]);
   const now = useNow(1000);
   const dueNow = useNow();
   const progress = useTokenQuery(api.study.progress, { day: localDay(now) });
@@ -43,9 +45,6 @@ export function StudyPage() {
       {fit === undefined ? <p className="text-muted">Loading…</p> : (
         <>
           <p className="text-xs text-muted">{schedulingDescription(fit)}</p>
-          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} fit={fit} />
+          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} fit={fit} saveHook={saveHook} />
         </>
       )}
-    </section>
-  );
-}

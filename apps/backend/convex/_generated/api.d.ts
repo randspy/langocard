@@ -22,6 +22,7 @@ import type * as migrations from "../migrations.js";
 import type * as seed from "../seed.js";
 import type * as skills from "../skills.js";
 import type * as study from "../study.js";
+import type * as stuckWords from "../stuckWords.js";
 import type * as studyProgress from "../studyProgress.js";
 import type * as studyOrder from "../studyOrder.js";
 import type * as studyPolicy from "../studyPolicy.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   skills: typeof skills;
   study: typeof study;
+  stuckWords: typeof stuckWords;
   studyProgress: typeof studyProgress;
   studyOrder: typeof studyOrder;
   studyPolicy: typeof studyPolicy;

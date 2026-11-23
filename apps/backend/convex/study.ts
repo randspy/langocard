@@ -6,6 +6,7 @@ import { contentOf, exampleAt, TOPICS, type EntryContent } from "./entryRules";
 import { cardFromJson, cardToJson, instantString, logToJson, newCard, RATINGS, type Rating } from "./fsrs";
 import { parseFit, schedulerFor } from "./fittedSettings";
 import { withStudyProgress } from "./studyProgress";
+import { loggedExample, recordRecall, returning, returningExample } from "./stuckWords";
 import { entryIdOf } from "./studyIndex";
 import { skillsOf } from "./skills";
 import { isDeleted } from "./merge";
@@ -136,6 +137,25 @@ async function soonestDue(ctx: QueryCtx, now: number, day: string): Promise<{ ro
     }
   }
   return best;
+}
+
+/**
+ * The example to show: rotated by exposures, or for a card back from a leech pause, one it
+ * wasn't recently answered in (Android's `StudyRules.shown`).
+ */
+async function shownExample(ctx: QueryCtx, key: string, row: Doc<"cards"> | null, entry: Entry, now: number): Promise<string> {
+  const { examples } = contentOf(entry);
+  const count = await exposures(ctx, entry.entryId);
+  const lastReview = row?.card ? cardFromJson(row.card).lastReview : null;
+  if (!row || !returning(row.pausedUntil, lastReview, now)) return exampleAt(examples, count);
+  const recent = (await ctx.db.query("reviews").withIndex("by_key_reviewedAt", (q) => q.eq("key", key)).order("desc").take(4))
+    .reverse().map((r) => loggedExample(r.log)).filter(Boolean);
+  return returningExample(examples, count, recent);
+}
+
+/** The entry's memory hook, shown on reveal for every skill; "" without one. */
+async function hookText(ctx: QueryCtx, entryId: string): Promise<string> {
+  return (await ctx.db.query("hooks").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique())?.text ?? "";
 }
 
 /** Sentence-bearing answers to this entry, placement included: how far its examples have rotated. */
@@ -270,7 +290,7 @@ export const next = query({
       return {
         key: row.key, skill: row.skill as WebSkill, version: row.lastReview as number | null, card: row.card,
         entryId: entry.entryId, entry: content,
-        example: exampleAt(content.examples, await exposures(ctx, entry.entryId)),
+        example: await shownExample(ctx, row.key, row, entry, now), hook: await hookText(ctx, entry.entryId),
       };
     };
     if (phase !== "cleanup") {
@@ -284,7 +304,7 @@ export const next = query({
         const content = contentOf(entry);
         return { key: `${entry.entryId}:${skill}`, skill, version: row?.lastReview ?? null,
           card: row?.card ?? null, entryId: entry.entryId, entry: content,
-          example: exampleAt(content.examples, await exposures(ctx, entry.entryId)) };
+          example: await shownExample(ctx, `${entry.entryId}:${skill}`, row, entry, now), hook: await hookText(ctx, entry.entryId) };
       }
     }
     // A sitting's learning debt may return before FSRS's due time, in insertion order.
@@ -368,19 +388,23 @@ export const answer = mutation({
     const result = schedulerFor(parseFit(settings?.fittedSettings)).review(card, rating as Rating, at);
     const cardJson = cardToJson(result.card);
     const log = `${logToJson(result.log).slice(0, -1)},"example":${androidJson(example)}}`;
+    let offerHook = false;
     await withStudyProgress(ctx, async (progress) => {
       progress.remember(entry);
-      const fields = { card: cardJson, lastReview: at, failures: rating === "AGAIN" ? (row?.failures ?? 0) + 1 : 0, updatedAt: Date.now() };
+      // Four misses in a row pause the card for three days (synced like a phone's pause).
+      const recall = recordRecall(row?.failures ?? 0, row?.pausedUntil ?? 0, rating === "AGAIN", at);
+      offerHook = recall.offerHook;
+      const fields = { card: cardJson, lastReview: at, failures: recall.failures, pausedUntil: recall.pausedUntil, updatedAt: Date.now() };
       const canonical = row ? { ...row, ...fields } : {
-        key, ...fields, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0,
-        _id: await ctx.db.insert("cards", { key, ...fields, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0 }), _creationTime: Date.now(),
+        key, ...fields, suspendedUntil: 0, cardEditedAt: 0,
+        _id: await ctx.db.insert("cards", { key, ...fields, suspendedUntil: 0, cardEditedAt: 0 }), _creationTime: Date.now(),
       };
       if (row) await ctx.db.patch(row._id, fields);
       await refreshCard(ctx, canonical._id);
       await progress.card(canonical);
       const reviewId = `${key}@${instantString(at)}`;
       if (!await ctx.db.query("reviews").withIndex("by_review", q => q.eq("reviewId", reviewId)).unique()) {
-        await ctx.db.insert("reviews", { reviewId, key, placement: false, log, updatedAt: Date.now(), exposureCounted: true });
+        await ctx.db.insert("reviews", { reviewId, key, placement: false, log, reviewedAt: instantString(at), updatedAt: Date.now(), exposureCounted: true });
         await progress.review(key);
       }
     });
@@ -402,7 +426,7 @@ export const answer = mutation({
         else if (buried.day < day) await ctx.db.patch(buried._id, { day, updatedAt: Date.now() });
       }
     }
-    return { status: "ok" as const, card: cardJson };
+    return { status: "ok" as const, card: cardJson, offerHook };
   },
 });
 

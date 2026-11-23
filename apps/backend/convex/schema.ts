@@ -27,6 +27,8 @@ export default defineSchema({
   // Append-only review history.
   reviews: defineTable({
     exposureCounted: v.optional(v.boolean()),
+    /** The log's `review_datetime`, so a card's recent answers are read in review-time order. */
+    reviewedAt: v.optional(v.string()),
     reviewId: v.string(),
     key: v.string(),
     placement: v.boolean(),
@@ -36,6 +38,7 @@ export default defineSchema({
     .index("by_exposureCounted", ["exposureCounted"])
     .index("by_review", ["reviewId"])
     .index("by_key", ["key"])
+    .index("by_key_reviewedAt", ["key", "reviewedAt"])
     .index("by_updated", ["updatedAt"]),
 
   // The whole library: bundled and pack entries (seeded from the repo) and personal entries.
