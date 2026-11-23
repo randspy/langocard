@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { requireToken } from "./access";
-import { contentOf, exampleAt, type EntryContent } from "./entryRules";
+import { contentOf, exampleAt, TOPICS, type EntryContent } from "./entryRules";
 import { cardFromJson, cardToJson, instantString, logToJson, newCard, RATINGS, Scheduler, type Rating } from "./fsrs";
 import { withStudyProgress } from "./studyProgress";
 import { entryIdOf } from "./studyIndex";
@@ -25,6 +25,49 @@ export const DUE_DISPLAY_CAP = 100;
 const SENTENCE_SKILLS = ["Reading", "Listening", "Production"] as const;
 
 type Entry = Doc<"entries">;
+
+/** Android's defaults for preferences a settings row lacks or holds in a form Android rejects. */
+const DEFAULT_MINIMUM_RANK = 2501;
+const DEFAULT_INTERESTS = "daily,culture,news";
+const MINIMUM_RANKS = [1, 2501, 7001];
+
+/** The starting rank and topic interests, read as Android reads them ("daily,culture,news"). */
+function preferences(settings: Doc<"settings"> | null) {
+  const minimumRank = settings && MINIMUM_RANKS.includes(settings.minimumRank) ? settings.minimumRank : DEFAULT_MINIMUM_RANK;
+  const interests = (settings?.interests ?? DEFAULT_INTERESTS).split(",").filter((t) => (TOPICS as readonly string[]).includes(t));
+  return { minimumRank, interests };
+}
+
+/** Fields that bring a settings row's preferences back to values Android accepts, keeping its counters. */
+function repairedPreferences(settings: Doc<"settings">) {
+  const repair: { minimumRank?: number; interests?: string } = {};
+  if (!MINIMUM_RANKS.includes(settings.minimumRank)) repair.minimumRank = DEFAULT_MINIMUM_RANK;
+  if (!settings.interests || settings.interests.split(",").some((t) => !(TOPICS as readonly string[]).includes(t))) repair.interests = DEFAULT_INTERESTS;
+  return repair;
+}
+
+/** A settings row for a learner who has none yet, with Android's defaults. */
+const newSettings = (day: string) => ({
+  placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: DEFAULT_MINIMUM_RANK,
+  interests: DEFAULT_INTERESTS, preferencesChangedAt: 0, day, seconds: 0, introduced: 0, genderIntroduced: 0,
+});
+
+/** Origins the learner studies: built-in, and every pack installed on some device (pack source IDs are pack IDs). */
+async function rankedOrigins(ctx: QueryCtx): Promise<string[]> {
+  const packs = (await ctx.db.query("sources").collect()).filter((s) => !s.sourceId.includes("|")).map((s) => `pack:${s.sourceId}`);
+  return ["bundled", ...packs];
+}
+
+/** The lowest rank band at or after `band` holding an introducible entry of these origins, or null. */
+async function nextBand(ctx: QueryCtx, origins: string[], band: number): Promise<number | null> {
+  let lowest: number | null = null;
+  for (const origin of origins) {
+    const first = await ctx.db.query("entries")
+      .withIndex("by_introducible_origin_band", (q) => q.eq("introducible", true).eq("origin", origin).gte("rankBand", band)).first();
+    if (first?.rankBand !== undefined && (lowest === null || first.rankBand < lowest)) lowest = first.rankBand;
+  }
+  return lowest;
+}
 
 /** Whether the learner may study this card now; returns its entry if so. Cheap checks come first. */
 async function studiable(ctx: QueryCtx, row: Pick<Doc<"cards">, "key" | "active" | "skill" | "pausedUntil" | "suspendedUntil" | "packId" | "entryId">, now: number, day: string, installed = new Map<string, boolean>()): Promise<Entry | null> {
@@ -103,20 +146,24 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     if (choice) return choice;
   }
   if (settings?.day === day && settings.introduced >= 5) return null;
-  const minimum = settings?.minimumRank ?? 0;
+  const { minimumRank: minimum, interests } = preferences(settings);
   for await (const entry of ctx.db.query("entries").withIndex("by_introducible_origin", q => q.eq("introducible", true).eq("origin", "personal"))) {
     if ((entry.studyRank ?? 0) < minimum) continue;
     const choice = await candidate(entry);
     if (choice) return choice;
   }
-  let interests: string[] = [];
-  try { const parsed: unknown = JSON.parse(settings?.interests ?? "[]"); if (Array.isArray(parsed)) interests = parsed.filter((x): x is string => typeof x === "string"); } catch { /* Older preferences can be empty. */ }
+  // Only built-in and installed packs: entries of packs no device installed stay dormant.
+  const origins = await rankedOrigins(ctx);
   let band = Math.floor(Math.min(minimum, 1_000_000) / 100);
   while (band <= 10000) {
-    const first = await ctx.db.query("entries").withIndex("by_introducible_band", q => q.eq("introducible", true).gte("rankBand", band)).first();
-    if (!first || first.rankBand === undefined) return null;
-    band = first.rankBand;
-    const entries = await ctx.db.query("entries").withIndex("by_introducible_band", q => q.eq("introducible", true).eq("rankBand", band)).take(1001);
+    const found = await nextBand(ctx, origins, band);
+    if (found === null) return null;
+    band = found;
+    const entries: Entry[] = [];
+    for (const origin of origins) {
+      entries.push(...await ctx.db.query("entries")
+        .withIndex("by_introducible_origin_band", q => q.eq("introducible", true).eq("origin", origin).eq("rankBand", band)).take(1001));
+    }
     if (entries.length > 1000) throw new ConvexError("Too many meanings in one rank band");
     entries.sort((a, b) => Number(interests.includes(b.topic)) - Number(interests.includes(a.topic)) || (a.studyOrder ?? a.entryId).localeCompare(b.studyOrder ?? b.entryId));
     for (const entry of entries) {
@@ -152,13 +199,9 @@ export const tick = mutation({
       const counters = settings.day === day
         ? { seconds: settings.seconds + seconds }
         : { day, seconds, introduced: 0, genderIntroduced: 0 };
-      await ctx.db.patch(settings._id, { ...counters, updatedAt });
+      await ctx.db.patch(settings._id, { ...counters, ...repairedPreferences(settings), updatedAt });
     } else {
-      await ctx.db.insert("settings", {
-        placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: 0,
-        interests: "[]", preferencesChangedAt: 0, day, seconds, introduced: 0,
-        genderIntroduced: 0, updatedAt,
-      });
+      await ctx.db.insert("settings", { ...newSettings(day), seconds, updatedAt });
     }
   },
 });
@@ -232,9 +275,8 @@ const androidJson = (value: string) => JSON.stringify(value).replace(/\//g, "\\/
 async function allocateCardId(ctx: MutationCtx, day: string): Promise<number> {
   const settings = await ctx.db.query("settings").first();
   const id = settings?.nextCardId ?? 0;
-  if (settings) await ctx.db.patch(settings._id, { nextCardId: id + 1, updatedAt: Date.now() });
-  else await ctx.db.insert("settings", { placementDone: false, placementIndex: 0, nextCardId: id + 1,
-    minimumRank: 0, interests: "[]", preferencesChangedAt: 0, day, seconds: 0, introduced: 0, genderIntroduced: 0, updatedAt: Date.now() });
+  if (settings) await ctx.db.patch(settings._id, { nextCardId: id + 1, ...repairedPreferences(settings), updatedAt: Date.now() });
+  else await ctx.db.insert("settings", { ...newSettings(day), nextCardId: id + 1, updatedAt: Date.now() });
   return id;
 }
 
@@ -264,7 +306,7 @@ export const answer = mutation({
       packId: entry.origin.startsWith("pack:") ? entry.origin.slice(5) : null, entryId: entry.entryId }, now, day)) return { status: "stale" as const };
     const wasNewMeaning = !row?.card && !entry.started;
     const settings = await ctx.db.query("settings").first();
-    if (wasNewMeaning && (entry.retired || (entry.studyRank ?? entry.rank ?? 2_147_483_647) < (settings?.minimumRank ?? 0) || (settings?.day === day && settings.introduced >= 5))) return { status: "stale" as const };
+    if (wasNewMeaning && (entry.retired || (entry.studyRank ?? entry.rank ?? 2_147_483_647) < preferences(settings).minimumRank || (settings?.day === day && settings.introduced >= 5))) return { status: "stale" as const };
     // A review never goes back in time, even if this browser's clock is behind.
     const at = Math.max(now, (row?.lastReview ?? 0) + 1);
     const card = row?.card == null ? newCard(await allocateCardId(ctx, day), at) : cardFromJson(row.card);
@@ -317,8 +359,13 @@ export const offer = query({
     if (await dailySeconds(ctx, day) >= 900) return "nothingLeft" as const;
     for await (const _ of dueCards(ctx, now, day)) return "practice" as const;
     if (await introduction(ctx, day, now)) return "practice" as const;
-    const settings = await ctx.db.query("settings").first();
-    if (await ctx.db.query("entries").withIndex("by_introducible_rank", q => q.eq("introducible", true).gte("studyRank", settings?.minimumRank ?? 0)).first()) return "nothingLeft" as const;
+    // Unstarted meanings the learner could study later (as on Android, dormant packs don't count).
+    const { minimumRank } = preferences(await ctx.db.query("settings").first());
+    for (const origin of ["personal", ...await rankedOrigins(ctx)]) {
+      const later = await ctx.db.query("entries").withIndex("by_introducible_origin_band", q => q.eq("introducible", true).eq("origin", origin)
+        .gte("rankBand", Math.floor(Math.min(minimumRank, 1_000_000) / 100))).take(200);
+      if (later.some((e) => (e.studyRank ?? 0) >= minimumRank)) return "nothingLeft" as const;
+    }
     if (await ctx.db.query("entries").withIndex("by_missingReading", q => q.eq("missingReading", true)).first()) return "nothingLeft" as const;
     if (await ctx.db.query("cards").withIndex("by_active_skill_due", q => q.eq("active", true).eq("skill", "Reading").gte("due", 0).lte("due", now)).first()) return "nothingLeft" as const;
     return "moreVocabulary" as const;

@@ -59,8 +59,7 @@ export default defineSchema({
     .index("by_started", ["started"])
     .index("by_missingReading", ["missingReading", "studyOrder"])
     .index("by_introducible_origin", ["introducible", "origin", "studyOrder"])
-    .index("by_introducible_rank", ["introducible", "studyRank"])
-    .index("by_introducible_band", ["introducible", "rankBand", "studyOrder"])
+    .index("by_introducible_origin_band", ["introducible", "origin", "rankBand", "studyOrder"])
     .index("by_lexeme", ["lexeme"])
     .index("by_nounKey", ["nounKey"])
     .index("by_updated", ["updatedAt"]),

@@ -31,6 +31,7 @@ const ownerOf = (key: string) => key.slice(0, key.lastIndexOf(":"));
 export function projectEntry(entry: Doc<"entries">, progress: Progress) {
   const content = contentOf(entry);
   const started = Object.values(progress.slots).some((slot) => slot.cardId !== null);
+  // Retired meanings still gain their remaining skills, as on Android (StudyRulesTest).
   const missing = (skill: Skill) => started && skillsOf(content).includes(skill) && progress.slots[skill]?.cardId == null;
   const studyRank = entry.rank ?? 2_147_483_647;
   return {

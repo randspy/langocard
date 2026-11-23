@@ -65,7 +65,8 @@ test("exposure migration can replay its page after a live review without double 
 });
 
 function entry(id: string) {
-  return shipped({ entryId: id, word: id, lemma: id, examples: [`{${id}} un.`, `{${id}} deux.`] });
+  // Ranked above Android's default starting rank (2501), which applies without settings.
+  return shipped({ entryId: id, word: id, lemma: id, rank: 3000, examples: [`{${id}} un.`, `{${id}} deux.`] });
 }
 function memory(key: string) {
   return { key, card: cardToJson({ cardId: 100, state: "REVIEW", step: null, stability: 10, difficulty: 5,
@@ -94,4 +95,27 @@ test("thousands of Reading-complete meanings stay outside the sibling read range
   await t.mutation(internal.seed.apply, { entries: [entry("sibling")] });
   await push(t, { cards: [memory("sibling:Listening")] });
   expect((await withToken(t).query(api.study.next, { day, now }))?.key).toBe("sibling:Reading");
+});
+
+test("dormant packs neither exhaust introductions nor count as remaining work", async () => {
+  const t = setup(), client = withToken(t);
+  const bundled = Array.from({ length: 3 }, (_, i) => ({ ...entry(`b-${i}`), rank: 100 + i }));
+  const dormant = Array.from({ length: 1500 }, (_, i) => ({ ...entry(`p-${i}`), origin: "pack:fr-core-everyday", rank: 2501 + i }));
+  for (const batch of [bundled, ...Array.from({ length: 3 }, (_, i) => dormant.slice(i * 500, (i + 1) * 500))]) {
+    await t.mutation(internal.seed.apply, { entries: batch });
+  }
+  // The learner starts at rank 2501 (Android's default) and has only the built-in pack.
+  expect(await client.query(api.study.next, { day, now })).toBeNull();
+  expect(await client.query(api.study.offer, { day, now })).toBe("moreVocabulary");
+  await t.run(ctx => ctx.db.insert("sources", { sourceId: "fr-core-everyday", source: "{}", updatedAt: 1 }));
+  expect((await client.query(api.study.next, { day, now }))?.key).toBe("p-0:Reading");
+}, 60_000);
+
+test("settings the web creates or touches are ones Android accepts", async () => {
+  const t = setup(), client = withToken(t);
+  await client.mutation(api.study.tick, { day, seconds: 10 });
+  expect(await t.run(ctx => ctx.db.query("settings").first())).toMatchObject({ minimumRank: 2501, interests: "daily,culture,news", seconds: 10 });
+  await t.run(async ctx => { const s = (await ctx.db.query("settings").first())!; await ctx.db.patch(s._id, { minimumRank: 0, interests: "[]", introduced: 3 }); });
+  await client.mutation(api.study.tick, { day, seconds: 5 });
+  expect(await t.run(ctx => ctx.db.query("settings").first())).toMatchObject({ minimumRank: 2501, interests: "daily,culture,news", seconds: 15, introduced: 3 });
 });

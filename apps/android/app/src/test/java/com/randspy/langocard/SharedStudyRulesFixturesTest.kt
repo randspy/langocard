@@ -36,7 +36,7 @@ class SharedStudyRulesFixturesTest {
             }
             val learner = Learner(JSONObject().put("version", 2).put("day", day).put("cards", cards).put("reviews", JSONArray())
                 .put("seconds", fixture.optInt("seconds")).put("introduced", fixture.optInt("introduced"))
-                .put("minimumRank", fixture.optInt("minimumRank")).put("interests", fixture.optJSONArray("interests") ?: JSONArray()))
+                .put("minimumRank", fixture.optInt("minimumRank", 1)).put("interests", fixture.optJSONArray("interests")?.let { a -> (0 until a.length()).joinToString(",") { a.getString(it) } } ?: "daily,culture,news"))
             val rules = StudyRules(entries, learner, emptySet(), supported = setOf(Skill.Reading), order = order)
             val chosen = rules.choose(false, PracticeBlock.DAILY, SessionLearning(), now, day)
             val expected = if (fixture.isNull("next")) null else fixture.getString("next")

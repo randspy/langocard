@@ -4,18 +4,21 @@ import io.github.openspacedrepetition.State
 import java.time.Instant
 
 /** Study decisions shared by session selection and home offers, without clocks or Android state. */
-class StudyRules(entries: List<Entry>, private val learner: Learner, private val retired: Set<String>,
+class StudyRules(private val entries: List<Entry>, private val learner: Learner, private val retired: Set<String>,
                  private val supported: Set<Skill> = Skill.entries.toSet(), order: StudyOrder? = null) {
-    private val entries = if (order == null) entries else entries.sortedBy { order.key(it.id) }
+    /** Selection breaks ties in the shipped order shared with the server; other uses keep library order. */
+    private val ordered = if (order == null) entries else entries.sortedBy { order.key(it.id) }
     private fun genderOwners() = GenderCards.owners(entries) { learner.card(it)?.cardId }
 
     private fun studiable(p: Prompt, audio: Boolean, genderOwners: Set<String>) =
         (p.skill != Skill.Listening || audio) && (p.skill != Skill.Gender || p.entry.id in genderOwners)
 
     /** Includes buried cards so due counts and passage vocabulary keep their existing meaning. */
-    fun prompts(audio: Boolean, now: Instant): List<Prompt> {
+    fun prompts(audio: Boolean, now: Instant): List<Prompt> = prompts(entries, audio, now)
+
+    private fun prompts(library: List<Entry>, audio: Boolean, now: Instant): List<Prompt> {
         val owners = genderOwners()
-        return entries.flatMap { e -> e.skills.map { Prompt(e, it) } }.filter { p ->
+        return library.flatMap { e -> e.skills.map { Prompt(e, it) } }.filter { p ->
             p.skill in supported && studiable(p, audio, owners) && !learner.isPausedOrSuspended(p.key, now.toEpochMilli())
         }
     }
@@ -32,7 +35,7 @@ class StudyRules(entries: List<Entry>, private val learner: Learner, private val
 
     /** Due cards precede new skills, then new meanings; cleanup can recall learning cards early. */
     fun choose(audio: Boolean, block: PracticeBlock, session: SessionLearning, now: Instant, day: String): Prompt? {
-        val available = prompts(audio, now).filter { !learner.isBuried(it.key, day) }
+        val available = prompts(ordered, audio, now).filter { !learner.isBuried(it.key, day) }
         val cleanup = session.next(available.map { it.key }) { key ->
             learner.card(key)?.state != State.REVIEW
         }?.let { key -> available.first { it.key == key } }

@@ -22,7 +22,7 @@ for (const fixture of fixtures.cases) test(fixture.name, async () => {
       failures: 0, pausedUntil: 0, suspendedUntil: 0, cardEditedAt: 0 })),
     entries: entries.filter(e => e.entryId.startsWith("personal-")).map(({ origin, ...e }) => ({ ...e, editedAt: 1, deletedAt: null })),
     reviews: [], buried: [], sources: [], settings: { placementDone: true, placementIndex: 0, nextCardId: 100,
-      minimumRank: fixture.minimumRank ?? 0, interests: JSON.stringify(fixture.interests ?? []), preferencesChangedAt: 1,
+      minimumRank: fixture.minimumRank ?? 1, interests: (fixture.interests ?? ["daily", "culture", "news"]).join(","), preferencesChangedAt: 1,
       day, seconds: fixture.seconds ?? 0, introduced: fixture.introduced ?? 0 },
   });
   const shown = await client.query(api.study.next, { day, now });
