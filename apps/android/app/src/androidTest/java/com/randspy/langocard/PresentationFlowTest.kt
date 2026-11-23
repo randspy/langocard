@@ -2,7 +2,6 @@ package com.randspy.langocard
 
 import android.app.Application
 import android.content.Context
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -48,13 +47,16 @@ class PresentationFlowTest {
 
     private fun show() = compose.setContent { LangocardTheme { PilotApp(model, speech) {} } }
 
-    private fun start(skill: Skill, kind: SessionKind = SessionKind.Practice) {
+    private fun start(skill: Skill, kind: SessionKind = SessionKind.Practice, spentSeconds: Int = 0) {
         instrumentation.runOnMainSync {
             val entry = model.library.entries.first { it.gender != null }
             val backup = JSONObject(model.library.backup())
             val card = Card.builder().cardId(1).state(State.REVIEW).stability(10.0).difficulty(5.0)
                 .due(Instant.now().minusSeconds(3600)).lastReview(Instant.now().minusSeconds(86400)).build()
-            backup.getJSONObject("data").put("cards", JSONObject().put(entry.cardKey(skill), card.toJson()))
+            backup.getJSONObject("data")
+                .put("cards", JSONObject().put(entry.cardKey(skill), card.toJson()))
+                .put("day", StudyPolicy.date(Instant.now()))
+                .put("seconds", spentSeconds)
             model.restore(backup.toString())
             model.start(kind, audio = true)
             assertEquals(skill, model.review.card.prompt.skill)
@@ -62,19 +64,12 @@ class PresentationFlowTest {
     }
 
     @Test fun practiceCountdownUpdatesWhileTheSameCardIsOpen() {
-        start(Skill.Reading)
+        start(Skill.Reading, spentSeconds = StudyPolicy.DAILY_SECONDS - 123)
         val card = model.review.card
         show()
-        val countdown = compose.onNode(hasText(" left", substring = true))
-        fun remainingSeconds(): Int {
-            val label = countdown.fetchSemanticsNode().config[SemanticsProperties.Text].single().text
-            val (minutes, seconds) = label.removeSuffix(" left").split(':')
-            return minutes.toInt() * 60 + seconds.toInt()
-        }
-        val initial = remainingSeconds()
-
+        compose.onNodeWithText("3 min left").assertIsDisplayed()
         compose.waitUntil(timeoutMillis = 5_000) {
-            remainingSeconds() < initial
+            compose.onAllNodesWithText("2 min left").fetchSemanticsNodes().isNotEmpty()
         }
         compose.runOnIdle { assertEquals(card, model.review.card) }
     }
