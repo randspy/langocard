@@ -125,8 +125,9 @@ async function soonestDue(ctx: QueryCtx, now: number, day: string): Promise<{ ro
   let best: { row: Doc<"cards">; entry: Entry } | null = null;
   for (const skill of WEB_SKILLS) {
     let first: number | null = null;
-    // Once a card is found, running out of budget while looking for ties just ends the search.
-    for await (const due of dueCards(ctx, skill, now, day, () => best !== null)) {
+    // Once this skill's first card is found, running out of budget while looking for its ties
+    // just ends the search; before that, an exhausted walk still fails loudly.
+    for await (const due of dueCards(ctx, skill, now, day, () => first !== null)) {
       // Every card sharing this skill's earliest due time competes on study order.
       if (first !== null && due.row.due! > first) break;
       first = due.row.due!;

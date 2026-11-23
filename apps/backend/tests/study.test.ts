@@ -116,6 +116,20 @@ describe("study.next with many other due cards", () => {
     expect(await client.query(api.study.summary, clock)).toEqual({ due: 1, dueCapped: false });
   }, 60_000);
 
+  test("a skill's blocked cards can't be skipped because another skill found a card", async () => {
+    const t = setup();
+    await t.run(async (ctx) => {
+      for (let i = 0; i < 2002; i++) {
+        const { entryId: _, origin, ...content } = shipped();
+        await ctx.db.insert("entries", { entryId: `frw-${i}`, ...content, origin, shipped: content, editedAt: null, deletedAt: null, upstreamChanged: false, retired: false, updatedAt: 1 });
+      }
+    });
+    const paused = Array.from({ length: 2000 }, (_, i) => cardRow(`frw-${i}:Production`, reviewedCard(i, -9 * DAY - i * 1000), { pausedUntil: now + DAY }));
+    const cards = [...paused, cardRow("frw-2000:Production", reviewedCard(8000, -2 * DAY)), cardRow("frw-2001:Reading", reviewedCard(8001, -DAY))];
+    for (let i = 0; i < cards.length; i += 500) await push(t, { cards: cards.slice(i, i + 500) });
+    await expect(withToken(t).query(api.study.next, clock)).rejects.toThrow(/Too many blocked/);
+  }, 60_000);
+
   test("a card synced before its entry was seeded becomes studiable", async () => {
     const t = setup();
     await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
