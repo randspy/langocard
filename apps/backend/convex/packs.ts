@@ -19,19 +19,26 @@ export const learningPreferences = query({
 });
 
 /**
- * Changes the preferences with a new change clock, so the latest change wins on every device.
- * At least one topic stays selected, as on Android.
+ * Changes one preference (the starting rank, or one topic on or off) on top of the current ones,
+ * with a new change clock, so the latest change wins on every device and a stale page can't undo
+ * another device's change to the other preference. At least one topic stays selected, as on Android.
  */
 export const setPreferences = mutation({
-  args: { token: v.string(), minimumRank: v.number(), interests: v.array(v.string()) },
-  handler: async (ctx, { token, minimumRank, interests }) => {
+  args: { token: v.string(), minimumRank: v.optional(v.number()), topic: v.optional(v.object({ name: v.string(), selected: v.boolean() })) },
+  handler: async (ctx, { token, minimumRank, topic }) => {
     requireToken(token);
-    if (!MINIMUM_RANKS.includes(minimumRank)) throw new ConvexError("Unknown starting rank");
-    const topics = TOPICS.filter((t) => interests.includes(t));
-    if (topics.length === 0 || topics.length !== new Set(interests).size) throw new ConvexError("Choose at least one known topic");
+    if (minimumRank !== undefined && !MINIMUM_RANKS.includes(minimumRank)) throw new ConvexError("Unknown starting rank");
+    if (topic && !(TOPICS as readonly string[]).includes(topic.name)) throw new ConvexError("Unknown topic");
     const settings = await ctx.db.query("settings").first();
+    const current = preferences(settings);
+    // Android keeps its interests in toggle order; a new topic joins the end.
+    const interests = !topic ? current.interests
+      : topic.selected ? [...current.interests.filter((t) => t !== topic.name), topic.name]
+        : current.interests.filter((t) => t !== topic.name);
+    if (interests.length === 0) throw new ConvexError("Keep at least one topic");
     const now = Date.now();
-    const changed = { minimumRank, interests: topics.join(","), preferencesChangedAt: Math.max(now, (settings?.preferencesChangedAt ?? 0) + 1), updatedAt: now };
+    const changed = { minimumRank: minimumRank ?? current.minimumRank, interests: interests.join(","),
+      preferencesChangedAt: Math.max(now, (settings?.preferencesChangedAt ?? 0) + 1), updatedAt: now };
     if (settings) await ctx.db.patch(settings._id, changed);
     // No daily counters yet: an empty day loses to any device's real day.
     else await ctx.db.insert("settings", { ...newSettings(""), ...changed });

@@ -16,19 +16,33 @@ test("preferences change the next new meaning and sync with a newer clock", asyn
   ] });
   expect(await client.query(api.packs.learningPreferences, {})).toEqual({ minimumRank: 2501, interests: ["daily", "culture", "news"] });
   expect((await client.query(api.study.next, { day, now }))?.key).toBe("mid:Reading");
-  await client.mutation(api.packs.setPreferences, { minimumRank: 1, interests: ["news"] });
+  await client.mutation(api.packs.setPreferences, { minimumRank: 1 });
+  await client.mutation(api.packs.setPreferences, { topic: { name: "daily", selected: false } });
+  await client.mutation(api.packs.setPreferences, { topic: { name: "culture", selected: false } });
   expect((await client.query(api.study.next, { day, now }))?.key).toBe("low:Reading");
-  await client.mutation(api.packs.setPreferences, { minimumRank: 2501, interests: ["culture", "news"] });
+  await client.mutation(api.packs.setPreferences, { minimumRank: 2501 });
+  await client.mutation(api.packs.setPreferences, { topic: { name: "culture", selected: true } });
   expect((await client.query(api.study.next, { day, now }))?.key).toBe("news:Reading");
   const [settings] = await pull(t, "settings");
-  expect(settings).toMatchObject({ minimumRank: 2501, interests: "culture,news" });
+  expect(settings).toMatchObject({ minimumRank: 2501, interests: "news,culture" });
   // An older phone change loses; the phone adopts the web's on its next pull.
   await t.mutation(api.sync.push, { token: TOKEN, cards: [], reviews: [], entries: [], sources: [], buried: [], settings: {
     placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: 7001, interests: "daily",
     preferencesChangedAt: 1, day, seconds: 0, introduced: 0 } });
-  expect((await pull(t, "settings"))[0]).toMatchObject({ minimumRank: 2501, interests: "culture,news" });
-  await expect(client.mutation(api.packs.setPreferences, { minimumRank: 3, interests: ["daily"] })).rejects.toThrow();
-  await expect(client.mutation(api.packs.setPreferences, { minimumRank: 1, interests: [] })).rejects.toThrow();
+  expect((await pull(t, "settings"))[0]).toMatchObject({ minimumRank: 2501, interests: "news,culture" });
+  await expect(client.mutation(api.packs.setPreferences, { minimumRank: 3 })).rejects.toThrow();
+  await client.mutation(api.packs.setPreferences, { topic: { name: "news", selected: false } });
+  await expect(client.mutation(api.packs.setPreferences, { topic: { name: "culture", selected: false } })).rejects.toThrow(/at least one/);
+});
+
+test("one preference changes on top of the other, so a stale page can't undo a phone's change", async () => {
+  const t = setup(), client = withToken(t);
+  // The phone chose News only.
+  await t.mutation(api.sync.push, { token: TOKEN, cards: [], reviews: [], entries: [], sources: [], buried: [], settings: {
+    placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: 2501, interests: "news",
+    preferencesChangedAt: 5, day, seconds: 0, introduced: 0 } });
+  await client.mutation(api.packs.setPreferences, { minimumRank: 7001 });
+  expect((await pull(t, "settings"))[0]).toMatchObject({ minimumRank: 7001, interests: "news" });
 });
 
 test("installing a pack records Android's source row and makes its entries studied", async () => {

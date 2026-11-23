@@ -19,7 +19,9 @@ export type Pack = {
   source: string; license: string; packVersion: number; builtIn: boolean;
 };
 
-export const PACKS: Pack[] = catalogue.packs.map((p) => ({
-  id: p.id, title: p.title, description: p.description, meanings: p.meanings,
-  source: sources(p.id) ?? "", license: licenses(p.id) ?? "", packVersion: versions(p.id) ?? 1, builtIn: p.id === BUILT_IN_PACK,
-}));
+export const PACKS: Pack[] = catalogue.packs.map((p) => {
+  const source = sources(p.id), license = licenses(p.id), packVersion = versions(p.id);
+  // Every catalogue pack ships with its attribution; a missing file is a build error, not a blank row.
+  if (!source || !license || packVersion === undefined) throw new Error(`Pack ${p.id} has no source, licence or version`);
+  return { id: p.id, title: p.title, description: p.description, meanings: p.meanings, source, license, packVersion, builtIn: p.id === BUILT_IN_PACK };
+});

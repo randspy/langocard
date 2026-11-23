@@ -15,11 +15,11 @@ export function PacksPage() {
   const install = useTokenMutation(api.packs.installPack);
   const { run, pending, error } = useAsyncAction();
   if (prefs === undefined || installed === undefined) return <p className="text-muted">Loading…</p>;
-  const save = (minimumRank: number, interests: string[]) => run(() => setPreferences({ minimumRank, interests }));
+  // Each control sends only its own change, applied to the current settings on the server.
   const toggle = (topic: string) => {
-    const next = prefs.interests.includes(topic) ? prefs.interests.filter((t) => t !== topic) : [...prefs.interests, topic];
+    const selected = !prefs.interests.includes(topic);
     // At least one topic stays selected, as on the phone.
-    if (next.length > 0) void save(prefs.minimumRank, next);
+    if (selected || prefs.interests.length > 1) void run(() => setPreferences({ topic: { name: topic, selected } }));
   };
   return (
     <section className="max-w-3xl space-y-8">
@@ -31,7 +31,7 @@ export function PacksPage() {
           <legend className="text-sm font-medium">Start new meanings from</legend>
           {RANKS.map(([rank, label]) => (
             <label key={rank} className="flex items-center gap-2 text-sm">
-              <input type="radio" name="rank" checked={prefs.minimumRank === rank} onChange={() => void save(rank, prefs.interests)} />
+              <input type="radio" name="rank" checked={prefs.minimumRank === rank} onChange={() => void run(() => setPreferences({ minimumRank: rank }))} />
               {label}
             </label>
           ))}
