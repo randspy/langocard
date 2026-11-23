@@ -73,7 +73,7 @@ edits, resets, pack installs), plus backfill migrations that can also rebuild th
 - **Entries** get derived `lexeme` (Android's `Entry.lexeme`) and `introducible` (not started,
   not retired, not deleted, bundled/personal or from an installed pack). Indexes: `lexeme`,
   `[introducible, origin]` and `[introducible, rank]`.
-- **Entry progress** (`progress` table): one row per entry that has a card or an answer (created
+- **Entry progress** (embedded `entries.progress` record, with `orphanProgress` only before content arrives): one record per entry that has a card or an answer (created
   by whichever arrives first, since Android may push a card and its log in separate batches;
   started state comes from cards, the exposure count from reviews) with the skills still
   without a card, `nounKey` (bare noun + gender), `rank`, the lowest started card ID, whether
@@ -115,6 +115,31 @@ How each choice keeps Android's order without unbounded reads:
 
 Tests run each function against a full seeded library, thousands of started entries, and a
 due range whose first eligible card sits behind a page of blocked ones.
+
+## Introduction implementation (#72)
+
+Progress is embedded in the entry rather than joined from a separate table. Sync already
+loads the entry for card derivation; sharing that read keeps the existing full-size phone
+batch below Convex's transaction limit. A transaction-local owner coalesces fixed memory
+slots and exposure changes. Missing content uses `orphanProgress`, adopted atomically when
+its entry arrives. Projection-only writes preserve the entry's sync clock.
+
+Each enabled skill has an indexed missing-skill flag. The web enables Reading in #72;
+Production, Gender and Listening become available with their presentation issues. All four
+skills already contribute to started state and receive sibling burials. Shared fixtures run
+Kotlin's actual rules with an optional supported-skills set, whose Android default stays all.
+
+Study ties use `content/study-order.json`: bundled asset order, catalogue order, then
+entry ID for additional entries. This normalizes the prior device-dependent order of pack
+installs and personal arrivals only for study; management lists retain their order. Parity
+assumes the same shipped content version. Regenerate with
+`node scripts/generate-study-order.mjs` when shipped content changes. The APK packages the
+same file through its generated assets task.
+
+Introduction candidates exclude started, deleted and retired entries in the index. Pack
+membership remains a cached read-time check, so an install applies immediately without a
+library-sized rewrite. A fresh daily sitting offers practice, nothing left, or more
+vocabulary; the extra-block offer is added by #77.
 
 ## Fixtures
 

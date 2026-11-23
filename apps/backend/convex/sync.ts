@@ -1,10 +1,11 @@
+import { withStudyProgress } from "./studyProgress";
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireToken } from "./access";
 import type { DataModel } from "./_generated/dataModel";
 import { contentOf, entryErrors } from "./entryRules";
 import { entryWins, isDeleted, mergeCard, mergeSettings, sameCard, type Settings } from "./merge";
-import { deriveCard, entryIdOf, entryState, entryStateOf, refreshEntryCards, withoutDerived, type EntryState } from "./studyIndex";
+import { deriveCard, entryIdOf, entryStateOf, refreshEntryCards, withoutDerived, type EntryState } from "./studyIndex";
 import { cardFields, entryClocks, entryContent, settingsFields } from "./validators";
 
 /**
@@ -27,6 +28,8 @@ export const push = mutation({
   },
   handler: async (ctx, args) => {
     requireToken(args.token);
+    return withStudyProgress(ctx, async (progress) => {
+    const addedReviews: string[] = [];
     for (const list of [args.cards, args.reviews, args.entries, args.sources, args.buried, args.hooks ?? []]) {
       if (list.length > MAX_BATCH) throw new ConvexError(`At most ${MAX_BATCH} items of each kind per push`);
     }
@@ -34,7 +37,7 @@ export const push = mutation({
     // Entry states read or written in this push, so each entry is looked up at most once.
     const states = new Map<string, EntryState>();
     const stateOf = async (entryId: string) => {
-      if (!states.has(entryId)) states.set(entryId, await entryState(ctx, entryId));
+      if (!states.has(entryId)) states.set(entryId, entryStateOf(await progress.entry(entryId)));
       return states.get(entryId)!;
     };
     /** Entry IDs the server refused: invalid content, or an unknown non-personal entry. */
@@ -48,7 +51,10 @@ export const push = mutation({
     }
     for (const review of args.reviews) {
       const stored = await ctx.db.query("reviews").withIndex("by_review", (q) => q.eq("reviewId", review.reviewId)).unique();
-      if (!stored) await ctx.db.insert("reviews", { ...review, updatedAt });
+      if (!stored) {
+        await ctx.db.insert("reviews", { ...review, updatedAt, exposureCounted: true });
+        addedReviews.push(review.key);
+      }
     }
     for (const { entryId, editedAt, deletedAt, ...content } of args.entries) {
       if (entryErrors(entryId, content).length > 0) {
@@ -56,14 +62,17 @@ export const push = mutation({
         continue;
       }
       const stored = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", entryId)).unique();
+      if (stored) progress.remember(stored);
       if (!stored) {
         // Bundled and pack entries come from the seed; devices may only add personal ones.
         if (!entryId.startsWith("personal-")) rejected.push(entryId);
         else {
-          await ctx.db.insert("entries", {
+          const inserted = {
             entryId, ...contentOf(content), editedAt, deletedAt,
             origin: "personal", shipped: null, upstreamChanged: false, retired: false, updatedAt,
-          });
+          };
+          const id = await ctx.db.insert("entries", inserted);
+          await progress.entryChanged({ ...inserted, _id: id, _creationTime: updatedAt }, true);
           const state: EntryState = { live: !isDeleted({ editedAt, deletedAt }), packId: null };
           states.set(entryId, state);
           // Cards pushed before their entry (in an earlier batch) become studiable now.
@@ -71,21 +80,31 @@ export const push = mutation({
         }
       } else if (entryWins({ editedAt, deletedAt }, stored)) {
         await ctx.db.patch(stored._id, { ...contentOf(content), editedAt, deletedAt, updatedAt });
+        await progress.entryChanged({ ...stored, ...contentOf(content), editedAt, deletedAt, updatedAt });
         const state = entryStateOf({ ...stored, editedAt, deletedAt });
         states.set(entryId, state);
-        if (state.live !== entryStateOf(stored).live) await refreshEntryCards(ctx, entryId, state);
+        if (state.live !== entryStateOf(stored).live) await refreshEntryCards(ctx, entryId, state, stored.progress?.slots);
       }
     }
     // After entries, so cards of entries added in this push are derived with them.
     for (const { key, ...incoming } of args.cards) {
       const entry = await stateOf(entryIdOf(key));
       const stored = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
-      if (!stored) await ctx.db.insert("cards", { key, ...incoming, updatedAt, ...deriveCard({ key, ...incoming }, entry) });
-      else {
+      if (!stored) {
+        const row = { key, ...incoming, updatedAt, ...deriveCard({ key, ...incoming }, entry) };
+        const id = await ctx.db.insert("cards", row);
+        await progress.card({ ...row, _id: id, _creationTime: updatedAt });
+      } else {
         const merged = mergeCard(stored, incoming);
-        if (!sameCard(merged, stored)) await ctx.db.patch(stored._id, { ...merged, updatedAt, ...deriveCard({ key, ...merged }, entry) });
+        if (!sameCard(merged, stored)) {
+          const row = { ...stored, ...merged, updatedAt, ...deriveCard({ key, ...merged }, entry) };
+          await ctx.db.patch(stored._id, { ...merged, updatedAt, ...deriveCard({ key, ...merged }, entry) });
+          await progress.card(row);
+        }
       }
     }
+    for (const key of addedReviews) await progress.review(key);
+
     for (const source of args.sources) {
       const stored = await ctx.db.query("sources").withIndex("by_source", (q) => q.eq("sourceId", source.sourceId)).unique();
       if (!stored) await ctx.db.insert("sources", { ...source, updatedAt });
@@ -105,6 +124,7 @@ export const push = mutation({
       }
     }
     return { serverTime: updatedAt, rejected };
+    });
   },
 });
 
@@ -139,8 +159,13 @@ export const pull = query({
     return {
       page: result.page.map(({ _id, _creationTime, ...row }) => {
         if ("shipped" in row) {
-          const { shipped: _, ...entry } = row;
+          const { shipped: _, studyOrder, progress, lexeme, nounKey, started, introducible,
+            missingReading, missingListening, missingProduction, missingGender, studyRank, rankBand, ...entry } = row;
           return { ...entry, ...contentOf(entry) };
+        }
+        if (table === "reviews" && "exposureCounted" in row) {
+          const { exposureCounted, ...review } = row;
+          return review;
         }
         return table === "cards" ? withoutDerived(row) : row;
       }),

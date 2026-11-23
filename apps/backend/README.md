@@ -143,3 +143,23 @@ after changing the schema or function signatures.
   rows are merged again without effect.
 - Convex free-plan limits are far above one learner's usage, but check the current
   plan, including whether inactive free projects are paused.
+
+### Backfill entry progress for web introductions
+
+After deploying #72, run each paginated migration until `isDone`, passing its returned
+`cursor` to the next call (start each migration with `{"cursor":null}`):
+
+```sh
+npx convex run migrations:deriveEntryProgress '{"cursor":null}'
+npx convex run migrations:countExposures '{"cursor":null}'
+npx convex run migrations:deriveCards '{"cursor":null}'
+```
+
+Run them in that order. New writes maintain the projections while the backfill runs.
+Review markers make replaying exposure pages safe; resetting a card preserves its count.
+Introductions refuse partially indexed libraries, and shown examples refuse uncounted
+historical reviews. These migrations preserve sync clocks. They initialize progress;
+repairing a corrupted exposure total requires a separate rebuild generation.
+
+When shipped content changes, run `node scripts/generate-study-order.mjs` from the repo
+root before seeding, and rerun the entry/card derivation passes so stored tie keys match.

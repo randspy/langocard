@@ -1,0 +1,53 @@
+package com.randspy.langocard
+
+import io.github.openspacedrepetition.Card
+import io.github.openspacedrepetition.State
+import org.json.JSONArray
+import org.json.JSONObject
+import org.junit.Assert.*
+import org.junit.Test
+import java.io.File
+import java.time.Instant
+
+/** The same cases invoke real StudyRules on Android and study.next/answer in Convex. */
+class SharedStudyRulesFixturesTest {
+    @Test fun `shared Reading selection and burials`() {
+        val fixtures = JSONObject(File("../../../content/study-rules-fixtures.json").readText())
+        val now = Instant.parse(fixtures.getString("now"))
+        val day = fixtures.getString("day")
+        val order = StudyOrder(JSONObject(File("../../../content/study-order.json").readText()))
+        val cases = fixtures.getJSONArray("cases")
+        for (i in 0 until cases.length()) {
+            val fixture = cases.getJSONObject(i)
+            val name = fixture.getString("name")
+            val rows = fixture.getJSONArray("entries")
+            val entries = (0 until rows.length()).map { j ->
+                val e = rows.getJSONObject(j)
+                Entry(e.getString("id"), "avoir", "have", "Posséder.", listOf(Example("{Avoir} un."), Example("{Avoir} deux.")),
+                    e.optString("topic", "daily"), lemma = e.optString("lemma", ""),
+                    rank = if (e.has("rank") && e.isNull("rank")) Int.MAX_VALUE else e.optInt("rank", 2501))
+            }
+            val cards = JSONObject()
+            val memory = fixture.optJSONArray("cards") ?: JSONArray()
+            for (j in 0 until memory.length()) {
+                val c = memory.getJSONObject(j)
+                cards.put(c.getString("key"), Card.builder().cardId(j).state(State.REVIEW).stability(10.0).difficulty(5.0)
+                    .due(now.plusSeconds(c.getLong("due"))).lastReview(now.minusSeconds(86400)).build().toJson())
+            }
+            val learner = Learner(JSONObject().put("version", 2).put("day", day).put("cards", cards).put("reviews", JSONArray())
+                .put("seconds", fixture.optInt("seconds")).put("introduced", fixture.optInt("introduced"))
+                .put("minimumRank", fixture.optInt("minimumRank")).put("interests", fixture.optJSONArray("interests") ?: JSONArray()))
+            val rules = StudyRules(entries, learner, emptySet(), supported = setOf(Skill.Reading), order = order)
+            val chosen = rules.choose(false, PracticeBlock.DAILY, SessionLearning(), now, day)
+            val expected = if (fixture.isNull("next")) null else fixture.getString("next")
+            assertEquals(name, expected, chosen?.key)
+            if (chosen != null) {
+                assertEquals(name, "{Avoir} un.", rules.shown(chosen, now).example.marked)
+                if (fixture.has("burials")) {
+                    val expectedBurials = fixture.getJSONArray("burials").let { a -> (0 until a.length()).map { a.getString(it) } }
+                    assertEquals(name, expectedBurials.sorted(), rules.siblingsToBury(chosen, false).sorted())
+                }
+            }
+        }
+    }
+}

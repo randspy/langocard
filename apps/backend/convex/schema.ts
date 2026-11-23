@@ -1,3 +1,4 @@
+import { entryStudyFields, progressFields } from "./studyProgress";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 import { cardFields, derivedCardFields, entryClocks, settingsFields, storedEntryContent } from "./validators";
@@ -8,6 +9,7 @@ import { cardFields, derivedCardFields, entryClocks, settingsFields, storedEntry
  * since their previous sync. Merge rules live in `merge.ts`.
  */
 export default defineSchema({
+  orphanProgress: defineTable({ entryId: v.string(), ...progressFields }).index("by_entry", ["entryId"]),
   hooks: defineTable({ entryId: v.string(), text: v.string(), editedAt: v.number(), updatedAt: v.number() })
     .index("by_entry", ["entryId"]).index("by_updated", ["updatedAt"]),
   // One FSRS card per "<entryId>:<Skill>". Review fields and manual fields merge separately.
@@ -20,16 +22,18 @@ export default defineSchema({
   })
     .index("by_key", ["key"])
     .index("by_updated", ["updatedAt"])
-    .index("by_active_skill_due", ["active", "skill", "due"]),
+    .index("by_active_skill_due", ["active", "skill", "due", "studyOrder"]),
 
   // Append-only review history.
   reviews: defineTable({
+    exposureCounted: v.optional(v.boolean()),
     reviewId: v.string(),
     key: v.string(),
     placement: v.boolean(),
     log: v.string(),
     updatedAt: v.number(),
   })
+    .index("by_exposureCounted", ["exposureCounted"])
     .index("by_review", ["reviewId"])
     .index("by_key", ["key"])
     .index("by_updated", ["updatedAt"]),
@@ -37,6 +41,7 @@ export default defineSchema({
   // The whole library: bundled and pack entries (seeded from the repo) and personal entries.
   entries: defineTable({
     entryId: v.string(),
+    ...entryStudyFields,
     ...storedEntryContent,
     ...entryClocks,
     /** "bundled", "personal" or "pack:<packId>". */
@@ -51,6 +56,13 @@ export default defineSchema({
   })
     .index("by_entry", ["entryId"])
     .index("by_upstreamChanged", ["upstreamChanged"])
+    .index("by_started", ["started"])
+    .index("by_missingReading", ["missingReading", "studyOrder"])
+    .index("by_introducible_origin", ["introducible", "origin", "studyOrder"])
+    .index("by_introducible_rank", ["introducible", "studyRank"])
+    .index("by_introducible_band", ["introducible", "rankBand", "studyOrder"])
+    .index("by_lexeme", ["lexeme"])
+    .index("by_nounKey", ["nounKey"])
     .index("by_updated", ["updatedAt"]),
 
   // Attribution for installed packs.

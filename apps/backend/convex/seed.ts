@@ -36,7 +36,7 @@ export const apply = internalMutation({
         const patch = applyShipped(stored, shipped, origin);
         if (patch) {
           await ctx.db.patch(stored._id, { ...patch, updatedAt });
-          if (patch.origin !== undefined) await refreshEntryCards(ctx, entryId);
+          await refreshEntryCards(ctx, entryId);
           updated++;
         }
       }
@@ -56,6 +56,7 @@ export const retire = internalMutation({
     for (const entry of await ctx.db.query("entries").collect()) {
       if (entry.origin !== "personal" && !entry.retired && !keep.has(entry.entryId)) {
         await ctx.db.patch(entry._id, { retired: true, updatedAt });
+        await refreshEntryCards(ctx, entry.entryId);
         retired++;
       }
     }

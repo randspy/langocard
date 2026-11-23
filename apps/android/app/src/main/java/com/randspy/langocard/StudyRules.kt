@@ -4,7 +4,9 @@ import io.github.openspacedrepetition.State
 import java.time.Instant
 
 /** Study decisions shared by session selection and home offers, without clocks or Android state. */
-class StudyRules(private val entries: List<Entry>, private val learner: Learner, private val retired: Set<String>) {
+class StudyRules(entries: List<Entry>, private val learner: Learner, private val retired: Set<String>,
+                 private val supported: Set<Skill> = Skill.entries.toSet(), order: StudyOrder? = null) {
+    private val entries = if (order == null) entries else entries.sortedBy { order.key(it.id) }
     private fun genderOwners() = GenderCards.owners(entries) { learner.card(it)?.cardId }
 
     private fun studiable(p: Prompt, audio: Boolean, genderOwners: Set<String>) =
@@ -14,7 +16,7 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
     fun prompts(audio: Boolean, now: Instant): List<Prompt> {
         val owners = genderOwners()
         return entries.flatMap { e -> e.skills.map { Prompt(e, it) } }.filter { p ->
-            studiable(p, audio, owners) && !learner.isPausedOrSuspended(p.key, now.toEpochMilli())
+            p.skill in supported && studiable(p, audio, owners) && !learner.isPausedOrSuspended(p.key, now.toEpochMilli())
         }
     }
 
@@ -64,7 +66,7 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
         val temporarilyBlocked = entries.any { entry -> entry.skills.any { skill ->
             val p = Prompt(entry, skill)
             val work = if (learner.card(p.key) == null) learner.started(entry) else due(p, now)
-            studiable(p, audio, owners) && work &&
+            p.skill in supported && studiable(p, audio, owners) && work &&
                 (learner.isBuried(p.key, day) || learner.isPausedOrSuspended(p.key, now.toEpochMilli()))
         } }
         return if (unstarted || temporarilyBlocked) NextPractice.NothingLeft else NextPractice.MoreVocabulary

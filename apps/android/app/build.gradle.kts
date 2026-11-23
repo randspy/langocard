@@ -68,3 +68,11 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+// One shared order file for server selection and the APK, without copying the content library.
+val studyOrderAssets = tasks.register<Copy>("studyOrderAssets") {
+    from(rootProject.file("../../content/study-order.json"))
+    into(layout.buildDirectory.dir("generated/studyOrderAssets"))
+}
+android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/studyOrderAssets").get().asFile)
+tasks.named("preBuild").configure { dependsOn(studyOrderAssets) }

@@ -1,0 +1,162 @@
+{
+  "now": "2026-11-20T09:00:00Z",
+  "day": "2026-11-20",
+  "cases": [
+    {
+      "name": "due before new",
+      "entries": [
+        {
+          "id": "fresh"
+        },
+        {
+          "id": "older"
+        }
+      ],
+      "cards": [
+        {
+          "key": "older:Reading",
+          "due": -100
+        }
+      ],
+      "next": "older:Reading"
+    },
+    {
+      "name": "Reading sibling before fresh despite meaning cap",
+      "entries": [
+        {
+          "id": "fresh"
+        },
+        {
+          "id": "started",
+          "rank": 1
+        }
+      ],
+      "cards": [
+        {
+          "key": "started:Listening",
+          "due": 3600
+        }
+      ],
+      "introduced": 5,
+      "next": "started:Reading"
+    },
+    {
+      "name": "personal first",
+      "entries": [
+        {
+          "id": "ranked",
+          "rank": 1
+        },
+        {
+          "id": "personal-one",
+          "rank": null
+        }
+      ],
+      "next": "personal-one:Reading"
+    },
+    {
+      "name": "topic preferred inside band",
+      "entries": [
+        {
+          "id": "low",
+          "rank": 2501
+        },
+        {
+          "id": "higher",
+          "rank": 2599,
+          "topic": "culture"
+        }
+      ],
+      "interests": [
+        "culture"
+      ],
+      "next": "higher:Reading"
+    },
+    {
+      "name": "earlier band wins",
+      "entries": [
+        {
+          "id": "earlier",
+          "rank": 2499
+        },
+        {
+          "id": "preferred",
+          "rank": 2500,
+          "topic": "culture"
+        }
+      ],
+      "interests": [
+        "culture"
+      ],
+      "next": "earlier:Reading"
+    },
+    {
+      "name": "meaning limit",
+      "entries": [
+        {
+          "id": "fresh"
+        }
+      ],
+      "introduced": 5,
+      "next": null
+    },
+    {
+      "name": "wind down",
+      "entries": [
+        {
+          "id": "fresh"
+        }
+      ],
+      "seconds": 780,
+      "next": null
+    },
+    {
+      "name": "minimum rank",
+      "entries": [
+        {
+          "id": "personal-low",
+          "rank": 1
+        },
+        {
+          "id": "eligible",
+          "rank": 3000
+        }
+      ],
+      "minimumRank": 2500,
+      "next": "eligible:Reading"
+    },
+    {
+      "name": "related meanings buried",
+      "entries": [
+        {
+          "id": "meaning-a",
+          "lemma": "avoir"
+        },
+        {
+          "id": "meaning-b",
+          "lemma": "avoir"
+        }
+      ],
+      "next": "meaning-a:Reading",
+      "burials": [
+        "meaning-a:Listening",
+        "meaning-a:Production",
+        "meaning-b:Reading",
+        "meaning-b:Listening",
+        "meaning-b:Production"
+      ]
+    },
+    {
+      "name": "deterministic ties despite arrival order",
+      "entries": [
+        {
+          "id": "zulu"
+        },
+        {
+          "id": "alpha"
+        }
+      ],
+      "next": "alpha:Reading"
+    }
+  ]
+}
