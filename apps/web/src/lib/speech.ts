@@ -33,7 +33,12 @@ class BrowserSpeech implements SpeechEngine {
       utterance.voice = installed;
       utterance.lang = installed.lang;
       let started = false;
+      let settled = false;
+      let deadline: ReturnType<typeof setTimeout> | undefined;
       const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(deadline);
         utterance.onstart = null; utterance.onend = null; utterance.onerror = null;
         this.pending = null;
         if (error) reject(error); else resolve();
@@ -42,11 +47,18 @@ class BrowserSpeech implements SpeechEngine {
       utterance.onend = () => finish(started ? undefined : new Error("Playback did not start"));
       utterance.onerror = () => finish(new Error("Playback failed. Try again or mute listening."));
       this.pending = () => finish(new Error("Playback cancelled"));
+      // Some engines emit no events (for example in a muted Chromium tab). Bound the wait,
+      // allowing longer examples enough time at normal speaking speed.
+      deadline = setTimeout(() => {
+        finish(new Error("Playback timed out. Try again or mute listening."));
+        speechSynthesis.cancel();
+      }, Math.max(15_000, text.length * 150));
       try { speechSynthesis.speak(utterance); } catch { finish(new Error("Playback failed")); }
     });
   }
   cancel() {
-    this.pending?.();
+    if (!this.pending) return;
+    this.pending();
     if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
   }
 }

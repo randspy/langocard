@@ -1,4 +1,4 @@
-import { browserSpeech, type SpeechEngine } from "@/lib/speech";
+import { browserSpeech, frenchVoice, type SpeechEngine } from "@/lib/speech";
 import { useFrenchVoice, usePlayback } from "@/lib/useSpeech";
 import type { Fit } from "@backend/fittedSettings";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -64,12 +64,25 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook
     setState({ kind: "loading" });
     try {
       await flush();
-      const card = await fetchNext([...pending.current], voice !== null && !muted.current);
-      setState(card ? { kind: "card", card, revealed: false, saving: false, typed: "", comparison: null, selected: null } : { kind: "done" });
+      const canListen = () => frenchVoice(speech.voices()) !== null && !muted.current;
+      let audio = canListen();
+      for (;;) {
+        const card = await fetchNext([...pending.current], audio);
+        const currentAudio = canListen();
+        // Capability can change during a save or fetch. Never display an unplayable card,
+        // or declare exhaustion from a request that excluded newly available Listening.
+        if ((card?.skill === "Listening" && !currentAudio) || (!card && currentAudio && !audio)) {
+          audio = currentAudio;
+          continue;
+        }
+        voiceArrived.current = false;
+        setState(card ? { kind: "card", card, revealed: false, saving: false, typed: "", comparison: null, selected: null } : { kind: "done" });
+        break;
+      }
     } catch (e) {
       setState({ kind: "error", message: errorMessage(e), retry: "load" });
     }
-  }, [fetchNext, flush, voice]);
+  }, [fetchNext, flush, speech]);
   const finish = async () => {
     ended.current = true;
     stop();

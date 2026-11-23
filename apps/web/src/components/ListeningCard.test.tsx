@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
 import type { SpeechEngine, SpeechVoice } from "@/lib/speech";
-import type { StudyCard } from "@/lib/study";
+import type { AnswerResult, StudyCard } from "@/lib/study";
 import { StudySession } from "./StudySession";
 
 const voice: SpeechVoice = { id: "fr", name: "French", lang: "fr-FR", local: true };
@@ -91,4 +91,57 @@ test("French voices arriving after an empty initial sitting make Listening avail
   await act(async () => { voices = [voice]; changed(); });
   expect(await screen.findByRole("button", { name: "Play example" })).toBeInTheDocument();
   expect(fetchNext).toHaveBeenLastCalledWith([], true);
+});
+
+
+test("a voice arriving while an answer saves is used by the next fetch", async () => {
+  const speech = new FakeSpeech();
+  let voices: SpeechVoice[] = [];
+  let changed = () => {};
+  speech.voices = () => voices;
+  speech.subscribe = (listener) => { changed = listener; return () => {}; };
+  let complete = () => {};
+  const answer = vi.fn(() => new Promise<AnswerResult>((resolve) => { complete = () => resolve({ status: "ok", card: "", offerHook: false }); }));
+  let calls = 0;
+  const fetchNext = vi.fn(async (_pending: string[], audio: boolean) => ++calls === 1 ? { ...card, key: "arriver:Reading", skill: "Reading" as const } : audio ? card : null);
+  render(<StudySession speech={speech} fetchNext={fetchNext} answer={answer} clock={() => 0} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Reveal answer" }));
+  await userEvent.click(screen.getByRole("button", { name: /Good/ }));
+  await act(async () => { voices = [voice]; changed(); });
+  await act(async () => complete());
+  expect(await screen.findByRole("button", { name: "Play example" })).toBeInTheDocument();
+  expect(fetchNext).toHaveBeenLastCalledWith(["arriver:Reading"], true);
+});
+
+test("an empty in-flight request is retried when French audio becomes available", async () => {
+  const speech = new FakeSpeech();
+  let voices: SpeechVoice[] = [];
+  let changed = () => {};
+  speech.voices = () => voices;
+  speech.subscribe = (listener) => { changed = listener; return () => {}; };
+  let complete: (value: StudyCard | null) => void = () => {};
+  const fetchNext = vi.fn((_pending: string[], audio: boolean) => audio ? Promise.resolve(card) : new Promise<StudyCard | null>(resolve => { complete = resolve; }));
+  render(<StudySession speech={speech} fetchNext={fetchNext} answer={async () => ({ status: "stale" })} clock={() => 0} />);
+  await act(async () => {});
+  await act(async () => { voices = [voice]; changed(); complete(null); });
+  expect(await screen.findByRole("button", { name: "Play example" })).toBeInTheDocument();
+  expect(fetchNext).toHaveBeenLastCalledWith([], true);
+});
+
+test("a Listening result is discarded if the French voice disappeared during its request", async () => {
+  const speech = new FakeSpeech();
+  let voices = [voice];
+  let changed = () => {};
+  speech.voices = () => voices;
+  speech.subscribe = (listener) => { changed = listener; return () => {}; };
+  let complete: (value: StudyCard | null) => void = () => {};
+  const fetchNext = vi.fn((_pending: string[], audio: boolean) => !audio ? Promise.resolve(null) : new Promise<StudyCard | null>(resolve => { complete = resolve; }));
+  const answer = vi.fn(async () => ({ status: "stale" as const }));
+  render(<StudySession speech={speech} fetchNext={fetchNext} answer={answer} clock={() => 0} />);
+  await act(async () => {});
+  await act(async () => { voices = []; changed(); complete(card); });
+  expect(await screen.findByText("Session complete.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Play example" })).not.toBeInTheDocument();
+  expect(fetchNext).toHaveBeenLastCalledWith([], false);
+  expect(answer).not.toHaveBeenCalled();
 });
