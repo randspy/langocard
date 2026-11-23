@@ -28,7 +28,8 @@ test("five first answers share the daily allowance, while siblings do not spend 
   expect(sibling.key).toBe("meaning-5:Reading");
   await client.mutation(api.study.answer, { day, now, key: sibling.key, version: sibling.version, example: sibling.example, rating: "EASY" });
   expect(await t.run(ctx => ctx.db.query("settings").first())).toMatchObject({ introduced: 5, nextCardId: 6 });
-  expect((await client.query(api.study.next, { day: "2026-11-21", now }))?.key).toBe("meaning-6:Reading");
+  // A new day: started meanings' Production siblings come before the next new meaning, as on Android.
+  expect((await client.query(api.study.next, { day: "2026-11-21", now }))?.key).toBe("meaning-0:Production");
 });
 
 test("review and card before entry are adopted once; resetting the last card keeps example rotation", async () => {
@@ -77,18 +78,19 @@ function push(t: T, fields: Partial<FunctionArgs<typeof api.sync.push>>) {
   return t.mutation(api.sync.push, { token: TOKEN, entries: [], cards: [], reviews: [], sources: [], buried: [], ...fields });
 }
 
-test("thousands of Reading-complete meanings stay outside the sibling read range", async () => {
+test("thousands of complete meanings stay outside the sibling read range", async () => {
   const t = convexTest({ schema, modules, transactionLimits: true });
   for (let batch = 0; batch < 8; batch++) await t.run(async ctx => {
     for (let i = 0; i < 500; i++) {
       const id = `complete-${batch * 500 + i}`;
       const { origin, entryId: logicalId, ...content } = entry(id);
-      const row = memory(`${id}:Reading`);
+      const row = memory(`${id}:Reading`), production = memory(`${id}:Production`);
       const cardId = await ctx.db.insert("cards", { ...row, ...deriveCard(row, { live: true, packId: null }), updatedAt: 1 });
+      const productionId = await ctx.db.insert("cards", { ...production, ...deriveCard(production, { live: true, packId: null }), updatedAt: 1 });
       const stored = { entryId: logicalId, ...content, origin, shipped: content, editedAt: null, deletedAt: null, retired: false, upstreamChanged: false, updatedAt: 1 };
       const entryId = await ctx.db.insert("entries", stored);
       await ctx.db.patch(entryId, projectEntry({ ...stored, _id: entryId, _creationTime: 1 }, {
-        slots: { Reading: { id: cardId, cardId: 100, suspendedUntil: 0 } }, exposures: 0,
+        slots: { Reading: { id: cardId, cardId: 100, suspendedUntil: 0 }, Production: { id: productionId, cardId: 101, suspendedUntil: 0 } }, exposures: 0,
       }));
     }
   });

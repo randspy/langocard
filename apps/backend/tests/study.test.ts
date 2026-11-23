@@ -63,7 +63,7 @@ describe("study.next", () => {
   test("returns null when nothing is due", async () => {
     const t = setup();
     await seed(t, [shipped()]);
-    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, DAY)), cardRow("frw-1:Listening", null)] });
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY)), cardRow("frw-1:Listening", null)] });
     expect(await withToken(t).query(api.study.next, clock)).toBeNull();
   });
 
@@ -118,7 +118,7 @@ describe("study.next with many other due cards", () => {
 
   test("a card synced before its entry was seeded becomes studiable", async () => {
     const t = setup();
-    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
     expect(await withToken(t).query(api.study.next, clock)).toBeNull();
     await seed(t, [shipped()]);
     expect((await withToken(t).query(api.study.next, clock))?.key).toBe("frw-1:Reading");
@@ -129,12 +129,13 @@ describe("study.answer", () => {
   test("reschedules the card and logs the review as a phone would", async () => {
     const t = setup();
     await seed(t, [shipped()]);
-    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
     const client = withToken(t);
     const shown = (await client.query(api.study.next, clock))!;
     const result = await client.mutation(api.study.answer, { key: shown.key, version: shown.version, rating: "GOOD", example: shown.example, ...clock });
     expect(result.status).toBe("ok");
-    const pulled = (await t.query(api.sync.pull, { token: TOKEN, table: "cards", since: 0, cursor: null })).page[0] as Record<string, unknown>;
+    const pulled = ((await t.query(api.sync.pull, { token: TOKEN, table: "cards", since: 0, cursor: null })).page as Record<string, unknown>[])
+      .find((row) => row.key === "frw-1:Reading")!;
     expect(Object.keys(pulled).sort()).toEqual(["card", "cardEditedAt", "failures", "key", "lastReview", "pausedUntil", "suspendedUntil", "updatedAt"]);
     const card = cardFromJson(pulled.card as string);
     expect(card.lastReview).toBe(now);
@@ -150,7 +151,7 @@ describe("study.answer", () => {
   test("refuses a card a phone reviewed since it was shown, and follows the phone", async () => {
     const t = setup();
     await seed(t, [shipped()]);
-    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
     const client = withToken(t);
     const shown = (await client.query(api.study.next, clock))!;
     await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, 5 * DAY), { lastReview: now - 1000 })] });
@@ -162,7 +163,7 @@ describe("study.answer", () => {
   test("refuses a card that was suspended or deleted since", async () => {
     const t = setup();
     await seed(t, [shipped()]);
-    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
     const client = withToken(t);
     const shown = (await client.query(api.study.next, clock))!;
     await client.mutation(api.entries.remove, { entryId: "frw-1" });
@@ -176,7 +177,7 @@ describe("study.answer", () => {
     const t = setup();
     await seed(t, [shipped()]);
     await push(t, {
-      cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))],
+      cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))],
       settings: { placementDone: true, placementIndex: 18, nextCardId: 41, minimumRank: 1, interests: "daily", preferencesChangedAt: 0, day, seconds: 0, introduced: 0 },
     });
     // A reset card has no FSRS card; answering it starts a new one.
@@ -199,7 +200,7 @@ describe("study.answer", () => {
 test("the migration rebuilds derived columns", async () => {
   const t = setup();
   await seed(t, [shipped()]);
-  await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+  await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
   await t.run(async (ctx) => {
     const row = (await ctx.db.query("cards").collect())[0];
     await ctx.db.patch(row._id, { active: undefined, due: undefined });
@@ -258,7 +259,7 @@ describe("daily practice", () => {
     const t = setup();
     const client = withToken(t);
     await seed(t, [shipped()]);
-    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY))] });
+    await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))] });
     const shown = (await client.query(api.study.next, clock))!;
     await client.mutation(api.study.answer, { ...clock, key: shown.key, version: shown.version, example: shown.example, rating: "AGAIN" });
     expect(await client.query(api.study.next, clock)).toBeNull();
