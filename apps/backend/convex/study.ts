@@ -54,7 +54,7 @@ export function preferences(settings: Doc<"settings"> | null) {
 }
 
 /** Fields that bring a settings row's preferences back to values Android accepts, keeping its counters. */
-function repairedPreferences(settings: Doc<"settings">) {
+export function repairedPreferences(settings: Doc<"settings">) {
   const repair: { minimumRank?: number; interests?: string } = {};
   if (!MINIMUM_RANKS.includes(settings.minimumRank)) repair.minimumRank = DEFAULT_MINIMUM_RANK;
   if (!settings.interests || settings.interests.split(",").some((t) => !(TOPICS as readonly string[]).includes(t))) repair.interests = DEFAULT_INTERESTS;

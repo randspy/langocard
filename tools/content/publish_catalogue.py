@@ -15,6 +15,8 @@ from generate_alternatives import ALTERNATIVES, folded, load
 ROOT = Path(__file__).resolve().parents[2]
 DRAFT = 'content/core-entries.json'
 NOTICE = 'content/NOTICE.md'
+# The vocabulary starting-check items, shared by the app and the web.
+PLACEMENT = 'content/placement-items.json'
 ASSETS = 'apps/android/app/src/main/assets'
 BASE_URL = 'https://raw.githubusercontent.com/randspy/langocard/content-v3/content/'
 SOURCE = ('French definitions adapted from French Wiktionary contributors, https://fr.wiktionary.org/ '
@@ -156,8 +158,11 @@ def validate(packs):
                 raise ContentError(f"{entry['id']}: {problem}")
 
 
-def build(rows, notice, alternatives=None):
-    """Every published file, keyed by repository path, from the draft rows, NOTICE.md bytes and alternatives by entry ID."""
+def build(rows, notice, alternatives=None, placement=None):
+    """
+    Every published file, keyed by repository path, from the draft rows, NOTICE.md bytes,
+    alternatives by entry ID and the starting-check items' bytes.
+    """
     alternatives = alternatives or {}
     if unknown := set(alternatives) - {row['id'] for row in rows}:
         raise ContentError(f'Alternatives for entries not in the draft: {sorted(unknown)[:5]}')
@@ -181,11 +186,14 @@ def build(rows, notice, alternatives=None):
     files[f'{ASSETS}/catalogue.json'] = catalogue
     files[f'{ASSETS}/frequent-pack.json'] = files[f'content/{BUNDLED.pack_id}.json']
     files[f'{ASSETS}/CONTENT-NOTICE.md'] = notice
+    if placement is not None:
+        files[f'{ASSETS}/placement-items.json'] = placement
     return files
 
 
 def publish(root=ROOT):
-    files = build(json.loads((root / DRAFT).read_text()), (root / NOTICE).read_bytes(), load(root / ALTERNATIVES))
+    files = build(json.loads((root / DRAFT).read_text()), (root / NOTICE).read_bytes(), load(root / ALTERNATIVES),
+                  (root / PLACEMENT).read_bytes())
     for path, data in files.items():
         (root / path).write_bytes(data)
     return files

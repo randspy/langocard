@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { api } from "@backend/_generated/api";
 import { Button } from "@/components/ui/button";
 import { useTokenMutation, useTokenQuery } from "@/lib/convex";
@@ -27,6 +28,7 @@ export function PacksPage() {
       <div className="space-y-3">
         <h2 className="font-semibold text-xl">Learning preferences</h2>
         <p className="text-sm text-muted">These choose which new meanings come first, on the web and on your phones after they sync.</p>
+        <p className="text-sm">Not sure where to start? <Link to="/placement" className="underline">Take the vocabulary starting check</Link>.</p>
         <fieldset className="space-y-1" disabled={pending}>
           <legend className="text-sm font-medium">Start new meanings from</legend>
           {RANKS.map(([rank, label]) => (

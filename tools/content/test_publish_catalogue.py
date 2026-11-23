@@ -1,7 +1,7 @@
 import json
 import unittest
 from generate_alternatives import ALTERNATIVES, load
-from publish_catalogue import ROOT, ContentError, build, pack_entry
+from publish_catalogue import PLACEMENT, ROOT, ContentError, build, pack_entry
 
 
 def row(**changes):
@@ -80,7 +80,8 @@ class PublishTests(unittest.TestCase):
 
     def test_committed_files_are_what_the_draft_publishes(self):
         files = build(json.loads((ROOT/'content/core-entries.json').read_text()), (ROOT/'content/NOTICE.md').read_bytes(),
-                      load(ROOT/ALTERNATIVES))
+                      load(ROOT/ALTERNATIVES), (ROOT/PLACEMENT).read_bytes())
+        self.assertIn('apps/android/app/src/main/assets/placement-items.json', files)
         for path, data in files.items():
             self.assertEqual(data, (ROOT/path).read_bytes(), path)
         catalogue = json.loads(files['content/catalogue.json'])
