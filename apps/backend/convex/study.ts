@@ -362,9 +362,8 @@ export const offer = query({
     // Unstarted meanings the learner could study later (as on Android, dormant packs don't count).
     const { minimumRank } = preferences(await ctx.db.query("settings").first());
     for (const origin of ["personal", ...await rankedOrigins(ctx)]) {
-      const later = await ctx.db.query("entries").withIndex("by_introducible_origin_band", q => q.eq("introducible", true).eq("origin", origin)
-        .gte("rankBand", Math.floor(Math.min(minimumRank, 1_000_000) / 100))).take(200);
-      if (later.some((e) => (e.studyRank ?? 0) >= minimumRank)) return "nothingLeft" as const;
+      if (await ctx.db.query("entries").withIndex("by_introducible_origin_rank", q => q.eq("introducible", true).eq("origin", origin)
+        .gte("studyRank", minimumRank)).first()) return "nothingLeft" as const;
     }
     if (await ctx.db.query("entries").withIndex("by_missingReading", q => q.eq("missingReading", true)).first()) return "nothingLeft" as const;
     if (await ctx.db.query("cards").withIndex("by_active_skill_due", q => q.eq("active", true).eq("skill", "Reading").gte("due", 0).lte("due", now)).first()) return "nothingLeft" as const;

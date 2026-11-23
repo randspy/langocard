@@ -119,3 +119,15 @@ test("settings the web creates or touches are ones Android accepts", async () =>
   await client.mutation(api.study.tick, { day, seconds: 5 });
   expect(await t.run(ctx => ctx.db.query("settings").first())).toMatchObject({ minimumRank: 2501, interests: "daily,culture,news", seconds: 15, introduced: 3 });
 });
+
+test("deleted meanings leave no sibling work, and rank cutoffs don't hide later meanings", async () => {
+  const t = setup(), client = withToken(t);
+  await t.mutation(internal.seed.apply, { entries: [entry("gone")] });
+  await push(t, { cards: [memory("gone:Listening")] });
+  await client.mutation(api.entries.remove, { entryId: "gone" });
+  expect(await client.query(api.study.offer, { day, now })).toBe("moreVocabulary");
+  await t.mutation(internal.seed.apply, { entries: [...Array.from({ length: 250 }, (_, i) => ({ ...entry(`low-${i}`), rank: 2500 })), { ...entry("later"), rank: 2600 }] });
+  await t.run(async ctx => ctx.db.insert("settings", { placementDone: true, placementIndex: 0, nextCardId: 0, minimumRank: 2501,
+    interests: "daily", preferencesChangedAt: 0, day, seconds: 0, introduced: 5, genderIntroduced: 0, updatedAt: 1 }));
+  expect(await client.query(api.study.offer, { day, now })).toBe("nothingLeft");
+});

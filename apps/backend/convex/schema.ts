@@ -60,6 +60,7 @@ export default defineSchema({
     .index("by_missingReading", ["missingReading", "studyOrder"])
     .index("by_introducible_origin", ["introducible", "origin", "studyOrder"])
     .index("by_introducible_origin_band", ["introducible", "origin", "rankBand", "studyOrder"])
+    .index("by_introducible_origin_rank", ["introducible", "origin", "studyRank"])
     .index("by_lexeme", ["lexeme"])
     .index("by_nounKey", ["nounKey"])
     .index("by_updated", ["updatedAt"]),
