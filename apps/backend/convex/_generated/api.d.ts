@@ -26,6 +26,7 @@ import type * as studyOrder from "../studyOrder.js";
 import type * as studyPolicy from "../studyPolicy.js";
 import type * as studyIndex from "../studyIndex.js";
 import type * as sync from "../sync.js";
+import type * as typedAnswer from "../typedAnswer.js";
 import type * as validators from "../validators.js";
 
 import type {
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   studyPolicy: typeof studyPolicy;
   studyIndex: typeof studyIndex;
   sync: typeof sync;
+  typedAnswer: typeof typedAnswer;
   validators: typeof validators;
 }>;
 
