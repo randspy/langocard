@@ -1,5 +1,7 @@
 import { schedulingDescription } from "@backend/fittedSettings";
-import { useCallback } from "react";
+import { browserSpeech } from "@/lib/speech";
+import { useFrenchVoice } from "@/lib/useSpeech";
+import { useCallback, useState } from "react";
 import { api } from "@backend/_generated/api";
 import { StudySession } from "@/components/StudySession";
 import { useTokenFetch, useTokenMutation, useTokenQuery } from "@/lib/convex";
@@ -7,6 +9,9 @@ import { localDay, type StudyCard } from "@/lib/study";
 import { useNow } from "@/lib/useNow";
 
 export function StudyPage() {
+  const voice = useFrenchVoice(browserSpeech);
+  const [muted, setMuted] = useState(false);
+  const audio = voice !== null && !muted;
   const fetch = useTokenFetch();
   const submit = useTokenMutation(api.study.answer);
   const fit = useTokenQuery(api.study.scheduling, {});
@@ -16,12 +21,12 @@ export function StudyPage() {
   const now = useNow(1000);
   const dueNow = useNow();
   const progress = useTokenQuery(api.study.progress, { day: localDay(now) });
-  const offer = useTokenQuery(api.study.offer, { day: localDay(now), now: dueNow });
-  const summary = useTokenQuery(api.study.summary, { day: localDay(now), now: dueNow });
+  const offer = useTokenQuery(api.study.offer, { day: localDay(now), now: dueNow, audio });
+  const summary = useTokenQuery(api.study.summary, { day: localDay(now), now: dueNow, audio });
   // Fetched once per card rather than subscribed, so a phone sync can't swap the card mid-answer.
-  const fetchNext = useCallback((pending: string[]) => {
+  const fetchNext = useCallback((pending: string[], audio: boolean) => {
     const at = Date.now();
-    return fetch(api.study.next, { day: localDay(at), now: at, pending });
+    return fetch(api.study.next, { day: localDay(at), now: at, pending, audio });
   }, [fetch]);
   const answer = useCallback((card: StudyCard, rating: "AGAIN" | "HARD" | "GOOD" | "EASY") => {
     const at = Date.now();
@@ -44,7 +49,7 @@ export function StudyPage() {
       {fit === undefined ? <p className="text-muted">Loading…</p> : (
         <>
           <p className="text-xs text-muted">{schedulingDescription(fit)}</p>
-          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} saveHook={saveHook} fit={fit} />
+          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} saveHook={saveHook} fit={fit} onMute={() => setMuted(true)} />
         </>
       )}
     </section>

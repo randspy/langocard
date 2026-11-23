@@ -50,8 +50,8 @@ class SharedStudyRulesFixturesTest {
             val learner = Learner(JSONObject().put("version", 2).put("day", day).put("cards", cards).put("reviews", reviews).put("paused", paused)
                 .put("seconds", fixture.optInt("seconds")).put("introduced", fixture.optInt("introduced")).put("genderIntroduced", fixture.optInt("genderIntroduced"))
                 .put("minimumRank", fixture.optInt("minimumRank", 1)).put("interests", fixture.optJSONArray("interests")?.let { a -> (0 until a.length()).joinToString(",") { a.getString(it) } } ?: "daily,culture,news"))
-            val rules = StudyRules(entries, learner, emptySet(), supported = setOf(Skill.Reading, Skill.Production, Skill.Gender), order = order)
-            val chosen = rules.choose(false, PracticeBlock.DAILY, SessionLearning(), now, day)
+            val rules = StudyRules(entries, learner, emptySet(), supported = setOf(Skill.Reading, Skill.Production, Skill.Gender) + if (fixture.optBoolean("audio")) setOf(Skill.Listening) else emptySet(), order = order)
+            val chosen = rules.choose(fixture.optBoolean("audio"), PracticeBlock.DAILY, SessionLearning(), now, day)
             val expected = if (fixture.isNull("next")) null else fixture.getString("next")
             assertEquals(name, expected, chosen?.key)
             if (chosen != null) {

@@ -339,3 +339,31 @@ test("a non-owner's missing Gender card does not prevent the more-vocabulary off
   expect(await client.query(api.study.next, clock)).toBeNull();
   expect(await client.query(api.study.offer, clock)).toBe("moreVocabulary");
 });
+
+test("Listening is selected and counted only with audio, without changing the hidden card", async () => {
+  const t = setup();
+  await seed(t, [shipped()]);
+  await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, -DAY)),
+    cardRow("frw-1:Production", reviewedCard(2, DAY)), cardRow("frw-1:Listening", reviewedCard(3, -2 * DAY))] });
+  const client = withToken(t);
+  expect((await client.query(api.study.next, clock))?.skill).toBe("Reading");
+  expect((await client.query(api.study.next, { ...clock, audio: true }))?.skill).toBe("Listening");
+  expect(await client.query(api.study.summary, clock)).toEqual({ due: 1, dueCapped: false });
+  expect(await client.query(api.study.summary, { ...clock, audio: true })).toEqual({ due: 2, dueCapped: false });
+  const before = await client.query(api.sync.pull, { table: "cards", since: 0, cursor: null });
+  await client.query(api.study.next, { ...clock, audio: false });
+  expect((await client.query(api.sync.pull, { table: "cards", since: 0, cursor: null })).page).toEqual(before.page);
+});
+
+test("Listening introductions and cleanup debt also respect audio availability", async () => {
+  const t = setup();
+  await seed(t, [shipped()]);
+  await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, DAY)), cardRow("frw-1:Production", reviewedCard(2, DAY))] });
+  const client = withToken(t);
+  expect(await client.query(api.study.next, clock)).toBeNull();
+  expect((await client.query(api.study.next, { ...clock, audio: true }))?.key).toBe("frw-1:Listening");
+  await push(t, { cards: [cardRow("frw-1:Listening", cardToJson(newCard(3, now + DAY)))] });
+  await client.mutation(api.study.tick, { day, seconds: 900 });
+  expect(await client.query(api.study.next, { ...clock, pending: ["frw-1:Listening"] })).toBeNull();
+  expect((await client.query(api.study.next, { ...clock, audio: true, pending: ["frw-1:Listening"] }))?.skill).toBe("Listening");
+});

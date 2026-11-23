@@ -595,6 +595,26 @@
         }
       ],
       "next": null
+    },
+    {
+      "name": "Listening due before Reading when audio is available",
+      "entries": [
+        {
+          "id": "heard"
+        }
+      ],
+      "cards": [
+        {
+          "key": "heard:Reading",
+          "due": -100
+        },
+        {
+          "key": "heard:Listening",
+          "due": -200
+        }
+      ],
+      "audio": true,
+      "next": "heard:Listening"
     }
   ]
 }
