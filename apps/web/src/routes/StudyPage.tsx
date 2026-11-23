@@ -45,13 +45,16 @@ export function StudyPage() {
   }, [fetch]);
   const answer = useCallback(async (card: StudyCard, rating: "AGAIN" | "HARD" | "GOOD" | "EASY") => {
     const at = Date.now(), day = localDay(at);
-    const result = await answerWithExtraBlock({
-      day, newMeaning: "newMeaning" in card && card.newMeaning, newGender: "newGender" in card && card.newGender,
-      loadSeconds: async () => (await fetch(api.study.progress, { day })).seconds,
-      submit: block => submit({ key: card.key, version: card.version, rating, example: card.example, day, now: at, block }),
-    });
-    setStored(readExtraBlockForDisplay());
-    return result;
+    try {
+      return await answerWithExtraBlock({
+        day, newMeaning: "newMeaning" in card && card.newMeaning, newGender: "newGender" in card && card.newGender,
+        loadSeconds: async () => (await fetch(api.study.progress, { day })).seconds,
+        submit: block => submit({ key: card.key, version: card.version, rating, example: card.example, day, now: at, block }),
+      });
+    } finally {
+      // A failed/ambiguous submission still spends its reservation until reconciled.
+      setStored(readExtraBlockForDisplay());
+    }
   }, [submit, fetch]);
   return (
     <section className="space-y-6">

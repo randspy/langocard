@@ -1,3 +1,4 @@
+import { localDay } from "./study";
 import { PracticeBlock, type StoredBlock } from "@backend/practiceBlock";
 
 const KEY = "langocard.extraBlock";
@@ -23,12 +24,22 @@ export function readExtraBlockForDisplay(): unknown {
   try { return readExtraBlock(); } catch { return null; }
 }
 
+function requireCurrentDay(day: string) {
+  if (localDay(Date.now()) !== day) throw new Error("The day changed. Try again to refresh today's practice.");
+}
+
 /** Grant replacement and answer reconciliation share one browser-wide critical section. */
 export async function createExtraBlock(create: () => Promise<StoredBlock | null>) {
   if (!navigator.locks) throw new Error("Extra practice is unavailable in this browser.");
+  const day = localDay(Date.now());
   return navigator.locks.request(KEY, async () => {
+    requireCurrentDay(day);
     const grant = await create();
-    if (grant) saveExtraBlock(grant);
+    requireCurrentDay(day);
+    if (grant) {
+      requireCurrentDay(grant.day);
+      saveExtraBlock(grant);
+    }
     return grant;
   });
 }
@@ -40,12 +51,15 @@ export async function answerWithExtraBlock<T extends AnswerOutcome>({ day, newMe
   loadSeconds: () => Promise<number>; submit: (block: StoredBlock | null) => Promise<T>;
 }): Promise<T> {
   const answer = async () => {
+    requireCurrentDay(day);
     const seconds = await loadSeconds();
+    requireCurrentDay(day);
     const block = PracticeBlock.read(readExtraBlock(), day, seconds);
     if (block.isExtra) {
       if (!navigator.locks) throw new Error("Extra practice is unavailable in this browser.");
       saveExtraBlock(block.introduced(newMeaning, newGender).toJSON());
     }
+    requireCurrentDay(day);
     const result = await submit(block.toJSON());
     if (block.isExtra) saveExtraBlock(result.status === "ok" && result.block ? result.block : block.toJSON());
     return result;

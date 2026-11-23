@@ -1,6 +1,8 @@
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { PracticeBlock } from "@backend/practiceBlock";
 import { answerWithExtraBlock, createExtraBlock, readExtraBlock, saveExtraBlock } from "./blockStorage";
+
+beforeEach(() => { vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 10, 20, 12).getTime()); });
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); localStorage.clear(); });
 
@@ -61,4 +63,36 @@ test("a storage read failure blocks submission instead of falling back to daily 
   const submit = vi.fn(async () => ({ status: "ok" as const }));
   await expect(answerWithExtraBlock({ day: "2026-11-20", newMeaning: true, newGender: false, loadSeconds: async () => 950, submit })).rejects.toThrow("Storage blocked");
   expect(submit).not.toHaveBeenCalled();
+});
+
+
+test.each(["answer", "grant"] as const)("a queued %s is discarded when its lock is acquired after midnight", async kind => {
+  const before = new Date(2026, 10, 20, 23, 59, 59).getTime();
+  const after = new Date(2026, 10, 21, 0, 0, 1).getTime();
+  vi.spyOn(Date, "now").mockReturnValue(before);
+  let release = () => {};
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  vi.stubGlobal("navigator", { locks: { request: (_key: string, action: () => Promise<unknown>) => waiting.then(action) } });
+  const original = PracticeBlock.grant("2026-11-20", 900, 5).toJSON();
+  saveExtraBlock(original);
+  const submit = vi.fn(async () => ({ status: "ok" as const }));
+  const create = vi.fn(async () => PracticeBlock.grant("2026-11-20", 950, 10).toJSON());
+  const action = kind === "answer"
+    ? answerWithExtraBlock({ day: "2026-11-20", newMeaning: true, newGender: false, loadSeconds: async () => 950, submit })
+    : createExtraBlock(create);
+  vi.spyOn(Date, "now").mockReturnValue(after);
+  release();
+  await expect(action).rejects.toThrow("day changed");
+  expect(submit).not.toHaveBeenCalled();
+  expect(create).not.toHaveBeenCalled();
+  expect(readExtraBlock()).toEqual(original);
+});
+
+test("a grant that crosses midnight while eligibility is checked is not persisted", async () => {
+  vi.stubGlobal("navigator", { locks: { request: (_key: string, action: () => Promise<unknown>) => action() } });
+  await expect(createExtraBlock(async () => {
+    vi.spyOn(Date, "now").mockReturnValue(new Date(2026, 10, 21).getTime());
+    return PracticeBlock.grant("2026-11-20", 900, 5).toJSON();
+  })).rejects.toThrow("day changed");
+  expect(readExtraBlock()).toBeNull();
 });
