@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ExtraPracticeButtons } from "./ExtraPracticeOffer";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
@@ -144,4 +146,25 @@ test("a Listening result is discarded if the French voice disappeared during its
   expect(screen.queryByRole("button", { name: "Play example" })).not.toBeInTheDocument();
   expect(fetchNext).toHaveBeenLastCalledWith([], false);
   expect(answer).not.toHaveBeenCalled();
+});
+
+
+test("reopening a completed sitting clears summary-only extra-minute buttons", async () => {
+  const speech = new FakeSpeech();
+  let voices: SpeechVoice[] = [], changed = () => {};
+  speech.voices = () => voices;
+  speech.subscribe = (listener) => { changed = listener; return () => {}; };
+  const fetchNext = async (_pending: string[], audio: boolean) => audio ? card : null;
+  function Sitting() {
+    const [summary, setSummary] = useState(false);
+    return <>
+      <StudySession speech={speech} fetchNext={fetchNext} answer={async () => ({ status: "stale" })} clock={() => 0} onSummaryChange={setSummary} />
+      {summary && <ExtraPracticeButtons start={async () => {}} />}
+    </>;
+  }
+  render(<Sitting />);
+  expect(await screen.findByRole("button", { name: "+5 minutes" })).toBeInTheDocument();
+  await act(async () => { voices = [voice]; changed(); });
+  expect(await screen.findByRole("button", { name: "Play example" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "+5 minutes" })).not.toBeInTheDocument();
 });

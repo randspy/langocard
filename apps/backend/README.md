@@ -170,3 +170,11 @@ repairing a corrupted exposure total requires a separate rebuild generation.
 
 When shipped content changes, run `node scripts/generate-study-order.mjs` from the repo
 root before seeding, and rerun the entry/card derivation passes so stored tie keys match.
+
+Extra practice grants and their introduction usage stay in the browser's local storage,
+not the synced settings row. Study requests pass that grant to apply its own time window
+and quotas; foreground ticks still add to the ordinary daily total. Malformed saved usage
+keeps a valid duration review-only, and a different day expires it.
+Grant creation and answer reservation/reconciliation share a browser Web Lock, so a
+pending answer cannot overwrite a newer grant in another tab. Storage access errors
+stop those actions; malformed JSON still follows the parser's normal expiry rules.
