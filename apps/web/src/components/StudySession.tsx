@@ -177,7 +177,8 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick }: Props)
 function Feedback({ answer }: { answer: TypedAnswer }) {
   const alternative = answer.match === "Alternative";
   const line = (label: string, parts: AnswerPart[]) => (
-    <p>
+    // Spaces are kept as typed, so a doubled or missing space is visible.
+    <p className="whitespace-pre-wrap">
       {label}:{" "}
       {parts.map((part, i) => part.marked
         ? <mark key={i} className="rounded-sm bg-danger/15 font-bold text-ink">{part.text}</mark>

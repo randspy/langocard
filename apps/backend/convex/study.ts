@@ -98,14 +98,14 @@ async function studiable(ctx: QueryCtx, row: Pick<Doc<"cards">, "key" | "active"
  * steps over the few that are blocked. Past `WALK_BUDGET` cards it throws, or with
  * `stopAtBudget` simply ends.
  */
-async function* dueCards(ctx: QueryCtx, skill: WebSkill, now: number, day: string, stopAtBudget = false): AsyncGenerator<{ row: Doc<"cards">; entry: Entry }> {
+async function* dueCards(ctx: QueryCtx, skill: WebSkill, now: number, day: string, stopAtBudget: boolean | (() => boolean) = false): AsyncGenerator<{ row: Doc<"cards">; entry: Entry }> {
   const installed = new Map<string, boolean>();
   let walked = 0;
   const range = ctx.db.query("cards")
     .withIndex("by_active_skill_due", (q) => q.eq("active", true).eq("skill", skill).gte("due", 0).lte("due", now));
   for await (const row of range) {
     if (++walked > WALK_BUDGET) {
-      if (stopAtBudget) return;
+      if (typeof stopAtBudget === "function" ? stopAtBudget() : stopAtBudget) return;
       throw new ConvexError("Too many blocked due cards to choose from; try again later");
     }
     const entry = await studiable(ctx, row, now, day, installed);
@@ -113,13 +113,24 @@ async function* dueCards(ctx: QueryCtx, skill: WebSkill, now: number, day: strin
   }
 }
 
-/** The due card due soonest across the web's skills; equal due times follow Android's skill order. */
+/**
+ * The due card due soonest across the web's skills. Equal due times follow Android's prompt
+ * order: meanings in study order, then skills in skill order.
+ */
 async function soonestDue(ctx: QueryCtx, now: number, day: string): Promise<{ row: Doc<"cards">; entry: Entry } | null> {
+  const rank = (c: { row: Doc<"cards">; entry: Entry }) =>
+    [c.row.due!, c.entry.studyOrder ?? c.entry.entryId, WEB_SKILLS.indexOf(c.row.skill as WebSkill)] as const;
+  const before = (a: ReturnType<typeof rank>, b: ReturnType<typeof rank>) =>
+    a[0] !== b[0] ? a[0] < b[0] : a[1] !== b[1] ? a[1] < b[1] : a[2] < b[2];
   let best: { row: Doc<"cards">; entry: Entry } | null = null;
   for (const skill of WEB_SKILLS) {
-    for await (const due of dueCards(ctx, skill, now, day)) {
-      if (!best || due.row.due! < best.row.due!) best = due;
-      break;
+    let first: number | null = null;
+    // Once a card is found, running out of budget while looking for ties just ends the search.
+    for await (const due of dueCards(ctx, skill, now, day, () => best !== null)) {
+      // Every card sharing this skill's earliest due time competes on study order.
+      if (first !== null && due.row.due! > first) break;
+      first = due.row.due!;
+      if (!best || before(rank(due), rank(best))) best = due;
     }
   }
   return best;
@@ -150,11 +161,10 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     throw new ConvexError("Run migrations:deriveEntryProgress before introducing cards");
   }
   let walked = 0;
-  const candidate = async (entry: Entry, skills: readonly WebSkill[] = WEB_SKILLS) => {
+  const candidate = async (entry: Entry) => {
     if (++walked > 1000) throw new ConvexError("Too many blocked introductions; try again later");
     // As on Android, a meaning offers its skills in skill order: the first one free to study.
-    for (const skill of skills) {
-      if (!skillsOf(contentOf(entry)).includes(skill)) continue;
+    for (const skill of WEB_SKILLS) {
       const key = `${entry.entryId}:${skill}`;
       const row = await ctx.db.query("cards").withIndex("by_key", q => q.eq("key", key)).unique();
       if (row?.card) continue;
@@ -334,7 +344,7 @@ export const answer = mutation({
     if ((row?.lastReview ?? null) !== version) return { status: "stale" as const };
     const entry = await ctx.db.query("entries").withIndex("by_entry", q => q.eq("entryId", entryIdOf(key))).unique();
     const skill = key.slice(key.lastIndexOf(":") + 1);
-    if (!entry || !isWebSkill(skill) || !skillsOf(contentOf(entry)).includes(skill)) return { status: "stale" as const };
+    if (!entry || !isWebSkill(skill)) return { status: "stale" as const };
     if (!await studiable(ctx, row ?? { key, active: !isDeleted(entry), skill, pausedUntil: 0, suspendedUntil: 0,
       packId: entry.origin.startsWith("pack:") ? entry.origin.slice(5) : null, entryId: entry.entryId }, now, day)) return { status: "stale" as const };
     const wasNewMeaning = !row?.card && !entry.started;
