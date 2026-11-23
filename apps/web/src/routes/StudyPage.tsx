@@ -1,5 +1,5 @@
 import { PracticeBlock, type StoredBlock } from "@backend/practiceBlock";
-import { observeExtraBlock, readExtraBlock, saveExtraBlock } from "@/lib/blockStorage";
+import { answerWithExtraBlock, observeExtraBlock, readExtraBlock, readExtraBlockForDisplay } from "@/lib/blockStorage";
 import { ExtraPracticeOffer } from "@/components/ExtraPracticeOffer";
 import { schedulingDescription } from "@backend/fittedSettings";
 import { browserSpeech } from "@/lib/speech";
@@ -12,14 +12,11 @@ import { localDay, type StudyCard } from "@/lib/study";
 import { useNow } from "@/lib/useNow";
 
 export function StudyPage() {
-  const [stored, setStored] = useState<unknown>(readExtraBlock);
-  useEffect(() => observeExtraBlock(() => setStored(readExtraBlock())), []);
+  const [stored, setStored] = useState<unknown>(readExtraBlockForDisplay);
+  useEffect(() => observeExtraBlock(() => setStored(readExtraBlockForDisplay())), []);
   const [sessionKey, setSessionKey] = useState(0);
   const [complete, setComplete] = useState(false);
-  const completed = useCallback(() => setComplete(true), []);
-  const saveBlock = useCallback((block: StoredBlock | null) => {
-    saveExtraBlock(block); setStored(block);
-  }, []);
+  const completed = useCallback((summary: boolean) => setComplete(summary), []);
   const start = useCallback((block: StoredBlock) => {
     setStored(block); setComplete(false); setMuted(false); setSessionKey(n => n + 1);
   }, []);
@@ -48,14 +45,14 @@ export function StudyPage() {
   }, [fetch]);
   const answer = useCallback(async (card: StudyCard, rating: "AGAIN" | "HARD" | "GOOD" | "EASY") => {
     const at = Date.now(), day = localDay(at);
-    const { seconds } = await fetch(api.study.progress, { day });
-    const block = PracticeBlock.read(readExtraBlock(), day, seconds);
-    // Reserve locally before sending: a reload during the request must not restore spent allowance.
-    if (block.isExtra) saveBlock(block.introduced("newMeaning" in card && card.newMeaning, "newGender" in card && card.newGender).toJSON());
-    const result = await submit({ key: card.key, version: card.version, rating, example: card.example, day, now: at, block: block.toJSON() });
-    if (block.isExtra) saveBlock(result.status === "ok" && result.block ? result.block : block.toJSON());
+    const result = await answerWithExtraBlock({
+      day, newMeaning: "newMeaning" in card && card.newMeaning, newGender: "newGender" in card && card.newGender,
+      loadSeconds: async () => (await fetch(api.study.progress, { day })).seconds,
+      submit: block => submit({ key: card.key, version: card.version, rating, example: card.example, day, now: at, block }),
+    });
+    setStored(readExtraBlockForDisplay());
     return result;
-  }, [submit, fetch, saveBlock]);
+  }, [submit, fetch]);
   return (
     <section className="space-y-6">
       <div className="flex items-baseline justify-between">
@@ -74,7 +71,7 @@ export function StudyPage() {
       {fit === undefined || progress === undefined ? <p className="text-muted">Loading…</p> : (
         <>
           <p className="text-xs text-muted">{schedulingDescription(fit)}</p>
-          <StudySession key={sessionKey} onComplete={completed} fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} saveHook={saveHook} fit={fit} onMute={() => setMuted(true)} />
+          <StudySession key={sessionKey} onSummaryChange={completed} fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} saveHook={saveHook} fit={fit} onMute={() => setMuted(true)} />
         </>
       )}
     </section>

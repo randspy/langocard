@@ -23,7 +23,7 @@ type Props = {
   fit?: Fit | null;
   speech?: SpeechEngine;
   onMute?: () => void;
-  onComplete?: () => void;
+  onSummaryChange?: (summary: boolean) => void;
   tick?: (checkpoint: { day: string; seconds: number }) => Promise<unknown>;
   /** Saves a memory hook for an entry, offered after a card's fourth miss in a row. */
   saveHook?: (entryId: string, text: string) => Promise<unknown>;
@@ -48,7 +48,7 @@ type State =
  */
 const noTick = async () => {};
 
-export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook = noTick, fit = null, speech = browserSpeech, onMute = () => {}, onComplete }: Props) {
+export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook = noTick, fit = null, speech = browserSpeech, onMute = () => {}, onSummaryChange }: Props) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const voice = useFrenchVoice(speech);
   const muted = useRef(false);
@@ -109,7 +109,7 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook
     }
   }, [voice, state.kind, load]);
 
-  useEffect(() => { if (state.kind === "done") onComplete?.(); }, [state.kind, onComplete]);
+  useEffect(() => { onSummaryChange?.(state.kind === "done"); }, [state.kind, onSummaryChange]);
 
   if (state.kind === "loading") return <p className="text-muted">Loading…</p>;
   if (state.kind === "ending") return <p className="text-muted">Saving practice time…</p>;

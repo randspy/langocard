@@ -4,7 +4,7 @@ import { api } from "@backend/_generated/api";
 import { EXTRA_MINUTES, PracticeBlock, type ExtraMinutes, type StoredBlock } from "@backend/practiceBlock";
 import { Button } from "@/components/ui/button";
 import { useTokenFetch } from "@/lib/convex";
-import { readExtraBlock, saveExtraBlock } from "@/lib/blockStorage";
+import { createExtraBlock, readExtraBlock } from "@/lib/blockStorage";
 import { localDay } from "@/lib/study";
 import { errorMessage } from "@/lib/useAsyncAction";
 
@@ -14,12 +14,14 @@ export function ExtraPracticeOffer({ audio, onStart }: { audio: boolean; onStart
   const navigate = useNavigate();
   const start = async (minutes: ExtraMinutes) => {
     const now = Date.now(), day = localDay(now);
-    const { seconds } = await fetch(api.study.progress, { day });
-    const block = PracticeBlock.read(readExtraBlock(), day, seconds).toJSON();
-    if (await fetch(api.study.offer, { day, now, audio, block }) !== "extraBlock") return;
-    const current = await fetch(api.study.progress, { day });
-    const grant = PracticeBlock.grant(day, current.seconds, minutes).toJSON()!;
-    saveExtraBlock(grant);
+    const grant = await createExtraBlock(async () => {
+      const { seconds } = await fetch(api.study.progress, { day });
+      const block = PracticeBlock.read(readExtraBlock(), day, seconds).toJSON();
+      if (await fetch(api.study.offer, { day, now, audio, block }) !== "extraBlock") return null;
+      const current = await fetch(api.study.progress, { day });
+      return PracticeBlock.grant(day, current.seconds, minutes).toJSON();
+    });
+    if (!grant) return;
     if (onStart) onStart(grant); else await navigate({ to: "/study" });
   };
   return <ExtraPracticeButtons start={start} />;

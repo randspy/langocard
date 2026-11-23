@@ -175,3 +175,6 @@ Extra practice grants and their introduction usage stay in the browser's local s
 not the synced settings row. Study requests pass that grant to apply its own time window
 and quotas; foreground ticks still add to the ordinary daily total. Malformed saved usage
 keeps a valid duration review-only, and a different day expires it.
+Grant creation and answer reservation/reconciliation share a browser Web Lock, so a
+pending answer cannot overwrite a newer grant in another tab. Storage access errors
+stop those actions; malformed JSON still follows the parser's normal expiry rules.

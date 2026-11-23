@@ -1,8 +1,8 @@
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { PracticeBlock } from "@backend/practiceBlock";
-import { readExtraBlock, saveExtraBlock } from "./blockStorage";
+import { answerWithExtraBlock, createExtraBlock, readExtraBlock, saveExtraBlock } from "./blockStorage";
 
-afterEach(() => localStorage.clear());
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); localStorage.clear(); });
 
 test("stored usage survives a fresh read, resets for a new grant, and expires at midnight", () => {
   const day = "2026-11-20";
@@ -22,4 +22,43 @@ test("malformed stored usage is review-only on every reload", () => {
     expect(block.meaningRoom(0)).toBe(false);
     expect(block.genderRoom(0)).toBe(false);
   }
+});
+
+
+test.each(["ok", "stale"] as const)("a pending %s answer cannot overwrite another tab's newer grant", async status => {
+  let tail = Promise.resolve();
+  vi.stubGlobal("navigator", { locks: { request: (_key: string, action: () => Promise<unknown>) => {
+    const next = tail.then(action);
+    tail = next.then(() => {}, () => {});
+    return next;
+  } } });
+  const day = "2026-11-20";
+  const old = PracticeBlock.grant(day, 900, 5).introduced(true, false);
+  saveExtraBlock(old.toJSON());
+  let entered = () => {}, complete = () => {};
+  const submitted = new Promise<void>(resolve => { entered = resolve; });
+  const answering = answerWithExtraBlock({ day, newMeaning: true, newGender: false, loadSeconds: async () => 950,
+    submit: async () => {
+      entered();
+      await new Promise<void>(resolve => { complete = resolve; });
+      return status === "ok" ? { status, block: old.introduced(true, false).toJSON() } : { status };
+    } });
+  await submitted;
+  expect(PracticeBlock.read(readExtraBlock(), day, 950).meaningRoom(0)).toBe(false);
+  const replacement = PracticeBlock.grant(day, 950, 10).toJSON();
+  const create = vi.fn(async () => replacement);
+  const replacing = createExtraBlock(create);
+  await Promise.resolve();
+  expect(create).not.toHaveBeenCalled();
+  complete();
+  await Promise.all([answering, replacing]);
+  expect(readExtraBlock()).toEqual(replacement);
+});
+
+test("a storage read failure blocks submission instead of falling back to daily allowance", async () => {
+  saveExtraBlock(PracticeBlock.grant("2026-11-20", 900, 5).toJSON());
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("Storage blocked"); });
+  const submit = vi.fn(async () => ({ status: "ok" as const }));
+  await expect(answerWithExtraBlock({ day: "2026-11-20", newMeaning: true, newGender: false, loadSeconds: async () => 950, submit })).rejects.toThrow("Storage blocked");
+  expect(submit).not.toHaveBeenCalled();
 });
