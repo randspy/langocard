@@ -8,7 +8,11 @@ import { PlacementPage } from "./PlacementPage";
 const { progress, answer, retake, accept } = vi.hoisted(() => ({
   progress: { answers: [] as boolean[] }, answer: vi.fn(async () => {}), retake: vi.fn(async () => {}), accept: vi.fn(async () => {}),
 }));
-vi.mock("@tanstack/react-router", () => ({ Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
+const { navigate } = vi.hoisted(() => ({ navigate: vi.fn(async () => {}) }));
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+  useNavigate: () => navigate,
+}));
 vi.mock("@/lib/convex", () => ({
   useTokenQuery: () => progress.answers,
   useTokenMutation: (ref: FunctionReference<"mutation">) =>
@@ -33,6 +37,7 @@ test("the result suggests a rank, saves the chosen one and can be retaken", asyn
   expect(screen.getByText(/No cards are marked known/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Start at rank 7,001" }));
   expect(accept).toHaveBeenCalledWith({ rank: 7001 });
+  expect(navigate).toHaveBeenCalledWith({ to: "/packs" });
   await userEvent.click(screen.getByRole("button", { name: "Retake check" }));
   expect(retake).toHaveBeenCalled();
 });

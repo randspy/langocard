@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import items from "@content/placement-items.json";
 import { api } from "@backend/_generated/api";
 import { adjustedHits, startingRank, STARTING_RANKS } from "@backend/vocabularyPlacement";
@@ -17,6 +17,7 @@ export function PlacementPage() {
   const retake = useTokenMutation(api.placement.retake);
   const accept = useTokenMutation(api.placement.accept);
   const { run, pending, error } = useAsyncAction();
+  const navigate = useNavigate();
   if (answers === undefined) return <p className="text-muted">Loading…</p>;
   const done = answers.length >= items.length;
   return (
@@ -35,7 +36,11 @@ export function PlacementPage() {
         </>
       ) : (
         <Result answers={answers} pending={pending}
-          onAccept={(rank) => void run(() => accept({ rank }))} onRetake={() => void run(() => retake({}))} />
+          onAccept={(rank) => void run(async () => {
+            await accept({ rank });
+            // As on the phone, saving closes the check; Packs shows the chosen rank.
+            await navigate({ to: "/packs" });
+          })} onRetake={() => void run(() => retake({}))} />
       )}
       {error && <p role="alert" className="text-danger">{error}</p>}
       <p className="text-xs text-muted">

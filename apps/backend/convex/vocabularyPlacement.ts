@@ -10,13 +10,6 @@ export type PlacementItem = { word: string; band: number };
 
 export const STARTING_RANKS = [1, 2501, 7001] as const;
 
-export function checkItems(items: readonly PlacementItem[]): void {
-  if (items.length !== 90 || items.filter((i) => i.band === -1).length !== 30 ||
-    ![0, 1, 2].every((band) => items.filter((i) => i.band === band).length === 20)) {
-    throw new Error("The starting check needs 20 words in each of 3 bands and 30 invented words");
-  }
-}
-
 /** Words recognised per band, discounted by the false-alarm rate on invented words. */
 export function adjustedHits(items: readonly PlacementItem[], answers: readonly boolean[]): number[] {
   if (answers.length !== items.length) throw new Error("Answer every word first");

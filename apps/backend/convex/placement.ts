@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireToken } from "./access";
-import { newSettings } from "./study";
+import { newSettings, repairedPreferences } from "./study";
 import { STARTING_RANKS } from "./vocabularyPlacement";
 
 /**
@@ -28,8 +28,8 @@ export const answer = mutation({
     const answers = row?.answers ?? [];
     if (index < answers.length) return;
     if (index !== answers.length || index >= ITEMS) throw new ConvexError("Answer the words in order");
-    if (row) await ctx.db.patch(row._id, { answers: [...answers, known], updatedAt: Date.now() });
-    else await ctx.db.insert("placementProgress", { answers: [known], updatedAt: Date.now() });
+    if (row) await ctx.db.patch(row._id, { answers: [...answers, known] });
+    else await ctx.db.insert("placementProgress", { answers: [known] });
   },
 });
 
@@ -53,7 +53,8 @@ export const accept = mutation({
     const settings = await ctx.db.query("settings").first();
     const now = Date.now();
     const changed = { minimumRank: rank, placementDone: true, preferencesChangedAt: Math.max(now, (settings?.preferencesChangedAt ?? 0) + 1), updatedAt: now };
-    if (settings) await ctx.db.patch(settings._id, changed);
+    // Topics a placeholder row holds in a form Android rejects are repaired too, or the phone would drop the row.
+    if (settings) await ctx.db.patch(settings._id, { ...repairedPreferences(settings), ...changed });
     else await ctx.db.insert("settings", { ...newSettings(""), ...changed });
   },
 });

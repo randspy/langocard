@@ -90,7 +90,7 @@ export default defineSchema({
     .index("by_updated", ["updatedAt"]),
 
   // The web's starting-check answers, in item order. Web-only: never synced (each phone keeps its own).
-  placementProgress: defineTable({ answers: v.array(v.boolean()), updatedAt: v.number() }),
+  placementProgress: defineTable({ answers: v.array(v.boolean()) }),
 
   // A single row of placement, preference and daily-counter state.
   settings: defineTable({
