@@ -47,7 +47,9 @@ export const MINIMUM_RANKS = [1, 2501, 7001];
 /** The starting rank and topic interests, read as Android reads them ("daily,culture,news"). */
 export function preferences(settings: Doc<"settings"> | null) {
   const minimumRank = settings && MINIMUM_RANKS.includes(settings.minimumRank) ? settings.minimumRank : DEFAULT_MINIMUM_RANK;
-  const interests = (settings?.interests ?? DEFAULT_INTERESTS).split(",").filter((t) => (TOPICS as readonly string[]).includes(t));
+  const known = (settings?.interests ?? DEFAULT_INTERESTS).split(",").filter((t) => (TOPICS as readonly string[]).includes(t));
+  // A row with no recognisable topics (an older web placeholder) reads as Android's default.
+  const interests = known.length ? known : DEFAULT_INTERESTS.split(",");
   return { minimumRank, interests };
 }
 

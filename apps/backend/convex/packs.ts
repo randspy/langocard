@@ -27,6 +27,7 @@ export const setPreferences = mutation({
   args: { token: v.string(), minimumRank: v.optional(v.number()), topic: v.optional(v.object({ name: v.string(), selected: v.boolean() })) },
   handler: async (ctx, { token, minimumRank, topic }) => {
     requireToken(token);
+    if ((minimumRank === undefined) === (topic === undefined)) throw new ConvexError("Change one preference at a time");
     if (minimumRank !== undefined && !MINIMUM_RANKS.includes(minimumRank)) throw new ConvexError("Unknown starting rank");
     if (topic && !(TOPICS as readonly string[]).includes(topic.name)) throw new ConvexError("Unknown topic");
     const settings = await ctx.db.query("settings").first();

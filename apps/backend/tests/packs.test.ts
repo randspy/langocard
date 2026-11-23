@@ -59,3 +59,14 @@ test("installing a pack records Android's source row and makes its entries studi
   expect(JSON.parse(sources[0].source as string)).toEqual({ source: "Wiktionary contributors", license: "CC BY-SA 4.0", packId: "fr-extra", packVersion: 2 });
   expect((await client.query(api.study.next, { day, now }))?.key).toBe("pack-1:Reading");
 });
+
+test("a rank change on an older placeholder row keeps Android's default topics", async () => {
+  const t = setup(), client = withToken(t);
+  await t.run(async (ctx) => { await ctx.db.insert("settings", { placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: 0,
+    interests: "[]", preferencesChangedAt: 0, day, seconds: 0, introduced: 0, updatedAt: 1 }); });
+  expect(await client.query(api.packs.learningPreferences, {})).toEqual({ minimumRank: 2501, interests: ["daily", "culture", "news"] });
+  await client.mutation(api.packs.setPreferences, { minimumRank: 7001 });
+  expect((await pull(t, "settings"))[0]).toMatchObject({ minimumRank: 7001, interests: "daily,culture,news" });
+  await expect(client.mutation(api.packs.setPreferences, {})).rejects.toThrow(/one preference/);
+  await expect(client.mutation(api.packs.setPreferences, { minimumRank: 1, topic: { name: "news", selected: true } })).rejects.toThrow(/one preference/);
+});
