@@ -260,7 +260,6 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard,
                 }
                 if (!speech.available) Text(speech.message)
                 GapFill(p.example, card) { text -> model.presentCard { it.type(text) } }
-                Text("Listen for the missing French, then type it or say it aloud. Write it as you hear it in the sentence. Then recall what it means.", style = MaterialTheme.typography.bodySmall)
             }
         }
         if (revealed) {
