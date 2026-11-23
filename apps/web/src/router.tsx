@@ -5,6 +5,7 @@ import { EntryPage } from "@/routes/EntryPage";
 import { ExportPage } from "@/routes/ExportPage";
 import { LibraryPage } from "@/routes/LibraryPage";
 import { NewEntryPage } from "@/routes/NewEntryPage";
+import { PacksPage } from "@/routes/PacksPage";
 import { SourcesPage } from "@/routes/SourcesPage";
 import { StudyPage } from "@/routes/StudyPage";
 import { UpstreamPage } from "@/routes/UpstreamPage";
@@ -21,6 +22,7 @@ function Layout() {
           <Link to="/study" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Study</Link>
           <Link to="/entries/new" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">New entry</Link>
           <Link to="/conflicts" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Upstream changes</Link>
+          <Link to="/packs" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Packs</Link>
           <Link to="/export" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Export</Link>
           <Link to="/sources" className="text-sm text-muted [&.active]:text-ink [&.active]:font-medium">Content sources</Link>
         </nav>
@@ -73,7 +75,13 @@ const studyRoute = createRoute({
   component: StudyPage,
 });
 
-const routeTree = rootRoute.addChildren([studyRoute, libraryRoute, newEntryRoute, entryRoute, upstreamRoute, exportRoute, sourcesRoute]);
+const packsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/packs",
+  component: PacksPage,
+});
+
+const routeTree = rootRoute.addChildren([packsRoute, studyRoute, libraryRoute, newEntryRoute, entryRoute, upstreamRoute, exportRoute, sourcesRoute]);
 export const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

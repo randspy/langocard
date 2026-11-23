@@ -8,7 +8,8 @@ format, and **Content sources** shows the content notice and licences. **AI fill
 New entry drafts an entry in the browser with WebLLM (see
 [web practice](../../docs/design/web-practice.md#on-device-ai-on-the-web)). **Study**
 practises Reading, Production (Speak) and Gender cards, introducing new meanings as the phone does; answers
-reach the phone on its next sync. The design is in
+reach the phone on its next sync. **Packs** sets the starting rank and topic interests and
+installs catalogue packs, which phones pick up on their next sync. The design is in
 [`docs/design/web-card-management.md`](../../docs/design/web-card-management.md).
 
 Stack: Vite, React, TypeScript, TanStack Router, Tailwind CSS. It talks to Convex

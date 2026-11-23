@@ -18,6 +18,7 @@ import type * as fittedSettings from "../fittedSettings.js";
 import type * as fsrs from "../fsrs.js";
 import type * as library from "../library.js";
 import type * as merge from "../merge.js";
+import type * as packs from "../packs.js";
 import type * as migrations from "../migrations.js";
 import type * as seed from "../seed.js";
 import type * as skills from "../skills.js";
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   fsrs: typeof fsrs;
   library: typeof library;
   merge: typeof merge;
+  packs: typeof packs;
   migrations: typeof migrations;
   seed: typeof seed;
   skills: typeof skills;

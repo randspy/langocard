@@ -42,10 +42,10 @@ type Entry = Doc<"entries">;
 /** Android's defaults for preferences a settings row lacks or holds in a form Android rejects. */
 const DEFAULT_MINIMUM_RANK = 2501;
 const DEFAULT_INTERESTS = "daily,culture,news";
-const MINIMUM_RANKS = [1, 2501, 7001];
+export const MINIMUM_RANKS = [1, 2501, 7001];
 
 /** The starting rank and topic interests, read as Android reads them ("daily,culture,news"). */
-function preferences(settings: Doc<"settings"> | null) {
+export function preferences(settings: Doc<"settings"> | null) {
   const minimumRank = settings && MINIMUM_RANKS.includes(settings.minimumRank) ? settings.minimumRank : DEFAULT_MINIMUM_RANK;
   const interests = (settings?.interests ?? DEFAULT_INTERESTS).split(",").filter((t) => (TOPICS as readonly string[]).includes(t));
   return { minimumRank, interests };
@@ -60,7 +60,7 @@ function repairedPreferences(settings: Doc<"settings">) {
 }
 
 /** A settings row for a learner who has none yet, with Android's defaults. */
-const newSettings = (day: string) => ({
+export const newSettings = (day: string) => ({
   placementDone: false, placementIndex: 0, nextCardId: 0, minimumRank: DEFAULT_MINIMUM_RANK,
   interests: DEFAULT_INTERESTS, preferencesChangedAt: 0, day, seconds: 0, introduced: 0, genderIntroduced: 0,
 });
