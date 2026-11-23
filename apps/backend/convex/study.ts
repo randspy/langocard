@@ -26,11 +26,15 @@ export const DUE_DISPLAY_CAP = 100;
 /** Answers that rotate an entry's examples: every sentence-bearing skill, placement included. */
 const SENTENCE_SKILLS = ["Reading", "Listening", "Production"] as const;
 /** Skills the web can present so far, in Android's skill order (which breaks ties). */
-export const WEB_SKILLS = ["Reading", "Production"] as const;
+export const WEB_SKILLS = ["Reading", "Production", "Gender"] as const;
+/** Skills a new meaning starts with; Gender comes later, as a sibling. */
+const MEANING_SKILLS = ["Reading", "Production"] as const;
+/** Gender cards introduced per day in daily practice, as on Android. */
+const NEW_GENDER_CARDS = 10;
 export type WebSkill = (typeof WEB_SKILLS)[number];
 const isWebSkill = (skill: string | undefined): skill is WebSkill => (WEB_SKILLS as readonly string[]).includes(skill ?? "");
 /** Entry progress flags marking a started meaning without a card for a skill. */
-const MISSING_INDEX = { Reading: "by_missingReading", Production: "by_missingProduction" } as const;
+const MISSING_INDEX = { Reading: "by_missingReading", Production: "by_missingProduction", Gender: "by_missingGender" } as const;
 
 type Entry = Doc<"entries">;
 
@@ -77,6 +81,34 @@ async function nextBand(ctx: QueryCtx, origins: string[], band: number): Promise
   return lowest;
 }
 
+/** Whether a meaning belongs to the library the learner studies: not deleted, and not in a dormant pack. */
+async function active(ctx: QueryCtx, entry: Entry, installed: Map<string, boolean>): Promise<boolean> {
+  if (isDeleted(entry)) return false;
+  if (!entry.origin.startsWith("pack:")) return true;
+  const packId = entry.origin.slice("pack:".length);
+  if (!installed.has(packId)) installed.set(packId, (await ctx.db.query("sources").withIndex("by_source", (q) => q.eq("sourceId", packId)).first()) !== null);
+  return installed.get(packId)!;
+}
+
+/**
+ * Whether this meaning studies its noun's Gender card. Of the active meanings sharing a noun
+ * and gender, those that already have a Gender card keep it; otherwise the one introduced
+ * first (the lowest card ID among started cards) owns it.
+ */
+async function genderOwner(ctx: QueryCtx, entry: Entry, installed: Map<string, boolean>): Promise<boolean> {
+  if (!entry.nounKey) return false;
+  const meanings: Entry[] = [];
+  for (const m of await ctx.db.query("entries").withIndex("by_nounKey", (q) => q.eq("nounKey", entry.nounKey)).take(101)) {
+    if (await active(ctx, m, installed)) meanings.push(m);
+  }
+  const studied = meanings.filter((m) => m.progress?.slots.Gender?.cardId != null);
+  if (studied.length) return studied.some((m) => m.entryId === entry.entryId);
+  const firstCard = (m: Entry) => Math.min(...Object.values(m.progress?.slots ?? {}).map((slot) => slot.cardId ?? Infinity));
+  let owner: Entry | null = null;
+  for (const m of meanings) if (firstCard(m) < Infinity && (!owner || firstCard(m) < firstCard(owner))) owner = m;
+  return owner?.entryId === entry.entryId;
+}
+
 /** Whether the learner may study this card now; returns its entry if so. Cheap checks come first. */
 async function studiable(ctx: QueryCtx, row: Pick<Doc<"cards">, "key" | "active" | "skill" | "pausedUntil" | "suspendedUntil" | "packId" | "entryId">, now: number, day: string, installed = new Map<string, boolean>()): Promise<Entry | null> {
   if (!row.active || !isWebSkill(row.skill)) return null;
@@ -91,7 +123,10 @@ async function studiable(ctx: QueryCtx, row: Pick<Doc<"cards">, "key" | "active"
   const buried = await ctx.db.query("buried").withIndex("by_key", (q) => q.eq("key", row.key)).unique();
   if (buried?.day === day) return null;
   const entry = await ctx.db.query("entries").withIndex("by_entry", (q) => q.eq("entryId", row.entryId!)).unique();
-  return entry && !isDeleted(entry) ? entry : null;
+  if (!entry || isDeleted(entry)) return null;
+  // Only one meaning per noun studies its Gender card (Android's GenderCards.owners).
+  if (row.skill === "Gender" && !await genderOwner(ctx, entry, installed)) return null;
+  return entry;
 }
 
 /**
@@ -183,10 +218,11 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     throw new ConvexError("Run migrations:deriveEntryProgress before introducing cards");
   }
   let walked = 0;
-  const candidate = async (entry: Entry) => {
+  const candidate = async (entry: Entry, skills: readonly WebSkill[]) => {
     if (++walked > 1000) throw new ConvexError("Too many blocked introductions; try again later");
     // As on Android, a meaning offers its skills in skill order: the first one free to study.
-    for (const skill of WEB_SKILLS) {
+    for (const skill of skills) {
+      if (skill === "Gender" && contentOf(entry).gender === null) continue;
       const key = `${entry.entryId}:${skill}`;
       const row = await ctx.db.query("cards").withIndex("by_key", q => q.eq("key", key)).unique();
       if (row?.card) continue;
@@ -196,21 +232,29 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     }
     return null;
   };
-  // Siblings: the first started meaning in study order with a free missing skill.
+  // Siblings: the first started meaning in study order with a free missing skill. Any other
+  // sibling skill comes before a Gender card, which also needs room in today's Gender count.
   let sibling: { entry: Entry; skill: WebSkill; row: Doc<"cards"> | null } | null = null;
-  for (const skill of WEB_SKILLS) {
+  for (const skill of MEANING_SKILLS) {
     for await (const entry of ctx.db.query("entries").withIndex(MISSING_INDEX[skill], q => q.eq(`missing${skill}`, true))) {
       if (sibling && (entry.studyOrder ?? entry.entryId) >= (sibling.entry.studyOrder ?? sibling.entry.entryId)) break;
-      const choice = await candidate(entry);
+      const choice = await candidate(entry, MEANING_SKILLS);
       if (choice) { sibling = choice; break; }
     }
   }
   if (sibling) return sibling;
+  const gendersToday = settings?.day === day ? settings.genderIntroduced ?? 0 : 0;
+  if (gendersToday < NEW_GENDER_CARDS) {
+    for await (const entry of ctx.db.query("entries").withIndex("by_missingGender", q => q.eq("missingGender", true))) {
+      const choice = await candidate(entry, ["Gender"]);
+      if (choice) return choice;
+    }
+  }
   if (settings?.day === day && settings.introduced >= 5) return null;
   const { minimumRank: minimum, interests } = preferences(settings);
   for await (const entry of ctx.db.query("entries").withIndex("by_introducible_origin", q => q.eq("introducible", true).eq("origin", "personal"))) {
     if ((entry.studyRank ?? 0) < minimum) continue;
-    const choice = await candidate(entry);
+    const choice = await candidate(entry, MEANING_SKILLS);
     if (choice) return choice;
   }
   // Only built-in and installed packs: entries of packs no device installed stay dormant.
@@ -229,7 +273,7 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     entries.sort((a, b) => Number(interests.includes(b.topic)) - Number(interests.includes(a.topic)) || (a.studyOrder ?? a.entryId).localeCompare(b.studyOrder ?? b.entryId));
     for (const entry of entries) {
       if (entry.origin === "personal" || (entry.studyRank ?? 0) < minimum) continue;
-      const choice = await candidate(entry);
+      const choice = await candidate(entry, MEANING_SKILLS);
       if (choice) return choice;
     }
     band++;
@@ -379,8 +423,10 @@ export const answer = mutation({
     if (!await studiable(ctx, row ?? { key, active: !isDeleted(entry), skill, pausedUntil: 0, suspendedUntil: 0,
       packId: entry.origin.startsWith("pack:") ? entry.origin.slice(5) : null, entryId: entry.entryId }, now, day)) return { status: "stale" as const };
     const wasNewMeaning = !row?.card && !entry.started;
+    const wasNewGender = !row?.card && skill === "Gender";
     const settings = await ctx.db.query("settings").first();
     if (wasNewMeaning && (entry.retired || (entry.studyRank ?? entry.rank ?? 2_147_483_647) < preferences(settings).minimumRank || (settings?.day === day && settings.introduced >= 5))) return { status: "stale" as const };
+    if (wasNewGender && settings?.day === day && (settings.genderIntroduced ?? 0) >= NEW_GENDER_CARDS) return { status: "stale" as const };
     // A review never goes back in time, even if this browser's clock is behind.
     const at = Math.max(now, (row?.lastReview ?? 0) + 1);
     const card = row?.card == null ? newCard(await allocateCardId(ctx, day), at) : cardFromJson(row.card);
@@ -408,12 +454,14 @@ export const answer = mutation({
         await progress.review(key);
       }
     });
-    if (wasNewMeaning) {
+    // Today's introduction counters, synced with the phone (a newer local day starts them at zero).
+    if (wasNewMeaning || wasNewGender) {
       const current = (await ctx.db.query("settings").first())!;
+      const sameDay = current.day === day;
       if (current.day <= day) await ctx.db.patch(current._id, { day,
-        introduced: (current.day === day ? current.introduced : 0) + 1,
-        seconds: current.day === day ? current.seconds : 0,
-        genderIntroduced: current.day === day ? current.genderIntroduced ?? 0 : 0, updatedAt: Date.now() });
+        introduced: (sameDay ? current.introduced : 0) + (wasNewMeaning ? 1 : 0),
+        seconds: sameDay ? current.seconds : 0,
+        genderIntroduced: (sameDay ? current.genderIntroduced ?? 0 : 0) + (wasNewGender ? 1 : 0), updatedAt: Date.now() });
     }
     for await (const related of ctx.db.query("entries").withIndex("by_lexeme", q => q.eq("lexeme", entry.lexeme))) {
       if (isDeleted(related)) continue;

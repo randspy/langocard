@@ -25,9 +25,10 @@ class SharedStudyRulesFixturesTest {
                 val e = rows.getJSONObject(j)
                 val examples = e.optJSONArray("examples")?.let { a -> (0 until a.length()).map { Example(a.getString(it)) } }
                     ?: listOf(Example("{Avoir} un."), Example("{Avoir} deux."))
-                Entry(e.getString("id"), "avoir", "have", "Posséder.", examples,
+                Entry(e.getString("id"), e.optString("word", "avoir"), "have", "Posséder.", examples,
                     e.optString("topic", "daily"), lemma = e.optString("lemma", ""),
-                    rank = if (e.has("rank") && e.isNull("rank")) Int.MAX_VALUE else e.optInt("rank", 2501))
+                    rank = if (e.has("rank") && e.isNull("rank")) Int.MAX_VALUE else e.optInt("rank", 2501),
+                    gender = Gender.entries.firstOrNull { it.json == e.optString("gender") })
             }
             val cards = JSONObject()
             val paused = JSONObject()
@@ -47,9 +48,9 @@ class SharedStudyRulesFixturesTest {
                     .put("reviewDuration", JSONObject.NULL).put("example", r.getString("example")).toString()))
             }
             val learner = Learner(JSONObject().put("version", 2).put("day", day).put("cards", cards).put("reviews", reviews).put("paused", paused)
-                .put("seconds", fixture.optInt("seconds")).put("introduced", fixture.optInt("introduced"))
+                .put("seconds", fixture.optInt("seconds")).put("introduced", fixture.optInt("introduced")).put("genderIntroduced", fixture.optInt("genderIntroduced"))
                 .put("minimumRank", fixture.optInt("minimumRank", 1)).put("interests", fixture.optJSONArray("interests")?.let { a -> (0 until a.length()).joinToString(",") { a.getString(it) } } ?: "daily,culture,news"))
-            val rules = StudyRules(entries, learner, emptySet(), supported = setOf(Skill.Reading, Skill.Production), order = order)
+            val rules = StudyRules(entries, learner, emptySet(), supported = setOf(Skill.Reading, Skill.Production, Skill.Gender), order = order)
             val chosen = rules.choose(false, PracticeBlock.DAILY, SessionLearning(), now, day)
             val expected = if (fixture.isNull("next")) null else fixture.getString("next")
             assertEquals(name, expected, chosen?.key)

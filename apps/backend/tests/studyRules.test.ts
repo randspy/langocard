@@ -14,6 +14,7 @@ for (const fixture of fixtures.cases) test(fixture.name, async () => {
   const day = fixtures.day;
   const entries = fixture.entries.map((e) => shipped({ entryId: e.id, rank: "rank" in e ? e.rank : 2501,
     topic: "topic" in e ? e.topic : "daily", lemma: "lemma" in e ? e.lemma : "",
+    word: "word" in e ? e.word as string : "avoir", gender: "gender" in e ? e.gender as "masculine" | "feminine" : null,
     examples: "examples" in e ? e.examples as string[] : ["{Avoir} un.", "{Avoir} deux."] }));
   const at = (seconds: number) => now + seconds * 1000;
   // Personal content uses the actual sync path, just as entries from a phone do.
@@ -32,7 +33,8 @@ for (const fixture of fixtures.cases) test(fixture.name, async () => {
     }),
     buried: [], sources: [], settings: { placementDone: true, placementIndex: 0, nextCardId: 100,
       minimumRank: fixture.minimumRank ?? 1, interests: (fixture.interests ?? ["daily", "culture", "news"]).join(","), preferencesChangedAt: 1,
-      day, seconds: fixture.seconds ?? 0, introduced: fixture.introduced ?? 0 },
+      day, seconds: fixture.seconds ?? 0, introduced: fixture.introduced ?? 0,
+      genderIntroduced: (fixture as { genderIntroduced?: number }).genderIntroduced ?? 0 },
   });
   const shown = await client.query(api.study.next, { day, now });
   expect(shown?.key ?? null).toBe(fixture.next);

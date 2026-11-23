@@ -473,6 +473,128 @@
       ],
       "next": "stuck:Reading",
       "example": "{Avoir} deux."
+    },
+    {
+      "name": "a Gender card waits behind other sibling skills",
+      "entries": [
+        {
+          "id": "n1",
+          "word": "une intrigue",
+          "gender": "feminine"
+        },
+        {
+          "id": "plain"
+        }
+      ],
+      "cards": [
+        {
+          "key": "n1:Reading",
+          "due": 86400
+        },
+        {
+          "key": "n1:Production",
+          "due": 86400
+        },
+        {
+          "key": "plain:Reading",
+          "due": 86400
+        }
+      ],
+      "next": "plain:Production"
+    },
+    {
+      "name": "the first-introduced meaning owns the noun's Gender card",
+      "entries": [
+        {
+          "id": "m1",
+          "word": "une intrigue",
+          "gender": "feminine"
+        },
+        {
+          "id": "m2",
+          "word": "une intrigue",
+          "gender": "feminine"
+        }
+      ],
+      "cards": [
+        {
+          "key": "m2:Reading",
+          "due": 86400
+        },
+        {
+          "key": "m2:Production",
+          "due": 86400
+        },
+        {
+          "key": "m1:Reading",
+          "due": 86400
+        },
+        {
+          "key": "m1:Production",
+          "due": 86400
+        }
+      ],
+      "next": "m2:Gender"
+    },
+    {
+      "name": "a meaning that has a Gender card keeps the role",
+      "entries": [
+        {
+          "id": "m1",
+          "word": "une intrigue",
+          "gender": "feminine"
+        },
+        {
+          "id": "m2",
+          "word": "une intrigue",
+          "gender": "feminine"
+        }
+      ],
+      "cards": [
+        {
+          "key": "m1:Reading",
+          "due": 86400
+        },
+        {
+          "key": "m1:Production",
+          "due": 86400
+        },
+        {
+          "key": "m2:Reading",
+          "due": 86400
+        },
+        {
+          "key": "m2:Production",
+          "due": 86400
+        },
+        {
+          "key": "m2:Gender",
+          "due": 86400
+        }
+      ],
+      "next": null
+    },
+    {
+      "name": "the daily Gender limit",
+      "entries": [
+        {
+          "id": "n1",
+          "word": "une intrigue",
+          "gender": "feminine"
+        }
+      ],
+      "genderIntroduced": 10,
+      "cards": [
+        {
+          "key": "n1:Reading",
+          "due": 86400
+        },
+        {
+          "key": "n1:Production",
+          "due": 86400
+        }
+      ],
+      "next": null
     }
   ]
 }
