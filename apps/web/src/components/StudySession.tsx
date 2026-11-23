@@ -245,7 +245,7 @@ function GenderCard({ card, saving, onNext }: { card: StudyCard; saving: boolean
           <p className={chosen === gender ? "font-semibold text-lg" : "font-semibold text-lg text-danger"}>
             {chosen === gender ? "✓ Right" : `✗ Not ${ARTICLE[chosen]}`}
           </p>
-          <p className="font-semibold text-2xl">{entry.word} ({GENDER_TAGS[gender]})</p>
+          <p className="font-semibold text-2xl">{ARTICLE[gender]} {nounOf(entry.word)} ({GENDER_TAGS[gender]})</p>
           {cue && <p>{cue.feedback}</p>}
           <p className="text-lg font-medium">{entry.english}</p>
           <p>{entry.definition}</p>

@@ -222,7 +222,6 @@ async function introduction(ctx: QueryCtx, day: string, now: number): Promise<{ 
     if (++walked > 1000) throw new ConvexError("Too many blocked introductions; try again later");
     // As on Android, a meaning offers its skills in skill order: the first one free to study.
     for (const skill of skills) {
-      if (skill === "Gender" && contentOf(entry).gender === null) continue;
       const key = `${entry.entryId}:${skill}`;
       const row = await ctx.db.query("cards").withIndex("by_key", q => q.eq("key", key)).unique();
       if (row?.card) continue;
@@ -493,7 +492,12 @@ export const offer = query({
         .gte("studyRank", minimumRank)).first()) return "nothingLeft" as const;
     }
     for (const skill of WEB_SKILLS) {
-      if (await ctx.db.query("entries").withIndex(MISSING_INDEX[skill], q => q.eq(`missing${skill}`, true)).first()) return "nothingLeft" as const;
+      if (skill === "Gender") {
+        const installed = new Map<string, boolean>();
+        for await (const entry of ctx.db.query("entries").withIndex(MISSING_INDEX[skill], q => q.eq(`missing${skill}`, true))) {
+          if (await active(ctx, entry, installed) && await genderOwner(ctx, entry, installed)) return "nothingLeft" as const;
+        }
+      } else if (await ctx.db.query("entries").withIndex(MISSING_INDEX[skill], q => q.eq(`missing${skill}`, true)).first()) return "nothingLeft" as const;
       if (await ctx.db.query("cards").withIndex("by_active_skill_due", q => q.eq("active", true).eq("skill", skill).gte("due", 0).lte("due", now)).first()) return "nothingLeft" as const;
     }
     return "moreVocabulary" as const;

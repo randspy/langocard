@@ -38,3 +38,10 @@ describe("Gender cards", () => {
     expect(answer).toHaveBeenCalledWith(expect.anything(), "AGAIN");
   });
 });
+
+
+test("feedback spells out the correct article for an elided noun", async () => {
+  renderCard(gender("l’agence", "feminine"));
+  await userEvent.click(await screen.findByRole("button", { name: "un" }));
+  expect(screen.getByText("une agence (f.)")).toBeInTheDocument();
+});

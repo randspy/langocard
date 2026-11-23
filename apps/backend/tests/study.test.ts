@@ -324,3 +324,18 @@ test("introducing a Gender card counts against the synced Gender count, not new 
   expect((await client.mutation(api.study.answer, { key: shown.key, version: shown.version, rating: "AGAIN", example: shown.example, ...clock })).status).toBe("ok");
   expect((await t.query(api.sync.pull, { token: TOKEN, table: "settings", since: 0, cursor: null })).page[0]).toMatchObject({ introduced: 2, genderIntroduced: 10 });
 });
+
+
+test("a non-owner's missing Gender card does not prevent the more-vocabulary offer", async () => {
+  const t = setup();
+  await seed(t, [shipped({ entryId: "first", word: "une intrigue", gender: "feminine", lemma: "intrigue" }),
+    shipped({ entryId: "second", word: "une intrigue", gender: "feminine", lemma: "intrigue" })]);
+  await push(t, { cards: [
+    cardRow("first:Reading", reviewedCard(1, 5 * DAY)), cardRow("first:Production", reviewedCard(2, 5 * DAY)),
+    cardRow("first:Gender", reviewedCard(3, 5 * DAY)), cardRow("second:Reading", reviewedCard(4, 5 * DAY)),
+    cardRow("second:Production", reviewedCard(5, 5 * DAY)),
+  ] });
+  const client = withToken(t);
+  expect(await client.query(api.study.next, clock)).toBeNull();
+  expect(await client.query(api.study.offer, clock)).toBe("moreVocabulary");
+});
