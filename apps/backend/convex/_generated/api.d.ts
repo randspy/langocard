@@ -14,6 +14,7 @@ import type * as cardState from "../cardState.js";
 import type * as cards from "../cards.js";
 import type * as entries from "../entries.js";
 import type * as entryRules from "../entryRules.js";
+import type * as fittedSettings from "../fittedSettings.js";
 import type * as fsrs from "../fsrs.js";
 import type * as library from "../library.js";
 import type * as merge from "../merge.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   cards: typeof cards;
   entries: typeof entries;
   entryRules: typeof entryRules;
+  fittedSettings: typeof fittedSettings;
   fsrs: typeof fsrs;
   library: typeof library;
   merge: typeof merge;

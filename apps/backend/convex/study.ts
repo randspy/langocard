@@ -3,7 +3,8 @@ import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { requireToken } from "./access";
 import { contentOf, exampleAt, TOPICS, type EntryContent } from "./entryRules";
-import { cardFromJson, cardToJson, instantString, logToJson, newCard, RATINGS, Scheduler, type Rating } from "./fsrs";
+import { cardFromJson, cardToJson, instantString, logToJson, newCard, RATINGS, type Rating } from "./fsrs";
+import { parseFit, schedulerFor } from "./fittedSettings";
 import { withStudyProgress } from "./studyProgress";
 import { entryIdOf } from "./studyIndex";
 import { skillsOf } from "./skills";
@@ -297,6 +298,15 @@ export const next = query({
   },
 });
 
+/** The fitted FSRS settings answers are scheduled with, or null for the defaults, for previews and display. */
+export const scheduling = query({
+  args: { token: v.string() },
+  handler: async (ctx, { token }) => {
+    requireToken(token);
+    return parseFit((await ctx.db.query("settings").first())?.fittedSettings);
+  },
+});
+
 /** Due cards waiting now, counted up to `DUE_DISPLAY_CAP`. */
 export const summary = query({
   args: { token: v.string(), ...clock },
@@ -354,7 +364,8 @@ export const answer = mutation({
     // A review never goes back in time, even if this browser's clock is behind.
     const at = Math.max(now, (row?.lastReview ?? 0) + 1);
     const card = row?.card == null ? newCard(await allocateCardId(ctx, day), at) : cardFromJson(row.card);
-    const result = new Scheduler().review(card, rating as Rating, at);
+    // The learner's fit synced from the phone, as Android schedules with it; defaults otherwise.
+    const result = schedulerFor(parseFit(settings?.fittedSettings)).review(card, rating as Rating, at);
     const cardJson = cardToJson(result.card);
     const log = `${logToJson(result.log).slice(0, -1)},"example":${androidJson(example)}}`;
     await withStudyProgress(ctx, async (progress) => {
