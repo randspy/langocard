@@ -6,6 +6,7 @@ import { ExportPage } from "@/routes/ExportPage";
 import { LibraryPage } from "@/routes/LibraryPage";
 import { NewEntryPage } from "@/routes/NewEntryPage";
 import { PacksPage } from "@/routes/PacksPage";
+import { PlacementPage } from "@/routes/PlacementPage";
 import { SourcesPage } from "@/routes/SourcesPage";
 import { StudyPage } from "@/routes/StudyPage";
 import { UpstreamPage } from "@/routes/UpstreamPage";
@@ -81,7 +82,13 @@ const packsRoute = createRoute({
   component: PacksPage,
 });
 
-const routeTree = rootRoute.addChildren([packsRoute, studyRoute, libraryRoute, newEntryRoute, entryRoute, upstreamRoute, exportRoute, sourcesRoute]);
+const placementRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/placement",
+  component: PlacementPage,
+});
+
+const routeTree = rootRoute.addChildren([packsRoute, placementRoute, studyRoute, libraryRoute, newEntryRoute, entryRoute, upstreamRoute, exportRoute, sourcesRoute]);
 export const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

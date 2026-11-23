@@ -1,0 +1,105 @@
+{
+  "description": "Starting-check cases shared by apps/backend/convex/vocabularyPlacement.ts and Android's VocabularyPlacement, over content/placement-items.json. answers has one 1 (yes) or 0 (no) per item, in order.",
+  "cases": [
+    {
+      "name": "every real word known",
+      "answers": "110110110110110110110110110110110110110110110110110110110110110110110110110110110110110110",
+      "adjustedHits": [
+        20,
+        20,
+        20
+      ],
+      "startingRank": 7001
+    },
+    {
+      "name": "everything known",
+      "answers": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+      "adjustedHits": [
+        0,
+        0,
+        0
+      ],
+      "startingRank": 1
+    },
+    {
+      "name": "nothing known",
+      "answers": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "adjustedHits": [
+        0,
+        0,
+        0
+      ],
+      "startingRank": 1
+    },
+    {
+      "name": "alternate answers",
+      "answers": "101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010",
+      "adjustedHits": [
+        0,
+        0,
+        0
+      ],
+      "startingRank": 1
+    },
+    {
+      "name": "first band only",
+      "answers": "110110110110110110110110110110000000000000000000000000000000000000000000000000000000000000",
+      "adjustedHits": [
+        20,
+        0,
+        0
+      ],
+      "startingRank": 2501
+    },
+    {
+      "name": "first two bands",
+      "answers": "110110110110110110110110110110110110110110110110110110110110000000000000000000000000000000",
+      "adjustedHits": [
+        20,
+        20,
+        0
+      ],
+      "startingRank": 7001
+    },
+    {
+      "name": "two bands with one false alarm",
+      "answers": "111110110110110110110110110110110110110110110110110110110110000000000000000000000000000000",
+      "adjustedHits": [
+        19.333333333333332,
+        19.333333333333332,
+        0
+      ],
+      "startingRank": 7001
+    },
+    {
+      "name": "two bands with seven false alarms",
+      "answers": "111111111111111111111110110110110110110110110110110110110110000000000000000000000000000000",
+      "adjustedHits": [
+        15.333333333333332,
+        15.333333333333332,
+        0
+      ],
+      "startingRank": 1
+    },
+    {
+      "name": "sixteen per band",
+      "answers": "110110110110110110110110000000110110110110110110110110000000110110110110110110110110000000",
+      "adjustedHits": [
+        16,
+        16,
+        16
+      ],
+      "startingRank": 7001
+    },
+    {
+      "name": "fifteen in the first band",
+      "answers": "110110110110110110110100000000110110110110110110110110110110110110110110110110110110110110",
+      "adjustedHits": [
+        15,
+        20,
+        20
+      ],
+      "startingRank": 1
+    }
+  ]
+}

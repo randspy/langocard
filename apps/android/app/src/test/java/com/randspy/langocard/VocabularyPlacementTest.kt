@@ -29,4 +29,22 @@ class VocabularyPlacementTest {
         assertEquals(7001, test.startingRank(List(90) { it < 16 || it in 20..35 }))
         assertEquals(1, test.startingRank(List(90) { it < 16 || it in 20..35 || it == 60 }))
     }
+
+    @Test fun `scoring matches the web on the shared fixtures`() {
+        val items = org.json.JSONArray(java.io.File("../../../content/placement-items.json").readText()).let { a ->
+            (0 until a.length()).map { i -> a.getJSONObject(i).let { PlacementItem(it.getString("word"), it.getInt("band")) } }
+        }
+        assertEquals("the app's copy is the shared file", java.io.File("../../../content/placement-items.json").readText(),
+            java.io.File("src/main/assets/placement-items.json").readText())
+        val placement = VocabularyPlacement(items)
+        val cases = org.json.JSONObject(java.io.File("../../../content/placement-fixtures.json").readText()).getJSONArray("cases")
+        for (i in 0 until cases.length()) {
+            val case = cases.getJSONObject(i)
+            val answers = case.getString("answers").map { it == '1' }
+            assertEquals(case.getString("name"), case.getInt("startingRank"), placement.startingRank(answers))
+            val hits = placement.adjustedHits(answers)
+            val expected = case.getJSONArray("adjustedHits")
+            for (band in 0..2) assertEquals(case.getString("name"), expected.getDouble(band), hits[band], 1e-9)
+        }
+    }
 }

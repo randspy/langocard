@@ -19,6 +19,7 @@ import type * as fsrs from "../fsrs.js";
 import type * as library from "../library.js";
 import type * as merge from "../merge.js";
 import type * as packs from "../packs.js";
+import type * as placement from "../placement.js";
 import type * as migrations from "../migrations.js";
 import type * as seed from "../seed.js";
 import type * as skills from "../skills.js";
@@ -31,6 +32,7 @@ import type * as studyIndex from "../studyIndex.js";
 import type * as sync from "../sync.js";
 import type * as typedAnswer from "../typedAnswer.js";
 import type * as validators from "../validators.js";
+import type * as vocabularyPlacement from "../vocabularyPlacement.js";
 
 import type {
   ApiFromModules,
@@ -50,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   library: typeof library;
   merge: typeof merge;
   packs: typeof packs;
+  placement: typeof placement;
   migrations: typeof migrations;
   seed: typeof seed;
   skills: typeof skills;
@@ -62,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   sync: typeof sync;
   typedAnswer: typeof typedAnswer;
   validators: typeof validators;
+  vocabularyPlacement: typeof vocabularyPlacement;
 }>;
 
 /**
