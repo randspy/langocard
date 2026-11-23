@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import { cardToJson, newCard, Scheduler } from "@backend/fsrs";
@@ -63,4 +63,25 @@ test("a repeat pause starts from the saved hook, which can be cleared, and a fai
   await userEvent.click(screen.getByRole("button", { name: "Save hook" }));
   expect(saveHook).toHaveBeenLastCalledWith("plot", "");
   expect(await screen.findByText("Session complete.")).toBeInTheDocument();
+});
+
+
+test("the hook draft cannot change during a pending save and survives a delayed failure", async () => {
+  let rejectSave: (error: Error) => void = () => {};
+  const saveHook = vi.fn(() => new Promise<void>((_, reject) => { rejectSave = reject; }));
+  render(<StudySession fetchNext={async () => card("old image")} clock={() => now} saveHook={saveHook}
+    answer={async () => ({ status: "ok" as const, card: "", offerHook: true })} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Reveal answer" }));
+  await userEvent.click(screen.getByRole("button", { name: /Again/ }));
+  const editor = await screen.findByLabelText("Memory hook");
+  await userEvent.clear(editor);
+  await userEvent.type(editor, "new image");
+  await userEvent.click(screen.getByRole("button", { name: "Save hook" }));
+  expect(editor).toHaveAttribute("readonly");
+  await userEvent.type(editor, " while saving");
+  expect(editor).toHaveValue("new image");
+  await act(async () => rejectSave(new Error("Offline")));
+  expect(screen.getByRole("alert")).toHaveTextContent("Offline");
+  expect(editor).toHaveValue("new image");
+  expect(editor).not.toHaveAttribute("readonly");
 });
