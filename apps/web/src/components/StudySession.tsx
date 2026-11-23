@@ -1,6 +1,7 @@
 import type { Fit } from "@backend/fittedSettings";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { clozeOf, textOf, answerOf } from "@backend/entryRules";
+import { clozeOf, nounOf, textOf, answerOf, type Gender } from "@backend/entryRules";
+import { endingMatch } from "@backend/nounEndings";
 import { MATCH_LABEL, MATCH_RATING, typedAnswer, type AnswerPart, type TypedAnswer } from "@backend/typedAnswer";
 import { Input, Textarea } from "@/components/ui/input";
 import { usePracticeClock } from "@/lib/usePracticeClock";
@@ -142,6 +143,15 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook
   };
   const previews = revealed ? intervals(card.card, clock(), fit) : null;
   const word = entry.gender ? `${entry.word} (${GENDER_TAGS[entry.gender]})` : entry.word;
+  if (card.skill === "Gender") {
+    return (
+      <article className="max-w-2xl space-y-6" aria-label="Study card">
+        {timeError && <p role="alert">{timeError}</p>}
+        <Button variant="outline" disabled={saving} onClick={() => void finish()}>End session</Button>
+        <GenderCard key={card.key} card={card} saving={saving} onNext={(rating) => void rate(rating)} />
+      </article>
+    );
+  }
   return (
     <article className="max-w-2xl space-y-6" aria-label="Study card">
       {timeError && <p role="alert">{timeError}</p>}
@@ -203,6 +213,48 @@ export function StudySession({ fetchNext, answer, clock, tick = noTick, saveHook
           </div>
         )}
     </article>
+  );
+}
+
+/**
+ * A Gender card grades itself: choose un or une, see whether it was right with the noun's
+ * ending cue, then go on. Right is Good, wrong is Again.
+ */
+function GenderCard({ card, saving, onNext }: { card: StudyCard; saving: boolean; onNext: (rating: Rating) => void }) {
+  const [chosen, setChosen] = useState<Gender | null>(null);
+  const { entry, example } = card;
+  const gender = entry.gender!;
+  const ARTICLE: Record<Gender, string> = { masculine: "un", feminine: "une" };
+  const cue = endingMatch(entry.word, gender);
+  return (
+    <>
+      <p className="text-sm uppercase tracking-wide text-muted">Gender</p>
+      <div className="space-y-2">
+        <p className="font-semibold text-3xl">{nounOf(entry.word)}</p>
+        <p className="text-lg">{entry.english}</p>
+        {!chosen && <p className="text-sm text-muted">Un or une?</p>}
+      </div>
+      {!chosen ? (
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Choose the article">
+          {(["masculine", "feminine"] as const).map((g) => (
+            <Button key={g} variant="outline" className="h-14 text-xl" onClick={() => setChosen(g)}>{ARTICLE[g]}</Button>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2 border-t border-line pt-4">
+          <p className={chosen === gender ? "font-semibold text-lg" : "font-semibold text-lg text-danger"}>
+            {chosen === gender ? "✓ Right" : `✗ Not ${ARTICLE[chosen]}`}
+          </p>
+          <p className="font-semibold text-2xl">{ARTICLE[gender]} {nounOf(entry.word)} ({GENDER_TAGS[gender]})</p>
+          {cue && <p>{cue.feedback}</p>}
+          <p className="text-lg font-medium">{entry.english}</p>
+          <p>{entry.definition}</p>
+          {card.hook && <p>Memory hook: {card.hook}</p>}
+          <p>{textOf(example)}</p>
+          <Button className="w-full" disabled={saving} onClick={() => onNext(chosen === gender ? "GOOD" : "AGAIN")}>Next</Button>
+        </div>
+      )}
+    </>
   );
 }
 

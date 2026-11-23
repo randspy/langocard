@@ -311,3 +311,31 @@ test("the fourth consecutive Again pauses the card for three days and offers a m
   await client.mutation(api.sync.saveMemoryHook, { entryId: "frw-1", text: "a strong image" });
   expect((await client.query(api.study.next, { day: "2026-11-24", now: now + 4 * DAY }))?.hook).toBe("a strong image");
 });
+
+test("introducing a Gender card counts against the synced Gender count, not new meanings", async () => {
+  const t = setup();
+  await seed(t, [shipped({ word: "une intrigue", gender: "feminine", lemma: "intrigue" })]);
+  await push(t, { cards: [cardRow("frw-1:Reading", reviewedCard(1, 5 * DAY)), cardRow("frw-1:Production", reviewedCard(2, 5 * DAY))],
+    settings: { placementDone: true, placementIndex: 0, nextCardId: 3, minimumRank: 1, interests: "daily", preferencesChangedAt: 0,
+      day, seconds: 0, introduced: 2, genderIntroduced: 9 } });
+  const client = withToken(t);
+  const shown = (await client.query(api.study.next, clock))!;
+  expect(shown).toMatchObject({ key: "frw-1:Gender", skill: "Gender", card: null });
+  expect((await client.mutation(api.study.answer, { key: shown.key, version: shown.version, rating: "AGAIN", example: shown.example, ...clock })).status).toBe("ok");
+  expect((await t.query(api.sync.pull, { token: TOKEN, table: "settings", since: 0, cursor: null })).page[0]).toMatchObject({ introduced: 2, genderIntroduced: 10 });
+});
+
+
+test("a non-owner's missing Gender card does not prevent the more-vocabulary offer", async () => {
+  const t = setup();
+  await seed(t, [shipped({ entryId: "first", word: "une intrigue", gender: "feminine", lemma: "intrigue" }),
+    shipped({ entryId: "second", word: "une intrigue", gender: "feminine", lemma: "intrigue" })]);
+  await push(t, { cards: [
+    cardRow("first:Reading", reviewedCard(1, 5 * DAY)), cardRow("first:Production", reviewedCard(2, 5 * DAY)),
+    cardRow("first:Gender", reviewedCard(3, 5 * DAY)), cardRow("second:Reading", reviewedCard(4, 5 * DAY)),
+    cardRow("second:Production", reviewedCard(5, 5 * DAY)),
+  ] });
+  const client = withToken(t);
+  expect(await client.query(api.study.next, clock)).toBeNull();
+  expect(await client.query(api.study.offer, clock)).toBe("moreVocabulary");
+});
