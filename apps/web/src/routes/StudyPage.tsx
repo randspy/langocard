@@ -39,8 +39,13 @@ export function StudyPage() {
       </p>}
       {offer === "moreVocabulary" && <p>Ready for more vocabulary? Add entries to your library.</p>}
       {offer === "nothingLeft" && <p>Nothing left for a fresh sitting right now.</p>}
-      {fit !== undefined && <p className="text-xs text-muted">{schedulingDescription(fit)}</p>}
-      <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} fit={fit ?? null} />
+      {/* The session starts once the scheduling is known, so previews match what answers use. */}
+      {fit === undefined ? <p className="text-muted">Loading…</p> : (
+        <>
+          <p className="text-xs text-muted">{schedulingDescription(fit)}</p>
+          <StudySession fetchNext={fetchNext} answer={answer} clock={Date.now} tick={tick} fit={fit} />
+        </>
+      )}
     </section>
   );
 }

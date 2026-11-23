@@ -21,16 +21,27 @@ export function parseFit(json: string | null | undefined): Fit | null {
   try {
     const o = JSON.parse(json) as Record<string, unknown>;
     const p = o.parameters;
-    if (o.format !== "langocard-fsrs" || o.version !== 1 || !Array.isArray(p) || p.length !== 21) return null;
+    // Android reads `version` as the integer 1, so "1.0" is refused as well.
+    if (o.format !== "langocard-fsrs" || !/"version"\s*:\s*1\s*[,}]/.test(json) || !Array.isArray(p) || p.length !== 21) return null;
     if (!p.every((w, i) => typeof w === "number" && w >= BOUNDS[i][0] && w <= BOUNDS[i][1])) return null;
     const retention = o.desiredRetention;
     if (typeof retention !== "number" || retention < 0.7 || retention > 0.95) return null;
-    if (!Number.isInteger(o.reviewCount) || (o.reviewCount as number) < 1000) return null;
-    if (typeof o.fitDate !== "string" || Number.isNaN(Date.parse(o.fitDate))) return null;
+    if (!Number.isInteger(o.reviewCount) || (o.reviewCount as number) < 1000 || (o.reviewCount as number) > 2_147_483_647) return null;
+    if (typeof o.fitDate !== "string" || !isOffsetDateTime(o.fitDate)) return null;
     return { parameters: p as number[], retention, reviewCount: o.reviewCount as number, fitDate: o.fitDate };
   } catch {
     return null;
   }
+}
+
+/** An ISO-8601 date-time with an offset and a real calendar date, as `OffsetDateTime.parse` accepts. */
+function isOffsetDateTime(text: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,9})?)?(Z|[+-]\d{2}:\d{2}(?::\d{2})?)$/.exec(text);
+  if (!m) return false;
+  const [year, month, day, hour, minute, second] = m.slice(1, 7).map((x) => Number(x ?? 0));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day &&
+    hour <= 23 && minute <= 59 && second <= 59;
 }
 
 /** The scheduler Android builds for this fit, or its defaults (90% target recall) without one. */
