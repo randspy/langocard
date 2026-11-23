@@ -1,5 +1,6 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { api } from "@backend/_generated/api";
+import { HomeExtraPractice } from "@/components/HomeExtraPractice";
 import { LibraryView } from "@/components/LibraryView";
 import { buttonVariants } from "@/components/ui/button";
 import { useTokenQuery } from "@/lib/convex";
@@ -16,6 +17,7 @@ export function LibraryPage() {
         <h1 className="font-semibold text-3xl">Library</h1>
         <Link to="/entries/new" className={buttonVariants()}>New entry</Link>
       </div>
+      <HomeExtraPractice />
       {library === undefined
         ? <p className="text-muted">Loading the library…</p>
         : <LibraryView entries={library.entries} search={search} now={now}

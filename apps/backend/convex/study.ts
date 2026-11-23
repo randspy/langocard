@@ -1,3 +1,4 @@
+import { PracticeBlock, type StoredBlock } from "./practiceBlock";
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
@@ -10,7 +11,7 @@ import { loggedExample, recordRecall, returning, returningExample } from "./stuc
 import { entryIdOf } from "./studyIndex";
 import { skillsOf } from "./skills";
 import { isDeleted } from "./merge";
-import { practicePhase } from "./studyPolicy";
+
 import { refreshCard } from "./studyIndex";
 
 /**
@@ -29,8 +30,8 @@ const SENTENCE_SKILLS = ["Reading", "Listening", "Production"] as const;
 export const WEB_SKILLS = ["Reading", "Listening", "Production", "Gender"] as const;
 /** Skills a new meaning starts with; Gender comes later, as a sibling. */
 const MEANING_SKILLS = ["Reading", "Listening", "Production"] as const;
-/** Gender cards introduced per day in daily practice, as on Android. */
-const NEW_GENDER_CARDS = 10;
+/** Local extra-block usage travels with each study request; daily state stays on the server. */
+const blockArg = v.optional(v.union(v.null(), v.object({ day: v.string(), start: v.number(), minutes: v.union(v.literal(5), v.literal(10), v.literal(15)), meaningsUsed: v.number(), gendersUsed: v.number() })));
 export type WebSkill = (typeof WEB_SKILLS)[number];
 const isWebSkill = (skill: string | undefined): skill is WebSkill => (WEB_SKILLS as readonly string[]).includes(skill ?? "");
 /** Entry progress flags marking a started meaning without a card for a skill. */
@@ -210,10 +211,11 @@ async function exposures(ctx: QueryCtx, entryId: string): Promise<number> {
 }
 
 /** The next new card: a sibling skill of a started meaning, else a new meaning, for skills the web presents. */
-async function introduction(ctx: QueryCtx, day: string, now: number, audio = false): Promise<{ entry: Entry; skill: WebSkill; row: Doc<"cards"> | null } | null> {
+async function introduction(ctx: QueryCtx, day: string, now: number, audio = false, stored: StoredBlock | null = null): Promise<{ entry: Entry; skill: WebSkill; row: Doc<"cards"> | null } | null> {
   const settings = await ctx.db.query("settings").first();
-  const phase = practicePhase(settings?.day === day ? settings.seconds : 0);
-  if (phase !== "practice") return null;
+  const seconds = settings?.day === day ? settings.seconds : 0;
+  const block = PracticeBlock.read(stored, day, seconds);
+  if (block.phase(seconds) !== "practice") return null;
   if (await ctx.db.query("entries").withIndex("by_started", q => q.eq("started", undefined)).first()) {
     throw new ConvexError("Run migrations:deriveEntryProgress before introducing cards");
   }
@@ -244,13 +246,13 @@ async function introduction(ctx: QueryCtx, day: string, now: number, audio = fal
   }
   if (sibling) return sibling;
   const gendersToday = settings?.day === day ? settings.genderIntroduced ?? 0 : 0;
-  if (gendersToday < NEW_GENDER_CARDS) {
+  if (block.genderRoom(gendersToday)) {
     for await (const entry of ctx.db.query("entries").withIndex("by_missingGender", q => q.eq("missingGender", true))) {
       const choice = await candidate(entry, ["Gender"]);
       if (choice) return choice;
     }
   }
-  if (settings?.day === day && settings.introduced >= 5) return null;
+  if (!block.meaningRoom(settings?.day === day ? settings.introduced : 0)) return null;
   const { minimumRank: minimum, interests } = preferences(settings);
   for await (const entry of ctx.db.query("entries").withIndex("by_introducible_origin", q => q.eq("introducible", true).eq("origin", "personal"))) {
     if ((entry.studyRank ?? 0) < minimum) continue;
@@ -313,21 +315,22 @@ export const tick = mutation({
 
 /** Today's synced time and the practice phase displayed by the browser. */
 export const progress = query({
-  args: { token: v.string(), day: v.string() },
-  handler: async (ctx, { token, day }) => {
+  args: { token: v.string(), day: v.string(), block: blockArg },
+  handler: async (ctx, { token, day, block: stored = null }) => {
     requireToken(token);
     const seconds = await dailySeconds(ctx, day);
-    return { seconds, phase: practicePhase(seconds) };
+    return { seconds, phase: PracticeBlock.read(stored, day, seconds).phase(seconds) };
   },
 });
 
 /** The card to study next, or null when nothing is due. */
 export const next = query({
-  args: { token: v.string(), ...clock, audio: v.optional(v.boolean()), pending: v.optional(v.array(v.string())) },
-  handler: async (ctx, { token, day, now, audio = false, pending = [] }) => {
+  args: { token: v.string(), ...clock, block: blockArg, audio: v.optional(v.boolean()), pending: v.optional(v.array(v.string())) },
+  handler: async (ctx, { token, day, now, block: stored = null, audio = false, pending = [] }) => {
     requireToken(token);
     if (pending.length > 1000) throw new ConvexError("Too many session cards");
-    const phase = practicePhase(await dailySeconds(ctx, day));
+    const seconds = await dailySeconds(ctx, day);
+    const phase = PracticeBlock.read(stored, day, seconds).phase(seconds);
     if (phase === "done") return null;
     const chosen = async (row: Doc<"cards">, entry: Entry) => {
       const content: EntryContent = contentOf(entry);
@@ -342,12 +345,12 @@ export const next = query({
       if (due) return chosen(due.row, due.entry);
     }
     if (phase === "practice") {
-      const choice = await introduction(ctx, day, now, audio);
+      const choice = await introduction(ctx, day, now, audio, stored);
       if (choice) {
         const { entry, skill, row } = choice;
         const content = contentOf(entry);
         return { key: `${entry.entryId}:${skill}`, skill, version: row?.lastReview ?? null,
-          card: row?.card ?? null, entryId: entry.entryId, entry: content,
+          card: row?.card ?? null, newMeaning: !entry.started, newGender: !row?.card && skill === "Gender", entryId: entry.entryId, entry: content,
           example: await shownExample(ctx, `${entry.entryId}:${skill}`, row, entry, now), hook: await hookText(ctx, entry.entryId) };
       }
     }
@@ -410,9 +413,10 @@ export const answer = mutation({
     version: v.union(v.number(), v.null()),
     rating: v.union(...RATINGS.map((r) => v.literal(r))),
     example: v.string(),
+    block: blockArg,
     ...clock,
   },
-  handler: async (ctx, { token, key, version, rating, example, day, now }) => {
+  handler: async (ctx, { token, key, version, rating, example, day, now, block: stored = null }) => {
     requireToken(token);
     if (example.length > 2000) throw new ConvexError("Invalid example");
     const row = await ctx.db.query("cards").withIndex("by_key", (q) => q.eq("key", key)).unique();
@@ -425,8 +429,9 @@ export const answer = mutation({
     const wasNewMeaning = !row?.card && !entry.started;
     const wasNewGender = !row?.card && skill === "Gender";
     const settings = await ctx.db.query("settings").first();
-    if (wasNewMeaning && (entry.retired || (entry.studyRank ?? entry.rank ?? 2_147_483_647) < preferences(settings).minimumRank || (settings?.day === day && settings.introduced >= 5))) return { status: "stale" as const };
-    if (wasNewGender && settings?.day === day && (settings.genderIntroduced ?? 0) >= NEW_GENDER_CARDS) return { status: "stale" as const };
+    const block = PracticeBlock.read(stored, day, settings?.day === day ? settings.seconds : 0);
+    if (wasNewMeaning && (entry.retired || (entry.studyRank ?? entry.rank ?? 2_147_483_647) < preferences(settings).minimumRank || !block.meaningRoom(settings?.day === day ? settings.introduced : 0))) return { status: "stale" as const };
+    if (wasNewGender && !block.genderRoom(settings?.day === day ? settings.genderIntroduced ?? 0 : 0)) return { status: "stale" as const };
     // A review never goes back in time, even if this browser's clock is behind.
     const at = Math.max(now, (row?.lastReview ?? 0) + 1);
     const card = row?.card == null ? newCard(await allocateCardId(ctx, day), at) : cardFromJson(row.card);
@@ -474,18 +479,22 @@ export const answer = mutation({
         else if (buried.day < day) await ctx.db.patch(buried._id, { day, updatedAt: Date.now() });
       }
     }
-    return { status: "ok" as const, card: cardJson, offerHook };
+    return { status: "ok" as const, card: cardJson, offerHook, ...(block.isExtra ? { block: block.introduced(wasNewMeaning, wasNewGender).toJSON() } : {}) };
   },
 });
 
 /** The next action for a fresh daily sitting, restricted to skills the web can present. */
 export const offer = query({
-  args: { token: v.string(), ...clock, audio: v.optional(v.boolean()) },
-  handler: async (ctx, { token, day, now, audio = false }) => {
+  args: { token: v.string(), ...clock, block: blockArg, audio: v.optional(v.boolean()) },
+  handler: async (ctx, { token, day, now, block: stored = null, audio = false }) => {
     requireToken(token);
-    if (await dailySeconds(ctx, day) >= 900) return "nothingLeft" as const;
-    if (await soonestDue(ctx, now, day, audio)) return "practice" as const;
-    if (await introduction(ctx, day, now, audio)) return "practice" as const;
+    const seconds = await dailySeconds(ctx, day);
+    const block = PracticeBlock.read(stored, day, seconds);
+    if (seconds < block.end && (await soonestDue(ctx, now, day, audio) || await introduction(ctx, day, now, audio, stored))) return "practice" as const;
+    if (seconds >= 900) {
+      const prospective = PracticeBlock.grant(day, seconds, 5).toJSON();
+      if (await soonestDue(ctx, now, day, audio) || await introduction(ctx, day, now, audio, prospective)) return "extraBlock" as const;
+    }
     // Unstarted meanings the learner could study later (as on Android, dormant packs don't count).
     const { minimumRank } = preferences(await ctx.db.query("settings").first());
     for (const origin of ["personal", ...await rankedOrigins(ctx)]) {
