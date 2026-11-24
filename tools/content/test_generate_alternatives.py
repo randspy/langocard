@@ -2,7 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from generate_alternatives import UnusableReply, alternatives_for, load, pending, rejection, run, save
+from generate_alternatives import CHECK_VERSION, UnusableReply, alternatives_for, load, pending, rejection, run, save, stale
 
 ROW = dict(id='fr-core-1', english='To reach a destination.', example='Le train devrait {arriver} à la gare.', rank=103)
 
@@ -18,7 +18,8 @@ class FakeModel:
 
 
 def verdict(candidate, ok=True, reason='ok'):
-    return {'candidate': candidate, 'reason': reason, 'grammatical': ok, 'same_meaning': ok}
+    return {'candidate': candidate, 'reason': reason, 'grammatical': ok, 'same_meaning': ok, 'same_register': ok,
+            'as_specific': ok}
 
 
 class FilterTests(unittest.TestCase):
@@ -37,7 +38,8 @@ class GenerateTests(unittest.TestCase):
     def test_keeps_only_candidates_the_checker_accepts(self):
         model = FakeModel({'alternatives': ['parvenir', 'arriver', 'venir', 'aller']},
                           {'verdicts': [verdict('parvenir'), verdict('venir', False, 'different meaning'),
-                                        {'candidate': 'aller', 'grammatical': True, 'same_meaning': False}]})
+                                        {'candidate': 'aller', 'grammatical': True, 'same_meaning': True,
+                                         'same_register': True, 'as_specific': False}]})
         record = alternatives_for(ROW, model)
         self.assertEqual(['parvenir'], record['accepted'])
         self.assertEqual({'arriver': 'target variant', 'venir': 'checker: different meaning', 'aller': 'checker:'},
@@ -45,9 +47,15 @@ class GenerateTests(unittest.TestCase):
         self.assertIn('Le train devrait ________ à la gare.', model.prompts[0])
         self.assertIn('1. parvenir: Le train devrait parvenir à la gare.', model.prompts[1])
 
+    def test_every_criterion_must_hold(self):
+        for criterion in ('grammatical', 'same_meaning', 'same_register', 'as_specific'):
+            model = FakeModel({'alternatives': ['parvenir']}, {'verdicts': [verdict('parvenir') | {criterion: False}]})
+            self.assertEqual([], alternatives_for(ROW, model)['accepted'], criterion)
+
     def test_skips_the_checker_when_nothing_was_proposed(self):
         model = FakeModel({'alternatives': []})
-        self.assertEqual({'example': ROW['example'], 'accepted': [], 'rejected': []}, alternatives_for(ROW, model))
+        self.assertEqual({'example': ROW['example'], 'accepted': [], 'rejected': [], 'check': CHECK_VERSION},
+                         alternatives_for(ROW, model))
         self.assertEqual(1, len(model.prompts))
 
     def test_unusable_replies_leave_the_row_pending(self):
@@ -79,6 +87,25 @@ class GenerateTests(unittest.TestCase):
         words = ['a1', 'b2', 'c3', 'd4', 'e5', 'f6']
         model = FakeModel({'alternatives': words}, {'verdicts': [verdict(w) for w in words]})
         self.assertEqual(words[:5], alternatives_for(ROW, model)['accepted'])
+
+
+class RecheckTests(unittest.TestCase):
+    def test_rejudges_only_current_records_whose_alternatives_an_older_checker_accepted(self):
+        rows = [ROW, ROW | {'id': 'fr-core-2'}, ROW | {'id': 'fr-core-3'}, ROW | {'id': 'fr-core-4', 'example': 'Il va {partir}.'}]
+        old = {'example': ROW['example'], 'accepted': ['parvenir', 'venir'], 'rejected': [{'candidate': 'x', 'reason': 'blank'}]}
+        records = {'fr-core-1': old, 'fr-core-2': old | {'check': CHECK_VERSION}, 'fr-core-3': old | {'accepted': []},
+                   'fr-core-4': old}
+        self.assertEqual(['fr-core-1'], [r['id'] for r in stale(rows, records)])
+        run(rows, records, FakeModel({'verdicts': [verdict('parvenir'), verdict('venir', False, 'broader')]}), rechecking=True)
+        self.assertEqual({'example': ROW['example'], 'accepted': ['parvenir'], 'check': CHECK_VERSION,
+                          'rejected': [{'candidate': 'x', 'reason': 'blank'}, {'candidate': 'venir', 'reason': 'recheck: broader'}]},
+                         records['fr-core-1'])
+        self.assertEqual([], stale(rows, records))
+
+    def test_an_unusable_recheck_leaves_the_record_stale(self):
+        records = {'fr-core-1': {'example': ROW['example'], 'accepted': ['parvenir'], 'rejected': []}}
+        run([ROW], records, lambda prompt: {}, rechecking=True)
+        self.assertEqual([ROW], stale([ROW], records))
 
 
 class ResumeTests(unittest.TestCase):
