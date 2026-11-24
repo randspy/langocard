@@ -56,13 +56,39 @@ class ExtraPracticeTest {
 
     private fun LearningModel.drain() {
         var remaining = 100
-        while (screen is LearningScreen.Review && remaining-- > 0) rate(Rating.GOOD, false)
-        assertTrue("session eventually exhausts eligible work", remaining > 0)
+        while (screen is LearningScreen.Review && !review.isRepeat && remaining-- > 0) {
+            val learner = library.learner
+            if (!block.meaningRoom(learner.introduced) && !learner.started(review.card.prompt.entry)) break
+            rate(Rating.GOOD, false)
+        }
+        assertTrue("session eventually exhausts the regular queue", remaining > 0)
+        if (screen is LearningScreen.Review) {
+            practise(block.end - spent)
+            finish()
+        }
         assertEquals(LearningScreen.Summary(SessionKind.Practice), screen)
     }
 
     private fun reviewed(id: Int, due: Instant) = Card.builder().cardId(id).state(State.REVIEW).stability(10.0).difficulty(5.0)
         .due(due).lastReview(Instant.now().minusSeconds(86400)).build()
+
+    @Test fun dailyPracticeRepeatsUntilFifteenMinutesWithoutRescheduling() = withModel { model ->
+        val entry = model.library.entries.first()
+        val key = entry.cardKey(Skill.Reading)
+        val card = reviewed(1, Instant.now().plusSeconds(86400))
+        model.restoreToday(StudyPolicy.DAILY_SECONDS - 60, cards = mapOf(key to card))
+        assertEquals(NextPractice.Session, model.nextPractice(false))
+        model.start(SessionKind.Practice, false)
+        assertTrue(model.review.isRepeat)
+        assertEquals(key, model.review.card.prompt.key)
+        model.rate(Rating.AGAIN, false)
+        assertEquals(card.toJson(), model.state(model.review.card.prompt)?.toJson())
+        assertEquals(0, JSONObject(model.library.backup()).getJSONObject("data").getJSONArray("reviews").length())
+        model.practise(59)
+        assertTrue(model.screen is LearningScreen.Review)
+        model.practise(1)
+        assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
+    }
 
     @Test fun extraBlockUnlocksIntroductionsAndEndsAtItsOwnLimit() = withModel { model ->
         model.restoreToday(seconds = StudyPolicy.DAILY_SECONDS)
@@ -181,22 +207,24 @@ class ExtraPracticeTest {
         val local = SyncData.settings(data)
         val remote = JSONObject(local.toString()).put("introduced", 99).put("seconds", 901)
         val merged = SyncData.mergeSettings(local, remote)
-        merged.keys().forEach { data.put(it, merged.get(it)) }
+        data.put("introduced", merged.getInt("introduced"))
+        data.put("seconds", merged.getInt("seconds"))
         model.restore(backup.toString())
         model.start(SessionKind.Practice, false)
         model.drain()
         assertEquals(100, JSONObject(model.library.backup()).getJSONObject("data").getInt("introduced"))
     }
 
-    @Test fun dailyCapsRemainAndEarlyDailyExhaustionDoesNotOfferExtensions() = withModel { model ->
+    @Test fun dailyPracticeIntroducesMoreMeaningsWhenTheRegularQueueRunsOut() = withModel { model ->
         model.restoreToday(0, 5, 10)
-        assertEquals(NextPractice.NothingLeft, model.nextPractice(false))
+        assertEquals(NextPractice.Session, model.nextPractice(false))
         model.startExtraBlock(ExtraMinutes.Five, false)
         assertEquals(PracticeBlock.DAILY, model.block)
-        model.restoreToday(0)
         model.start(SessionKind.Practice, false)
-        model.drain()
-        assertEquals(5, JSONObject(model.library.backup()).getJSONObject("data").getInt("introduced"))
+        assertFalse(model.review.isRepeat)
+        assertNull(model.state(model.review.card.prompt))
+        model.rate(Rating.GOOD, false)
+        assertEquals(6, JSONObject(model.library.backup()).getJSONObject("data").getInt("introduced"))
     }
 
     @Test fun catalogueAbsenceIsDistinctFromTemporaryExhaustionAndHonoursRank() = withModel { model ->

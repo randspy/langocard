@@ -33,8 +33,9 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
 
     private fun due(p: Prompt, now: Instant) = learner.card(p.key)?.due?.let { !it.isAfter(now) } == true
 
-    /** Due cards precede new skills, then new meanings; cleanup can recall learning cards early. */
-    fun choose(audio: Boolean, block: PracticeBlock, session: SessionLearning, now: Instant, day: String): Prompt? {
+    /** Practice can introduce more meanings once the regular queue and learning cards are exhausted. */
+    fun choose(audio: Boolean, block: PracticeBlock, session: SessionLearning, now: Instant, day: String,
+               allowMoreMeanings: Boolean = false): Prompt? {
         val available = prompts(ordered, audio, now).filter { !learner.isBuried(it.key, day) }
         val cleanup = session.next(available.map { it.key }) { key ->
             learner.card(key)?.state != State.REVIEW
@@ -47,7 +48,7 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
         val sibling = available.filter { p -> learner.card(p.key) == null && (p.skill != Skill.Gender || genderRoom) &&
             learner.started(p.entry) }.minByOrNull { it.skill == Skill.Gender }
         if (sibling != null) return sibling
-        if (block.meaningRoom(learner.introduced)) {
+        if (block.meaningRoom(learner.introduced, allowMore = allowMoreMeanings && cleanup == null)) {
             return available.filter { learner.card(it.key) == null && it.skill != Skill.Gender && !learner.started(it.entry) &&
                 it.entry.rank >= learner.minimumRank && it.entry.id !in retired }
                 .sortedBy { if (it.entry.id.startsWith("personal-")) -1 else it.entry.rank.coerceAtMost(1000000) / 100 * 100 +
@@ -57,12 +58,23 @@ class StudyRules(private val entries: List<Entry>, private val learner: Learner,
         return cleanup
     }
 
+    /** Fills remaining practice time by rotating through previously studied cards. */
+    fun repeat(audio: Boolean, block: PracticeBlock, now: Instant, lastAnswered: Map<String, Int> = emptyMap()): Prompt? {
+        if (learner.seconds >= block.end) return null
+        return prompts(ordered, audio, now).asSequence()
+            .filter { learner.card(it.key) != null }
+            .minByOrNull { lastAnswered[it.key] ?: 0 }
+    }
+
     /** A fresh session has no cleanup debt; an extra grant has its own introduction allowances. */
     fun nextPractice(audio: Boolean, block: PracticeBlock, now: Instant, day: String): NextPractice {
-        if (learner.seconds < block.end && choose(audio, block, SessionLearning(), now, day) != null) return NextPractice.Session
+        fun hasPractice(block: PracticeBlock) =
+            choose(audio, block, SessionLearning(), now, day, allowMoreMeanings = true) != null ||
+                repeat(audio, block, now) != null
+        if (learner.seconds < block.end && hasPractice(block)) return NextPractice.Session
         if (learner.seconds >= StudyPolicy.DAILY_SECONDS) {
             val prospective = PracticeBlock.extra(learner.seconds, ExtraMinutes.Five)
-            if (choose(audio, prospective, SessionLearning(), now, day) != null) return NextPractice.ExtraBlock
+            if (hasPractice(prospective)) return NextPractice.ExtraBlock
         }
         val unstarted = entries.any { entry -> entry.rank >= learner.minimumRank && entry.id !in retired && !learner.started(entry) }
         val owners = genderOwners()

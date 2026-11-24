@@ -133,7 +133,7 @@ internal fun PilotApp(model: LearningModel, speech: FrenchSpeech, settings: () -
             }
             when (screen) {
                 LearningScreen.VocabularyPlacement -> VocabularyPlacementScreen(model)
-                is LearningScreen.Review -> Review(model, speech, screen.card, screen.kind)
+                is LearningScreen.Review -> Review(model, speech, screen.card, screen.kind, screen.isRepeat)
                 is LearningScreen.Summary -> {
                     Text(if (screen.kind == SessionKind.Placement) { if (model.placementDone) "Starting point saved" else "Starting check paused" } else "Done for today", style = MaterialTheme.typography.headlineLarge)
                     Text("${model.sessionReviews} assessments · ${model.sessionRecalled} recalled")
@@ -223,7 +223,7 @@ private fun DrawerRow(label: String, selected: Boolean, badge: String?, onClick:
 }
 
 @Composable
-private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard, kind: SessionKind) {
+private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard, kind: SessionKind, isRepeat: Boolean) {
     val p = card.prompt
     val revealed = card.revealed
     val comparison = card.comparison
@@ -233,7 +233,8 @@ private fun Review(model: LearningModel, speech: FrenchSpeech, card: ReviewCard,
         Text("Listening paused ·", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         TextButton(onClick = model::unmuteListening) { Text("Turn back on") }
     }
-    Text(p.skill.label, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(if (isRepeat) "${p.skill.label} · Practice repeat" else p.skill.label,
+        style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         when (p.skill) {
             Skill.Reading -> {
@@ -378,7 +379,7 @@ private fun ReviewControls(model: LearningModel, speech: FrenchSpeech, card: Rev
                             .semantics { if (comparison != null && revealed) this.selected = isSelected }) {
                         Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                             Text(label, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
-                            if (revealed) Text("~$interval", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
+                            if (interval.isNotEmpty()) Text("~$interval", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
                         }
                     }
                 }

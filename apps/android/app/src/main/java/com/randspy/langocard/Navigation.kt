@@ -15,6 +15,6 @@ enum class SessionKind { Practice, Placement }
 sealed interface LearningScreen {
     data object Home : LearningScreen
     data object VocabularyPlacement : LearningScreen
-    data class Review(val card: ReviewCard, val kind: SessionKind) : LearningScreen
+    data class Review(val card: ReviewCard, val kind: SessionKind, val isRepeat: Boolean = false) : LearningScreen
     data class Summary(val kind: SessionKind) : LearningScreen
 }

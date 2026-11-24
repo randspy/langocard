@@ -55,6 +55,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     var sessionSeconds by mutableIntStateOf(0); private set
     private var placementIndex = learner.placementIndex
     private val sessionLearning = SessionLearning()
+    private val lastAnswered = mutableMapOf<String, Int>()
     private var lastTick = android.os.SystemClock.elapsedRealtime()
     val placementDone get() = learner.placementDone
     val vocabularyPlacement = VocabularyPlacement(JSONArray(getApplication<Application>().assets.open("placement-items.json").bufferedReader().use { it.readText() }).let { a ->
@@ -105,6 +106,7 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     fun start(kind: SessionKind, audio: Boolean) {
         rollover(); sessionReviews = 0; sessionRecalled = 0; sessionSeconds = 0
         sessionLearning.clear()
+        lastAnswered.clear()
         lastTick = android.os.SystemClock.elapsedRealtime(); next(kind, audio)
     }
     fun tick() {
@@ -118,6 +120,8 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
             lastTick += seconds * 1000L; rollover()
             sessionSeconds += seconds; learner.seconds = spent + seconds; library.changed()
             if (sessionSeconds % 10 == 0) library.save()
+            val review = screen as? LearningScreen.Review
+            if (review?.isRepeat == true && spent >= block.end) finish(review.kind)
         }
     }
     var readingPassageActive = false
@@ -149,13 +153,22 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         if (!StudyPolicy.sessionOpen(placing, spent, current.end, cleanup = true)) return finish(kind)
         val now = Instant.now()
         val rules = studyRules
-        val chosen = rules.choose(audio && !listeningMuted, current, sessionLearning, now, StudyPolicy.date(now))
-        if (chosen != null) screen = LearningScreen.Review(ReviewCard.question(rules.shown(chosen, now)), kind)
-        else { if (placing) learner.placementDone = true; finish(kind) }
+        val withAudio = audio && !listeningMuted
+        val scheduled = rules.choose(withAudio, current, sessionLearning, now, StudyPolicy.date(now),
+            allowMoreMeanings = !placing)
+        val chosen = scheduled ?: if (placing) null else rules.repeat(withAudio, current, now, lastAnswered)
+        if (chosen != null) {
+            screen = LearningScreen.Review(ReviewCard.question(rules.shown(chosen, now)), kind, isRepeat = scheduled == null)
+        } else { if (placing) learner.placementDone = true; finish(kind) }
     }
     fun rate(rating: Rating, audio: Boolean) {
         val review = screen as? LearningScreen.Review ?: return
         val p = review.card.prompt
+        if (review.isRepeat) {
+            recordSessionAnswer(p, rating)
+            next(review.kind, audio)
+            return
+        }
         val placing = review.kind == SessionKind.Placement
         val activeBlock = block
         val wasNewGender = p.skill == Skill.Gender && state(p) == null
@@ -175,8 +188,13 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
         } else {
             placementIndex++; learner.placementIndex = placementIndex
         }
-        sessionReviews++; if (rating != Rating.AGAIN) sessionRecalled++
+        recordSessionAnswer(p, rating)
         library.save(); next(review.kind, audio)
+    }
+    private fun recordSessionAnswer(prompt: Prompt, rating: Rating) {
+        sessionReviews++
+        if (rating != Rating.AGAIN) sessionRecalled++
+        lastAnswered[prompt.key] = sessionReviews
     }
     /** Set for the rest of the sitting, until [home]; skipping leaves the card's schedule untouched. */
     var listeningMuted by androidx.compose.runtime.mutableStateOf(false); private set
@@ -187,7 +205,9 @@ class LearningModel(application: Application) : AndroidViewModel(application) {
     }
     fun unmuteListening() { listeningMuted = false }
     fun interval(rating: Rating): String {
-        val p = (screen as? LearningScreen.Review)?.card?.prompt ?: return ""
+        val review = screen as? LearningScreen.Review ?: return ""
+        if (review.isRepeat) return ""
+        val p = review.card.prompt
         val card = state(p) ?: MemoryCard.builder().cardId(learner.nextCardId).build()
         val now = Instant.now()
         return StudyPolicy.interval(now, scheduler.reviewCard(card, rating, now).card().due)

@@ -55,6 +55,10 @@ class ListeningMuteTest {
         var remaining = 100
         while (screen is LearningScreen.Review && remaining-- > 0) {
             assertNotEquals("muted listening stays out of the session", Skill.Listening, review.card.prompt.skill)
+            if (review.isRepeat) {
+                practise(block.end - spent)
+                break
+            }
             rate(Rating.GOOD, true)
         }
         assertTrue("session eventually exhausts eligible work", remaining > 0)
@@ -92,7 +96,8 @@ class ListeningMuteTest {
 
     @Test fun skippingTheOnlyCardEndsTheSession() = withModel { model ->
         val due = reviewed(1, Instant.now().minusSeconds(3600))
-        model.restoreToday(0, StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS, mapOf(model.listeningKey to due)) { data ->
+        model.restoreToday(StudyPolicy.DAILY_SECONDS - StudyPolicy.WIND_DOWN_SECONDS,
+            StudyPolicy.NEW_SENSES, StudyPolicy.NEW_GENDER_CARDS, mapOf(model.listeningKey to due)) { data ->
             data.put("buried", JSONObject().apply {
                 model.heard.skills.filter { it != Skill.Listening }.forEach { put("${model.heard.id}:${it.name}", today) }
             })
@@ -116,6 +121,7 @@ class ListeningMuteTest {
         assertEquals(NextPractice.ExtraBlock, model.nextPractice(true))
         model.startExtraBlock(ExtraMinutes.Five, true)
         assertTrue(model.screen is LearningScreen.Review)
+        model.practise(ExtraMinutes.Five.seconds - StudyPolicy.WIND_DOWN_SECONDS)
         model.drainHearing()
         assertEquals(0, model.dueCount(true))
         assertNotEquals("the due Listening card is not offered as more practice", NextPractice.Session, model.nextPractice(true))

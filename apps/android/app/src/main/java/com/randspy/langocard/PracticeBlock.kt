@@ -18,26 +18,27 @@ data class PracticeBlock private constructor(
     private val length: ExtraMinutes?,
     private val meaningsUsed: Int = 0,
     private val gendersUsed: Int = 0,
+    private val reviewOnly: Boolean = false,
 ) {
     val end get() = start + (length?.seconds ?: StudyPolicy.DAILY_SECONDS)
     val isExtra get() = length != null
     val minutes get() = (end - start) / 60
     /** Whole minutes practised in this block, including cleanup. */
     fun minutesIn(seconds: Int) = (seconds - start).coerceAtLeast(0) / 60
-    fun meaningRoom(dailyIntroduced: Int) = length?.let { meaningsUsed < it.introductions }
-        ?: (dailyIntroduced < StudyPolicy.NEW_SENSES)
+    fun meaningRoom(dailyIntroduced: Int, allowMore: Boolean = false) = !reviewOnly &&
+        (allowMore || (length?.let { meaningsUsed < it.introductions } ?: (dailyIntroduced < StudyPolicy.NEW_SENSES)))
     fun genderRoom(dailyIntroduced: Int) = length?.let { gendersUsed < it.introductions }
         ?: (dailyIntroduced < StudyPolicy.NEW_GENDER_CARDS)
 
     /** Records only first introductions; repeated answers spend no allowance. */
     fun introduced(newMeaning: Boolean, newGender: Boolean): PracticeBlock = length?.let {
-        PracticeBlock(start, it, (meaningsUsed + if (newMeaning) 1 else 0).coerceAtMost(it.introductions),
-            (gendersUsed + if (newGender) 1 else 0).coerceAtMost(it.introductions))
+        copy(meaningsUsed = (meaningsUsed + if (newMeaning) 1 else 0).coerceAtMost(it.introductions),
+            gendersUsed = (gendersUsed + if (newGender) 1 else 0).coerceAtMost(it.introductions))
     } ?: this
 
     /** Stores local usage with its day tag; replacing a grant discards all unused allowance. */
     fun write(data: JSONObject, day: String) {
-        if (!isExtra) return
+        if (!isExtra || reviewOnly) return
         data.put(KEY, JSONObject().put("day", day).put("start", start).put("minutes", minutes)
             .put("meaningsUsed", meaningsUsed).put("gendersUsed", gendersUsed))
     }
@@ -66,7 +67,7 @@ data class PracticeBlock private constructor(
                 start > Int.MAX_VALUE - length.seconds - StudyPolicy.CLEANUP_SECONDS) return DAILY
             val meanings = integer(stored, "meaningsUsed")?.takeIf { it in 0..length.introductions }
             val genders = integer(stored, "gendersUsed")?.takeIf { it in 0..length.introductions }
-            return if (meanings == null || genders == null) PracticeBlock(start, length, length.introductions, length.introductions)
+            return if (meanings == null || genders == null) PracticeBlock(start, length, length.introductions, length.introductions, reviewOnly = true)
                 else PracticeBlock(start, length, meanings, genders)
         }
 

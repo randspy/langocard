@@ -56,11 +56,10 @@ Use an `x86_64` system image on Intel hosts. The welcome screen also has an Andr
 ## Offline learning library
 
 After the daily 15-minute goal, the home and summary screens offer +5, +10 or +15
-minutes when eligible cards remain, including when a previous block exhausts its
-allowance before its timer ends. Each block grants 2, 3 or 5 new meanings and,
-separately, 2, 3 or 5 new Gender cards. Repeated blocks are available while work
-exists; unused allowance never carries forward. Daily practice keeps its 5-meaning
-and 10-Gender limits. Due reviews, sibling skills, rank preferences, burial and the
+minutes when there are cards to practice. Each block starts with an allowance of 2, 3 or 5 new meanings
+and, separately, 2, 3 or 5 new Gender cards. Repeated blocks are available while work
+exists. Unused allowance expires when you start a fresh block. Daily practice starts
+with allowances of 5 meanings and 10 Gender cards. Due reviews, sibling skills, rank preferences, burial and the
 two-minute wind-down and cleanup still apply. Home and summary offer resume when
 both time and work remain, or Vocabulary packs when suitable unstarted words run out.
 Block usage survives sessions, process restarts and backup restore. Old or malformed
@@ -105,8 +104,7 @@ See `../../docs/design/core-entries.md`.
   preference, not a CEFR mapping or a claim that lower-ranked words are known.
   Existing reviews, started senses, unranked starter cards and personal entries
   are preserved.
-- Due reviews take priority. Standard daily practice introduces at most five new meanings;
-  existing meanings gain additional skills on later days. Related skills are
+- Due reviews take priority. Existing meanings gain additional skills on later days. Related skills are
   buried until the next local calendar day. Failed cards retain their FSRS due
   times; four consecutive failures pause that skill for three days.
 - The daily target is 15 foreground minutes, accumulated across sessions. The
@@ -114,8 +112,12 @@ See `../../docs/design/core-entries.md`.
   or failed this session return while still in FSRS learning or relearning, even
   before their due time, until recalled once. Cleanup can start cards for up to
   two minutes past the target. The card on screen can always be finished, so the
-  summary reports the full elapsed time even beyond that cap. A session may end
-  earlier if eligible material is exhausted. Suspensions and sibling burying still apply.
+  summary reports the full elapsed time even beyond that cap for scheduled cards.
+  Before the final two minutes, practice can introduce more meanings once the
+  regular queue and learning cards run out. When there are no cards left to
+  introduce or review, practice repeats rotate through studied cards until the
+  target. Repeat answers leave the review schedule unchanged. Paused and suspended
+  cards stay out of practice.
   Background time is excluded. The clock is checkpointed every ten seconds and
   on leaving the activity (an abrupt process termination can lose up to ten seconds).
 - Card states, placement, interests, history and daily counters are kept in private

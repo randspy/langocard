@@ -16,7 +16,7 @@ class SessionCleanupTest {
         override fun getFilesDir() = folder
     }
 
-    @Test fun lateFailureReturnsBeforeDueAndSuccessfulRecallEndsSession() {
+    @Test fun lateFailureReturnsBeforeDueAndSuccessfulRecallLeavesTimeForRepeats() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val folder = File(instrumentation.targetContext.cacheDir, "cleanup-${System.nanoTime()}").apply { mkdirs() }
         try {
@@ -41,7 +41,7 @@ class SessionCleanupTest {
                 assertEquals(key, model.review.card.prompt.key)
                 assertTrue(model.state(model.review.card.prompt)!!.due.isAfter(Instant.now()))
                 model.rate(Rating.GOOD, false)
-                assertEquals(LearningScreen.Summary(SessionKind.Practice), model.screen)
+                assertTrue(model.review.isRepeat)
                 val reviews = JSONObject(model.library.backup()).getJSONObject("data").getJSONArray("reviews")
                 assertEquals(2, reviews.length())
             }

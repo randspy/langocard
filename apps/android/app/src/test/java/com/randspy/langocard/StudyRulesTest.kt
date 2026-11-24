@@ -151,7 +151,12 @@ class StudyRulesTest {
         val rules = StudyRules(listOf(fresh), learner, emptySet())
         val block = PracticeBlock.extra(900, ExtraMinutes.Five)
         assertEquals(fresh.cardKey(Skill.Reading), choose(rules, block)?.key)
-        assertNull(choose(rules, block.introduced(true, false).introduced(true, false)))
+        val used = block.introduced(true, false).introduced(true, false)
+        assertNull(choose(rules, used))
+        assertEquals(fresh.cardKey(Skill.Reading),
+            rules.choose(true, used, SessionLearning(), now, day, allowMoreMeanings = true)?.key)
+        learner.seconds = used.end - StudyPolicy.WIND_DOWN_SECONDS
+        assertNull(rules.choose(true, used, SessionLearning(), now, day, allowMoreMeanings = true))
     }
 
     @Test fun `wind down stops introductions and returns only eligible learning cleanup after the target`() {
@@ -221,7 +226,7 @@ class StudyRulesTest {
         val rules = StudyRules(listOf(fresh), learner, emptySet())
         assertEquals(NextPractice.Session, offer(rules))
         learner.introduced = 5
-        assertEquals(NextPractice.NothingLeft, offer(rules))
+        assertEquals(NextPractice.Session, offer(rules))
         learner.seconds = 900
         assertEquals(NextPractice.ExtraBlock, offer(rules))
         val extra = PracticeBlock.extra(900, ExtraMinutes.Ten)

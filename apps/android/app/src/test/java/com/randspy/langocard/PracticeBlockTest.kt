@@ -94,7 +94,9 @@ class PracticeBlockTest {
                 val block = PracticeBlock.read(data, "2026-11-15", 950)
                 assertEquals(1200, block.end)
                 assertFalse(block.meaningRoom(0))
+                assertFalse(block.meaningRoom(0, allowMore = true))
                 assertFalse(block.genderRoom(0))
+                block.introduced(false, false).write(data, "2026-11-15")
             }
         }
     }
