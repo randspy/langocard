@@ -85,9 +85,10 @@ def ollama(prompt, model=MODEL, url=OLLAMA, timeout=300):
     except (OSError, KeyError, ValueError) as e:
         raise OllamaError(f'Ollama request failed: {e}') from e
     try:
-        return json.loads(reply)
+        parsed = json.loads(reply)
     except ValueError:
         return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def folded(text):

@@ -50,10 +50,14 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(['parvenir'], self.records['a']['accepted'])
         self.assertEqual([{'candidate': 'venir', 'reason': 'review: different meaning'}], self.records['a']['rejected'])
 
-    def test_rejects_verdicts_for_alternatives_not_on_record(self):
-        self.verdicts['a'].append({'alternative': 'aller', 'verdict': 'wrong', 'reason': 'x'})
-        with self.assertRaises(ValueError):
-            drop_wrong(self.records, self.verdicts)
+    def test_rejects_malformed_verdicts_before_changing_anything(self):
+        for extra in [{'alternative': 'aller', 'verdict': 'wrong', 'reason': 'x'},
+                      {'alternative': 'venir', 'verdict': 'correct', 'reason': 'again'},
+                      {'alternative': 'parvenir', 'verdict': 'wrong'}]:
+            verdicts = {'a': [self.verdicts['a'][1], extra]}
+            with self.subTest(extra), self.assertRaises(ValueError):
+                drop_wrong(self.records, verdicts)
+            self.assertEqual(['parvenir', 'venir'], self.records['a']['accepted'])
 
 
 if __name__ == '__main__':

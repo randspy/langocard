@@ -51,9 +51,12 @@ def tally(verdicts):
 def drop_wrong(records, verdicts):
     """Moves every alternative judged wrong to `rejected`; returns how many. Checks every verdict first."""
     for key, judged in verdicts.items():
+        seen = set()
         for v in judged:
-            if v.get('verdict') not in VERDICTS or v.get('alternative') not in records.get(key, {}).get('accepted', ()):
-                raise ValueError(f'{key}: verdict {v!r} does not match a recorded alternative')
+            if v.get('verdict') not in VERDICTS or not isinstance(v.get('reason'), str) or v.get('alternative') in seen \
+                    or v.get('alternative') not in records.get(key, {}).get('accepted', ()):
+                raise ValueError(f'{key}: verdict {v!r} is not one well-formed verdict on a recorded alternative')
+            seen.add(v['alternative'])
     removed = 0
     for key, judged in verdicts.items():
         record = records[key]
