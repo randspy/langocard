@@ -298,9 +298,9 @@ private fun SessionProgress(model: LearningModel, kind: SessionKind) {
     } else {
         val block = model.block
         val remaining = (block.end - model.spent).coerceAtLeast(0)
-        val seconds = (remaining % 60).toString().padStart(2, '0')
+        val minutes = kotlin.math.ceil(remaining / 60.0).toInt()
         val prefix = if (block.isExtra) "+" else ""
-        "$prefix${remaining / 60}:$seconds left"
+        "$prefix${minutes} min left"
     }
     Text(progress, modifier = Modifier.padding(4.dp), style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary)
