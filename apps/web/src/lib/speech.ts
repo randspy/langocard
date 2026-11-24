@@ -7,10 +7,14 @@ export interface SpeechEngine {
   cancel(): void;
 }
 
-/** French voices only, preferring installed voices, then France, then a stable name. */
+/** French voices only, preferring local voices and the France locale. */
 export function frenchVoice(voices: readonly SpeechVoice[]): SpeechVoice | null {
+  const compactMacVoice = /^(?:urn:moz-tts:osx:)?com\.apple\.voice\.compact\./i;
   return [...voices].filter(v => /^fr(?:-|$)/i.test(v.lang)).sort((a, b) =>
-    Number(b.local) - Number(a.local) || Number(/^fr-FR$/i.test(b.lang)) - Number(/^fr-FR$/i.test(a.lang)) || a.name.localeCompare(b.name))[0] ?? null;
+    Number(b.local) - Number(a.local)
+    || Number(/^fr-FR$/i.test(b.lang)) - Number(/^fr-FR$/i.test(a.lang))
+    || Number(compactMacVoice.test(b.id)) - Number(compactMacVoice.test(a.id))
+    || a.name.localeCompare(b.name))[0] ?? null;
 }
 
 class BrowserSpeech implements SpeechEngine {
@@ -27,7 +31,8 @@ class BrowserSpeech implements SpeechEngine {
     this.cancel();
     return new Promise((resolve, reject) => {
       if (typeof speechSynthesis === "undefined") return reject(new Error("Speech is unavailable"));
-      const installed = speechSynthesis.getVoices().find(v => v.voiceURI === voice.id);
+      // Browsers can reuse a voice URI across languages.
+      const installed = speechSynthesis.getVoices().find(v => v.voiceURI === voice.id && v.lang === voice.lang);
       if (!installed) return reject(new Error("The French voice is unavailable"));
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.voice = installed;
