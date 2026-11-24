@@ -53,7 +53,8 @@ class ReviewTests(unittest.TestCase):
     def test_rejects_malformed_verdicts_before_changing_anything(self):
         for extra in [{'alternative': 'aller', 'verdict': 'wrong', 'reason': 'x'},
                       {'alternative': 'venir', 'verdict': 'correct', 'reason': 'again'},
-                      {'alternative': 'parvenir', 'verdict': 'wrong'}]:
+                      {'alternative': 'parvenir', 'verdict': 'wrong'},
+                      {'alternative': ['venir'], 'verdict': 'wrong', 'reason': 'x'}]:
             verdicts = {'a': [self.verdicts['a'][1], extra]}
             with self.subTest(extra), self.assertRaises(ValueError):
                 drop_wrong(self.records, verdicts)

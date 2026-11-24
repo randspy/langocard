@@ -53,7 +53,8 @@ def drop_wrong(records, verdicts):
     for key, judged in verdicts.items():
         seen = set()
         for v in judged:
-            if v.get('verdict') not in VERDICTS or not isinstance(v.get('reason'), str) or v.get('alternative') in seen \
+            if v.get('verdict') not in VERDICTS or not isinstance(v.get('reason'), str) \
+                    or not isinstance(v.get('alternative'), str) or v['alternative'] in seen \
                     or v.get('alternative') not in records.get(key, {}).get('accepted', ()):
                 raise ValueError(f'{key}: verdict {v!r} is not one well-formed verdict on a recorded alternative')
             seen.add(v['alternative'])
