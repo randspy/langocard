@@ -13,7 +13,7 @@ object ContentFiles {
     /** An example's answer lists at most this many alternatives; mirrors `MAX_ALTERNATIVES` in `entryRules.ts`. */
     const val MAX_ALTERNATIVES = 5
     /** Formats that carry `examples`; files of earlier versions are rejected, not converted. */
-    const val PACK_VERSION = 2
+    const val PACK_VERSION = 3
     const val BACKUP_VERSION = 2
     const val DATA_VERSION = 2
     /** Mirrors `entryErrors` in `entryRules.ts`; throws the message of the first rule broken. */

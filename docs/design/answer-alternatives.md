@@ -27,10 +27,20 @@ the target is shown.
 | 9 | Web | The entry form preview lists "Also accepted: …" under each answer. Library search matches alternatives. |
 | 10 | Upstream merge | For an edited entry, each of the learner's examples whose sentence (ignoring alternatives) matches a shipped example gains the shipped alternatives it lacks, after its own. A rewritten sentence gains nothing. `upstreamChanged` compares content ignoring alternatives, so new alternatives alone never raise it. Alternatives are never removed from an edited entry. Unedited entries take shipped content whole, as before. `sameContent` stays strict. |
 | 11 | Example identity | Stuck-word history records an example's marked text. It compares examples ignoring alternatives, so adding alternatives keeps the history. |
-| 12 | Generation | `tools/content/generate_alternatives.py` asks local Ollama `gemma4:26b` for candidates, filters them deterministically (target, accent or case variants of it, the same noun with another article, more words than the target plus one, `{`, `}`, `\|`), then asks a second, independent `gemma4:26b` call to judge each candidate in the full sentence. A candidate is accepted only when that call says the new sentence is both grammatical and the same meaning in the same register, and at most 5 are kept. Results go to `content/alternatives.json`, keyed by entry ID and exact example text, with accepted and rejected candidates and the reason. Runs resume by skipping keys already present. |
-| 13 | Review | Claude Haiku reviews a seeded sample of 200 examples that have alternatives, split across bands by size: `correct`, `wrong` or `unsure` per alternative. Publish only if `wrong` is at most 5% of the judged alternatives. Otherwise tighten filters or the checker, re-run the checker on stored candidates, and review a new sample. Alternatives judged `wrong` are removed before publishing. The result goes in `docs/research`. |
+| 12 | Generation | `tools/content/generate_alternatives.py` asks local Ollama `gemma4:26b` for candidates, filters them deterministically (target, accent or case variants of it, the same noun with another article, more words than the target plus one, `{`, `}`, `\|`), then asks a second, independent `gemma4:26b` call to judge each candidate in the full sentence. A candidate is accepted only when that call says the new sentence is grammatical, the same meaning, the same register (no neutral word for slang) and as specific (no broader or narrower word), and at most 5 are kept. Records note the checker version (`check`); after the checker changes, `--recheck` re-judges the alternatives an older one accepted. Results go to `content/alternatives.json`, keyed by entry ID and exact example text, with accepted and rejected candidates and the reason. Runs resume by skipping keys already present. |
+| 13 | Review | Claude Haiku reviews a seeded sample of 200 examples that have alternatives, split across bands by size: `correct`, `wrong` or `unsure` per alternative. Publish only if `wrong` is at most 5% of the judged alternatives. Otherwise tighten filters or the checker, re-run the checker on stored candidates, and review a new sample. `tools/content/review_alternatives.py` draws the sample and removes the alternatives judged wrong. Alternatives judged `wrong` are removed before publishing. The result goes in `docs/research`. |
 | 14 | Publish | `publish_catalogue.py` merges `alternatives.json` into the examples and fails if a key's example text no longer exists. Packs become `langocard-pack` version 3 with `packVersion` 3, Android `PACK_VERSION` becomes 3 and the catalogue moves to the `content-v4` branch. The pack `source`, `status` and `NOTICE.md` say the alternatives are machine-generated and sample-reviewed. |
 | 15 | Rollout | One user, so old clients are not supported. Order: backend and web, then Android, then content. |
+
+## Content rollout
+
+After PR 4 merges, and only with operator approval:
+
+1. Push a `content-v4` branch that contains the merged `content/` directory. The app's `CATALOGUE_URL` and every pack URL in the catalogue point there.
+2. Run `npm run seed` in `apps/backend` for development, then `npm run seed -- --prod`. Unedited entries take the new examples; edited ones gain the alternatives (decision 10).
+3. Install the new APK. Its bundled frequent pack carries the alternatives.
+
+The generation and review record is [`../research/answer-alternatives-review-2026-11-25.md`](../research/answer-alternatives-review-2026-11-25.md).
 
 ## Ubiquitous language
 

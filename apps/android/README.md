@@ -160,12 +160,12 @@ cards, with HTML escaped and content-source attribution retained. Fronts use the
 example and backs list them all. Export does not preserve FSRS
 scheduling or engine-generated audio; listening stays in Langocard.
 
-Packs contain `format: "langocard-pack"`, `version: 2`, `source`, `license`, and
+Packs contain `format: "langocard-pack"`, `version: 3`, `source`, `license`, and
 an `entries` array. Entry fields are `id`, `word`, `english`, `definition`, `examples`
-(1 to 5 different sentences, each with one answer in `{braces}`; the first is shown
-first), and `topic` (`daily`, `culture`, or `news`). Optional `gender` is `masculine`,
+(1 to 5 different sentences, each with one answer in `{braces}`, optionally with up to
+5 accepted alternatives as `{target|alternative}`; the first sentence is shown first), and `topic` (`daily`, `culture`, or `news`). Optional `gender` is `masculine`,
 `feminine`, or `null` for a non-noun; without it the app takes the gender of a leading
-`un`, `une`, `le` or `la`. Version 1 packs are rejected. IDs must be
+`un`, `une`, `le` or `la`. Version 1 and 2 packs are rejected. IDs must be
 unique, stable, and not collide with installed entries. Import is additive; duplicate
 IDs reject the whole pack. Packs and backups have a 20 MB size limit. Downloads
 accept direct HTTPS URLs; redirects are rejected. Imported material works offline.
@@ -180,7 +180,7 @@ python3 tools/content/publish_catalogue.py
 It writes the three `fr-core` packs and `catalogue.json` to `content/`, and the
 bundled `frequent-pack.json`, `catalogue.json` and `CONTENT-NOTICE.md` to
 `app/src/main/assets/`. It refuses any entry the importer would reject, and reruns
-produce identical bytes. The catalogue is hosted on the `content-v3` Git branch with
+produce identical bytes. The catalogue is hosted on the `content-v4` Git branch with
 direct HTTPS raw URLs. Catalogue downloads verify pack SHA256 digests before
 validation/import.
 

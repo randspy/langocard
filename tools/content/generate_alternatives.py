@@ -4,10 +4,11 @@
 A local Ollama model proposes other words that fill each example's gap with the same
 meaning, deterministic filters drop what other checks already handle, and a second,
 independent model call accepts or rejects each remaining candidate in the full sentence.
-Runs resume: examples already recorded with the same text are skipped. See
+Runs resume: examples already recorded with the same text are skipped. After the checker changes,
+`--recheck` re-judges the alternatives an older checker accepted. See
 docs/design/answer-alternatives.md.
 
-    python3 tools/content/generate_alternatives.py [--limit N] [--workers N] [--model M]
+    python3 tools/content/generate_alternatives.py [--limit N] [--workers N] [--model M] [--recheck]
 """
 import argparse
 import json
@@ -46,6 +47,8 @@ Rewrite the full sentence in your head to check each one. Only real synonyms in 
 Do not include the expected answer, spelling variants of it, or the same word with another article.
 Reply with JSON: {{"alternatives": ["..."]}}"""
 
+# Bump when CHECK changes: `--recheck` re-judges accepted alternatives recorded under an older checker.
+CHECK_VERSION = 2
 CHECK = """You are a strict French teacher checking flashcard answers. A wrong acceptance teaches a learner a \
 mistake, so when in doubt, reject.
 
@@ -54,13 +57,17 @@ Original sentence: {sentence}
 
 Each candidate below replaces "{target}" in the original sentence. For each, in order, judge the new sentence:
 - grammatical: correct French with the right agreement and construction, nothing missing or doubled;
-- same_meaning: a native speaker would say it means the same thing, in the same register; a broader, narrower \
-or merely related word is not the same meaning.
+- same_meaning: a native speaker would say it means the same thing; a merely related word is not the same meaning;
+- same_register: the candidate is exactly as slangy, familiar, vulgar, neutral, formal, literary or technical as \
+"{target}"; a neutral word for a slang or familiar one, or a formal word for a neutral one, is false;
+- as_specific: the candidate names the same precise thing or action, neither more general (for example \
+"assaisonner" for "saler", "fixer" for "visser", "mur" for "rempart") nor more specific.
 
 {candidates}
 Reply with JSON, one verdict per candidate in the same order: \
 {{"verdicts": [{{"candidate": "...", "reason": "one short sentence", "grammatical": true or false, \
-"same_meaning": true or false}}]}}"""
+"same_meaning": true or false, "same_register": true or false, "as_specific": true or false}}]}}"""
+CRITERIA = ('grammatical', 'same_meaning', 'same_register', 'as_specific')
 
 
 class OllamaError(RuntimeError):
@@ -78,9 +85,10 @@ def ollama(prompt, model=MODEL, url=OLLAMA, timeout=300):
     except (OSError, KeyError, ValueError) as e:
         raise OllamaError(f'Ollama request failed: {e}') from e
     try:
-        return json.loads(reply)
+        parsed = json.loads(reply)
     except ValueError:
         return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def folded(text):
@@ -131,26 +139,44 @@ def alternatives_for(row, generate):
         else:
             candidates.append(candidate)
             seen.add(folded(candidate))
-    accepted = []
-    if candidates:
-        listing = ''.join(f'{i}. {c}: {cloze.replace(GAP, c)}\n' for i, c in enumerate(candidates, 1))
-        reply = generate(CHECK.format(english=row['english'], sentence=example.replace('{', '').replace('}', ''),
-                                      target=target, candidates=listing)).get('verdicts')
-        complete = lambda v: isinstance(v, dict) and isinstance(v.get('candidate'), str) and \
-            isinstance(v.get('grammatical'), bool) and isinstance(v.get('same_meaning'), bool)
-        if not isinstance(reply, list) or not all(map(complete, reply)):
-            raise UnusableReply(f"{row['id']}: incomplete verdicts")
-        verdicts = {folded(v['candidate'].strip()): v for v in reply}
-        # Exactly one complete verdict per candidate, or the reply can't be trusted.
-        if len(verdicts) != len(reply) or set(verdicts) != {folded(c) for c in candidates}:
-            raise UnusableReply(f"{row['id']}: no single complete verdict for every candidate")
-        for c in candidates:
-            v = verdicts[folded(c)]
-            if v['grammatical'] and v['same_meaning'] and len(accepted) < MAX_ALTERNATIVES:
-                accepted.append(c)
-            else:
-                rejected.append({'candidate': c, 'reason': f"checker: {v.get('reason', '')}".strip()})
-    return {'example': example, 'accepted': accepted, 'rejected': rejected}
+    accepted, judged = judge(row, candidates, generate)
+    return {'example': example, 'accepted': accepted, 'rejected': rejected + judged, 'check': CHECK_VERSION}
+
+
+def judge(row, candidates, generate, label='checker'):
+    """
+    The checker's verdict on each candidate in the full sentence: (accepted, rejected with reasons).
+    Raises UnusableReply unless the reply holds exactly one complete verdict per candidate.
+    """
+    if not candidates:
+        return [], []
+    example = row['example']
+    target = target_of(example)
+    cloze = example.replace('{' + target + '}', GAP)
+    listing = ''.join(f'{i}. {c}: {cloze.replace(GAP, c)}\n' for i, c in enumerate(candidates, 1))
+    reply = generate(CHECK.format(english=row['english'], sentence=example.replace('{', '').replace('}', ''),
+                                  target=target, candidates=listing)).get('verdicts')
+    complete = lambda v: isinstance(v, dict) and isinstance(v.get('candidate'), str) and \
+        all(isinstance(v.get(c), bool) for c in CRITERIA)
+    if not isinstance(reply, list) or not all(map(complete, reply)):
+        raise UnusableReply(f"{row['id']}: incomplete verdicts")
+    verdicts = {folded(v['candidate'].strip()): v for v in reply}
+    if len(verdicts) != len(reply) or set(verdicts) != {folded(c) for c in candidates}:
+        raise UnusableReply(f"{row['id']}: no single complete verdict for every candidate")
+    accepted, rejected = [], []
+    for c in candidates:
+        v = verdicts[folded(c)]
+        if all(v[criterion] for criterion in CRITERIA) and len(accepted) < MAX_ALTERNATIVES:
+            accepted.append(c)
+        else:
+            rejected.append({'candidate': c, 'reason': f"{label}: {v.get('reason', '')}".strip()})
+    return accepted, rejected
+
+
+def recheck(row, record, generate):
+    """The record with its accepted alternatives re-judged by the current checker."""
+    accepted, rejected = judge(row, record['accepted'], generate, label='recheck')
+    return record | {'accepted': accepted, 'rejected': record['rejected'] + rejected, 'check': CHECK_VERSION}
 
 
 def load(path):
@@ -171,16 +197,24 @@ def pending(rows, records):
     return sorted((r for r in rows if records.get(r['id'], {}).get('example') != r['example']), key=lambda r: r['rank'])
 
 
-def run(rows, records, generate, workers=1, limit=None, on_progress=None):
+def stale(rows, records):
+    """Rows whose current record has accepted alternatives judged by an older checker, most frequent first."""
+    def older(record):
+        return record and record['accepted'] and record.get('check', 1) < CHECK_VERSION
+    return sorted((r for r in rows if older(records.get(r['id'])) and records[r['id']]['example'] == r['example']),
+                  key=lambda r: r['rank'])
+
+
+def run(rows, records, generate, workers=1, limit=None, on_progress=None, rechecking=False):
     """
-    Fills `records` in place for pending rows; calls `on_progress(done, total)` after each one.
-    A row whose reply is unusable is left out, so the next run retries it.
+    Fills `records` in place for pending rows, or re-judges stale ones when `rechecking`; calls
+    `on_progress(done, total)` after each one. A row whose reply is unusable is left as it was, so the next run retries it.
     """
-    todo = pending(rows, records)[:limit]
+    todo = (stale(rows, records) if rechecking else pending(rows, records))[:limit]
 
     def attempt(row):
         try:
-            return alternatives_for(row, generate)
+            return recheck(row, records[row['id']], generate) if rechecking else alternatives_for(row, generate)
         except (UnusableReply, OllamaError) as e:
             print(f'skipped {e}', file=sys.stderr, flush=True)
             return None
@@ -199,6 +233,7 @@ def main(argv=None):
     parser.add_argument('--limit', type=int, help='stop after this many examples')
     parser.add_argument('--workers', type=int, default=1, help='parallel requests (match OLLAMA_NUM_PARALLEL)')
     parser.add_argument('--model', default=MODEL)
+    parser.add_argument('--recheck', action='store_true', help='re-judge alternatives accepted by an older checker')
     args = parser.parse_args(argv)
     rows = json.loads((ROOT / DRAFT).read_text())
     path = ROOT / ALTERNATIVES
@@ -210,7 +245,7 @@ def main(argv=None):
             save(path, records, args.model)
             print(f'{done}/{total}', flush=True)
 
-    run(rows, records, lambda prompt: ollama(prompt, args.model), args.workers, args.limit, progress)
+    run(rows, records, lambda prompt: ollama(prompt, args.model), args.workers, args.limit, progress, args.recheck)
     save(path, records, args.model)
     accepted = sum(len(r['accepted']) for r in records.values())
     print(f'{len(records)} examples recorded, {accepted} alternatives accepted', file=sys.stderr)
