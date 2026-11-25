@@ -18,15 +18,17 @@ NOTICE = 'content/NOTICE.md'
 # The vocabulary starting-check items, shared by the app and the web.
 PLACEMENT = 'content/placement-items.json'
 ASSETS = 'apps/android/app/src/main/assets'
-BASE_URL = 'https://raw.githubusercontent.com/randspy/langocard/content-v3/content/'
+BASE_URL = 'https://raw.githubusercontent.com/randspy/langocard/content-v4/content/'
 SOURCE = ('French definitions adapted from French Wiktionary contributors, https://fr.wiktionary.org/ '
           '(per-entry sourceUrl), extracted with Wiktextract via Kaikki, https://kaikki.org/dictionary/rawdata.html. '
           'Frequency ranks: Lexique 3.83, Boris New, Christophe Pallier and contributors, '
           'https://openlexicon.fr/datasets-info/Lexique383/README-Lexique.html. '
           'English glosses and example sentences are machine-generated and not independently reviewed. '
+          'Accepted answer alternatives are machine-generated (gemma4:26b) and checked by a second model pass; '
+          'a 200-example sample was reviewed by Claude Haiku. '
           'Adaptations: one selected meaning per lemma, noun articles, cloze markup, frequency ranks.')
 LICENSE = 'CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/; see NOTICE.md for attribution and modifications'
-STATUS = ('French definitions source-aligned; English glosses and examples machine-generated; '
+STATUS = ('French definitions source-aligned; English glosses, examples and answer alternatives machine-generated; '
           'not independently language-reviewed')
 
 MAX_BYTES = 20 * 1024 * 1024
@@ -111,7 +113,7 @@ def band_of(rank):
 
 
 def pack(band, entries):
-    return dict(format='langocard-pack', version=2, packId=band.pack_id, packVersion=2,
+    return dict(format='langocard-pack', version=3, packId=band.pack_id, packVersion=3,
                 source=SOURCE, license=LICENSE, status=STATUS, entries=entries)
 
 

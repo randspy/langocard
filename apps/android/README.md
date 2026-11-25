@@ -178,7 +178,7 @@ python3 tools/content/publish_catalogue.py
 It writes the three `fr-core` packs and `catalogue.json` to `content/`, and the
 bundled `frequent-pack.json`, `catalogue.json` and `CONTENT-NOTICE.md` to
 `app/src/main/assets/`. It refuses any entry the importer would reject, and reruns
-produce identical bytes. The catalogue is hosted on the `content-v3` Git branch with
+produce identical bytes. The catalogue is hosted on the `content-v4` Git branch with
 direct HTTPS raw URLs. Catalogue downloads verify pack SHA256 digests before
 validation/import.
 

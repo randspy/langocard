@@ -31,6 +31,13 @@ independently reviewed by a French or English speaker. Format checks are not
 linguistic review. No third-party recordings are included; installed local French
 TTS supplies pronunciation on the device.
 
+## Answer alternatives
+
+Some examples accept other words in their answer marks, written `{target|alternative}`.
+These accepted alternatives are machine-generated (gemma4:26b) and checked by a second
+model pass; a 200-example sample was reviewed by Claude Haiku and the alternatives it
+judged wrong were removed. They have not been reviewed by a French speaker.
+
 Entry IDs are stable for this release; content corrections should preserve IDs and
 record the changed fields. `ranked-lemmas.json` is a **frequency reference**, not a
 study deck.
