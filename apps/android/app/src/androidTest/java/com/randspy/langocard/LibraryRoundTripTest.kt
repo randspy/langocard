@@ -35,7 +35,7 @@ class LibraryRoundTripTest {
                 assertEquals(1, JSONObject(restored.library.backup()).getJSONObject("data").getJSONObject("cards").length())
                 assertEquals(1, JSONObject(restored.library.backup()).getJSONObject("data").getJSONArray("reviews").length())
                 val entry = Entry("test-pack-entry", "un récit", "a narrative", "Histoire racontée.", listOf(Example("Elle écrit {un récit}.")), "culture")
-                val pack = JSONObject().put("format", "langocard-pack").put("version", 2).put("source", "Test author")
+                val pack = JSONObject().put("format", "langocard-pack").put("version", ContentFiles.PACK_VERSION).put("source", "Test author")
                     .put("license", "Test license").put("entries", JSONArray().put(ContentFiles.entryJson(entry)))
                 assertEquals(1, restored.library.importPack(pack.toString()))
                 val before = restored.library.backup()

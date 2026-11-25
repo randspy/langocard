@@ -9,7 +9,7 @@ were generated and checked, as decisions 12 and 13 of
 | Draft examples | 19,904 examples | |
 | Generated with checker version 1 (19,573 recorded; 331 never got a usable model reply) | 7,151 | 9,114 |
 | After re-judging with checker version 2 | 4,933 | 5,833 |
-| After clearing 4 that version 2 never judged | 4,929 | 5,826 |
+| After clearing 4 that version 2 never judged | 4,929 | 5,825 |
 | Published, after removing the alternatives Haiku judged wrong | 4,921 | 5,815 |
 
 ## Generation

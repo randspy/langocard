@@ -32,6 +32,16 @@ the target is shown.
 | 14 | Publish | `publish_catalogue.py` merges `alternatives.json` into the examples and fails if a key's example text no longer exists. Packs become `langocard-pack` version 3 with `packVersion` 3, Android `PACK_VERSION` becomes 3 and the catalogue moves to the `content-v4` branch. The pack `source`, `status` and `NOTICE.md` say the alternatives are machine-generated and sample-reviewed. |
 | 15 | Rollout | One user, so old clients are not supported. Order: backend and web, then Android, then content. |
 
+## Content rollout
+
+After PR 4 merges, and only with operator approval:
+
+1. Push a `content-v4` branch that contains the merged `content/` directory. The app's `CATALOGUE_URL` and every pack URL in the catalogue point there.
+2. Run `npm run seed` in `apps/backend` for development, then `npm run seed -- --prod`. Unedited entries take the new examples; edited ones gain the alternatives (decision 10).
+3. Install the new APK. Its bundled frequent pack carries the alternatives.
+
+The generation and review record is [`../research/answer-alternatives-review-2026-11-25.md`](../research/answer-alternatives-review-2026-11-25.md).
+
 ## Ubiquitous language
 
 - **Target.** The first word or phrase in an example's answer marks: the one the card trains.

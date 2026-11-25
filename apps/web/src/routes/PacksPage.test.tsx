@@ -44,7 +44,7 @@ test("packs show their state; an uninstalled pack installs with its source and l
   expect(screen.queryByRole("button", { name: /Uninstall/ })).not.toBeInTheDocument();
   await userEvent.click(within(screen.getByRole("listitem", { name: "Beyond the everyday" })).getByRole("button", { name: "Install" }));
   expect(installPack).toHaveBeenCalledWith(expect.objectContaining({
-    packId: "fr-core-extended-2026-11-v1", packVersion: 2, license: expect.stringContaining("CC BY-SA 4.0"), source: expect.stringContaining("Wiktionary"),
+    packId: "fr-core-extended-2026-11-v1", packVersion: 3, license: expect.stringContaining("CC BY-SA 4.0"), source: expect.stringContaining("Wiktionary"),
   }));
 });
 
