@@ -40,9 +40,11 @@ These issues still ship and belong to the gloss follow-up.
 
 ## Rollout
 
+Historical: this was the `content-v3` release. Later content releases follow their own rollout, currently [answer alternatives](answer-alternatives.md#content-rollout), which keeps existing data.
+
 After merge, and only with operator approval:
 
-1. Push a `content-v3` branch that contains the new `content/` directory (historical: packs now live on `content-v4`, see the [answer alternatives](answer-alternatives.md) rollout). The app's `CATALOGUE_URL` and every pack URL in the catalogue point there.
+1. Push a `content-v3` branch that contains the new `content/` directory. The app's `CATALOGUE_URL` and every pack URL in the catalogue point there.
 2. Wipe every Convex table on the development deployment, then run `npm run seed` in `apps/backend`.
 3. Wipe every Convex table on the production deployment, then run `npm run seed -- --prod`.
 4. Uninstall the app, then install the new APK, so local study data starts empty.
